@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Check, X, Save, Copy, Store, FileText, Settings2, Power, KeyRound } from "lucide-react"
 
 // A dedicated component for individual prompt textareas to manage local typing state safely
@@ -70,6 +71,14 @@ export default function AdminPage() {
     // Brand tag input state
     const [newBrand, setNewBrand] = useState("")
 
+    // Security & Logic states
+    const [pendingMetadata, setPendingMetadata] = useState<Record<string, any>>({})
+
+    // Approval Dialog states
+    const [approveModalOpen, setApproveModalOpen] = useState(false)
+    const [storeToApprove, setStoreToApprove] = useState<any>(null)
+    const [selectedBrandForApprove, setSelectedBrandForApprove] = useState("")
+
     useEffect(() => {
         const fetchAdminData = async () => {
             setIsLoading(true)
@@ -78,6 +87,22 @@ export default function AdminPage() {
             const { data: storesData } = await supabase.from('stores').select('*').order('created_at', { ascending: false })
             if (storesData) {
                 setStores(storesData)
+
+                // Fetch isolated extra B2B metadata for pending accounts securely without exposing total network scopes
+                const pendingIds = storesData.filter(s => s.status === 'pending').map(s => s.id)
+                if (pendingIds.length > 0) {
+                    try {
+                        const res = await fetch('/api/admin/pending-details', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ store_ids: pendingIds })
+                        })
+                        const json = await res.json()
+                        if (json.success && json.metadata) {
+                            setPendingMetadata(json.metadata)
+                        }
+                    } catch (err) { console.error("Failed fetching metadata", err) }
+                }
             }
 
             // 1-1. Fetch store_settings via API (bypassing RLS)
@@ -123,11 +148,33 @@ export default function AdminPage() {
     const activeStores = stores.filter(s => s.status !== 'pending')
 
     // Handlers
-    const handleApproveStore = async (storeId: string) => {
-        const { error } = await supabase.from('stores').update({ status: 'active' }).eq('id', storeId)
-        if (!error) {
-            setStores(prev => prev.map(s => s.id === storeId ? { ...s, status: 'active' } : s))
-            alert("가맹점 승인이 완료되었습니다!")
+    const openApproveModal = (store: any) => {
+        setStoreToApprove(store)
+        setSelectedBrandForApprove(adminConfig.allowed_brands?.[0] || "")
+        setApproveModalOpen(true)
+    }
+
+    const executeApproveStore = async () => {
+        if (!selectedBrandForApprove) {
+            alert("할당할 브랜드를 선택해야 합니다.")
+            return
+        }
+        try {
+            const res = await fetch('/api/admin/approve-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ store_id: storeToApprove.id, brand_name: selectedBrandForApprove })
+            })
+            const json = await res.json()
+            if (json.success) {
+                setStores(prev => prev.map(s => s.id === storeToApprove.id ? { ...s, status: 'active' } : s))
+                alert("해당 매장에 브랜드가 안전하게 할당되었으며, 최종 승인이 완료되었습니다!")
+                setApproveModalOpen(false)
+            } else {
+                alert("상태 오류: " + json.error)
+            }
+        } catch (e) {
+            alert("네트워크 송출 오류가 발생했습니다.")
         }
     }
 
@@ -311,25 +358,33 @@ export default function AdminPage() {
                             <div className="p-8 text-center text-muted-foreground bg-white border border-dashed rounded-lg">승인 대기 중인 계정이 없습니다.</div>
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2">
-                                {pendingAccounts.map((acc: any) => (
-                                    <Card key={acc.id} className="flex flex-col xl:flex-row xl:items-center justify-between p-5 bg-white shadow-sm border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
-                                        <div className="flex flex-col gap-1.5 mb-4 xl:mb-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-lg text-slate-800">{acc.name}</span>
-                                                <Badge variant="outline" className="bg-amber-50/80 text-amber-700 border-amber-300 font-semibold px-2 py-0.5">대기중</Badge>
+                                {pendingAccounts.map((acc: any) => {
+                                    const meta = pendingMetadata[acc.id] || {}
+                                    return (
+                                        <Card key={acc.id} className="flex flex-col xl:flex-row xl:items-center justify-between p-5 bg-white shadow-sm border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
+                                            <div className="flex flex-col gap-1.5 mb-4 xl:mb-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-lg text-slate-800">{acc.name}</span>
+                                                    <Badge variant="outline" className="bg-amber-50/80 text-amber-700 border-amber-300 font-semibold px-2 py-0.5">대기중</Badge>
+                                                </div>
+                                                <div className="text-[13px] text-slate-600 mt-1 grid gap-1">
+                                                    <span className="font-mono text-slate-400">ID: {acc.email}</span>
+                                                    {meta.owner_name && <span><strong className="text-slate-700">대표:</strong> {meta.owner_name} / {meta.phone}</span>}
+                                                    {meta.biz_number && <span><strong className="text-slate-700">사업자:</strong> {meta.biz_number} ({meta.biz_address})</span>}
+                                                    {meta.biz_type && <span><strong className="text-slate-700">종목:</strong> {meta.biz_type} / {meta.biz_category}</span>}
+                                                </div>
                                             </div>
-                                            <span className="text-sm text-slate-500 font-mono">{acc.email}</span>
-                                        </div>
-                                        <div className="flex xl:flex-col gap-2 w-full xl:w-[120px]">
-                                            <Button onClick={() => handleApproveStore(acc.id)} className="flex-1 xl:w-full bg-emerald-600 hover:bg-emerald-700 shadow-sm gap-1.5 font-bold h-9">
-                                                <Check className="w-4 h-4" /> 승인 허가
-                                            </Button>
-                                            <Button onClick={() => handleRejectStore(acc.id)} variant="outline" className="flex-1 xl:w-full text-rose-600 border-rose-200 hover:bg-rose-50 gap-1.5 font-bold h-9">
-                                                <X className="w-4 h-4" /> 거절
-                                            </Button>
-                                        </div>
-                                    </Card>
-                                ))}
+                                            <div className="flex xl:flex-col gap-2 w-full xl:w-[120px] shrink-0">
+                                                <Button onClick={() => openApproveModal(acc)} className="flex-1 xl:w-full bg-emerald-600 hover:bg-emerald-700 shadow-sm gap-1.5 font-bold h-9">
+                                                    <Check className="w-4 h-4" /> 직권 승인
+                                                </Button>
+                                                <Button onClick={() => handleRejectStore(acc.id)} variant="outline" className="flex-1 xl:w-full text-rose-600 border-rose-200 hover:bg-rose-50 gap-1.5 font-bold h-9">
+                                                    <X className="w-4 h-4" /> 승인 거절
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    )
+                                })}
                             </div>
                         )}
                     </section>
@@ -504,6 +559,47 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
+
+            {/* Admin Brand Approval Finalization Modal */}
+            <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl">가맹점 최종 심사 및 브랜드 할당</DialogTitle>
+                        <DialogDescription className="text-[13px] pt-1 leading-relaxed">
+                            <strong className="text-indigo-600 font-bold">[{storeToApprove?.name}]</strong> 가맹점 대시보드를 활성화합니다. 이 매장이 어느 본사(브랜드)에 최초 소속되는지 반드시 할당해주세요. 지정된 브랜드끼리만 내부 카탈로그가 공유되며 허가되지 않은 데이터 침입을 방지합니다.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="brandSelect" className="font-bold text-slate-800 mb-1">
+                                공식 관리 브랜드 부여 <span className="text-rose-500">*</span>
+                            </Label>
+                            {(!adminConfig.allowed_brands || adminConfig.allowed_brands.length === 0) ? (
+                                <div className="text-[13px] text-rose-600 font-bold bg-rose-50 p-4 rounded-md border border-rose-200 leading-relaxed shadow-inner">
+                                    🚨 시스템에 등록된 공식 브랜드가 없습니다. <br />상단의 [공식 브랜드 등록] 탭에서 먼저 브랜드를 1개 이상 생성하여 퍼블리싱 해주세요.
+                                </div>
+                            ) : (
+                                <select
+                                    id="brandSelect"
+                                    value={selectedBrandForApprove}
+                                    onChange={(e) => setSelectedBrandForApprove(e.target.value)}
+                                    className="flex h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-indigo-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                >
+                                    {adminConfig.allowed_brands.map((b: string, i: number) => (
+                                        <option key={i} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter className="border-t bg-slate-50/50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg mt-2">
+                        <Button variant="outline" onClick={() => setApproveModalOpen(false)} className="bg-white">돌아가기</Button>
+                        <Button onClick={executeApproveStore} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-sm" disabled={!adminConfig.allowed_brands || adminConfig.allowed_brands.length === 0}>
+                            최종 승인 및 권한 발급 완료
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
