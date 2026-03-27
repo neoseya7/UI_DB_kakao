@@ -174,38 +174,83 @@ export default function Dashboard() {
 
   const handleChangeSelected = async () => {
     if (selectedIds.length === 0) return alert("변경할 주문을 먼저 체크박스로 선택해주세요.")
-    if (!bulkProduct && !bulkDate) return alert("변경할 상품명 또는 날짜를 선택/입력해주세요.")
+    if (!bulkProduct && !bulkDate) return alert("변경할 상품명 또는 날짜를 선택해주세요.")
 
     try {
-      const updates: any = {}
-      if (bulkProduct) updates.product_name = bulkProduct
-      if (bulkDate) updates.collect_date = bulkDate
+      setIsLoading(true)
+      const targetLogs = logs.filter(l => selectedIds.includes(l.id))
 
-      const { error } = await supabase
-        .from('chat_logs')
-        .update(updates)
-        .in('id', selectedIds)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-      if (error) throw error
+      for (const log of targetLogs) {
+        const targetDate = bulkDate && bulkDate !== "-" ? bulkDate : log.date
+        const targetProduct = bulkProduct && bulkProduct !== "-" ? bulkProduct : log.product
 
-      setLogs(prev => prev.map(log => {
-        if (selectedIds.includes(log.id)) {
-          return {
-            ...log,
-            product: bulkProduct || log.product,
-            date: bulkDate || log.date
+        await supabase.from('chat_logs').update({
+          collect_date: targetDate,
+          product_name: targetProduct,
+          is_processed: true,
+          category: 'ORDER'
+        }).eq('id', log.id)
+
+        if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-") {
+          const { data: existingOrders } = await supabase.from('orders')
+            .select('id')
+            .eq('store_id', user.id)
+            .eq('pickup_date', targetDate)
+            .eq('customer_nickname', log.nickname)
+
+          let orderId = null
+
+          if (existingOrders && existingOrders.length > 0) {
+            orderId = existingOrders[0].id
+            await supabase.from('orders').update({ customer_memo_1: '관리자 수동 복구' }).eq('id', orderId)
+          } else {
+            const { data: newOrder } = await supabase.from('orders').insert({
+              store_id: user.id,
+              pickup_date: targetDate,
+              customer_nickname: log.nickname,
+              is_received: false,
+              customer_memo_1: '관리자 수동 복구'
+            }).select().single()
+
+            if (newOrder) orderId = newOrder.id
+          }
+
+          if (orderId && activeProducts) {
+            const prod = activeProducts.find(p => p.collect_name === targetProduct)
+            if (prod) {
+              const { data: existingItems } = await supabase.from('order_items')
+                .select('id, quantity')
+                .eq('order_id', orderId)
+                .eq('product_id', prod.id)
+
+              if (existingItems && existingItems.length > 0) {
+                const newQty = log.quantity > 0 ? log.quantity : (existingItems[0].quantity || 1)
+                await supabase.from('order_items').update({ quantity: newQty }).eq('id', existingItems[0].id)
+              } else {
+                await supabase.from('order_items').insert({
+                  order_id: orderId,
+                  product_id: prod.id,
+                  quantity: log.quantity > 0 ? log.quantity : 1
+                })
+              }
+            }
           }
         }
-        return log
-      }))
+      }
 
-      alert(`선택한 ${selectedIds.length}개 항목의 정보가 변경되었습니다.`)
+      alert(`✅ 선택한 ${selectedIds.length}개 항목이 정식 주문으로 강제 동기화(복구) 되었습니다!`)
       setSelectedIds([])
       setBulkProduct("")
       setBulkDate("")
+      fetchLogs()
     } catch (err: any) {
       console.error(err)
-      alert(`변경 실패: ${err.message}`)
+      alert(`변경 및 동기화 실패: ${err.message}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
