@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks } from "lucide-react"
+import { MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks, BarChart3 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
@@ -68,6 +68,13 @@ export function Sidebar() {
                 >
                   <Blocks className="h-4 w-4" />
                   부가기능 (단축 매크로)
+                </Link>
+                <Link
+                  href="/analytics"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  통계 (Analytics)
                 </Link>
                 <Link
                   href="/settings"
