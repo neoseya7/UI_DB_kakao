@@ -357,6 +357,7 @@ export default function PickupCalendarPage() {
                 "고객명": c.name,
                 "수령확인": c.checked ? "O" : "X",
                 "주문 요약": getSummary(c.items),
+                "결제 금액": c.items.reduce((total: number, qty: number, idx: number) => total + (qty * (products[idx]?.price || 0)), 0),
                 "비고 1": c.memo1,
                 "비고 2": c.memo2
             }
@@ -370,6 +371,7 @@ export default function PickupCalendarPage() {
             "고객명": "총 합계",
             "수령확인": "",
             "주문 요약": "",
+            "결제 금액": rawCustomers.reduce((globalTotal, c) => globalTotal + c.items.reduce((t: number, q: number, idx: number) => t + (q * (products[idx]?.price || 0)), 0), 0),
             "비고 1": "",
             "비고 2": ""
         }
@@ -567,6 +569,7 @@ export default function PickupCalendarPage() {
                                 <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">수령확인</th>
                                 <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">관리</th>
                                 <th rowSpan={4} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
+                                <th rowSpan={4} className="border-b border-r px-3 py-3 w-[110px] min-w-[110px] bg-blue-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-center">결제 금액</th>
                                 <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
                                 <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 2</th>
                                 {products.map((p, i) => <th key={i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">{p.name}</th>)}
@@ -577,12 +580,12 @@ export default function PickupCalendarPage() {
                         </thead>
 
                         <tbody>
-                            <tr><td colSpan={products.length + 5} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
+                            <tr><td colSpan={products.length + 6} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
 
                             {isLoading ? (
-                                <tr><td colSpan={products.length + 6} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
+                                <tr><td colSpan={products.length + 7} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
                             ) : filteredCustomers.length === 0 ? (
-                                <tr><td colSpan={products.length + 6} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
+                                <tr><td colSpan={products.length + 7} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'}`}>
@@ -611,6 +614,9 @@ export default function PickupCalendarPage() {
                                         <td className="border-b border-r px-3 py-2 bg-slate-50/40 text-left">
                                             <span className="text-sm font-medium text-slate-800 break-words leading-tight block">{getSummary(c.items)}</span>
                                         </td>
+                                        <td className="border-b border-r px-3 py-2 bg-blue-50/20 text-right font-bold text-blue-900 border-x-blue-100 shadow-inner">
+                                            {c.items.reduce((total: number, qty: number, idx: number) => total + (qty * (products[idx]?.price || 0)), 0).toLocaleString()}원
+                                        </td>
                                         <td className="border-b border-r px-2 py-1 bg-indigo-50/10">
                                             <Input defaultValue={c.memo1} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_1', e.target.value)} placeholder="메모" className="h-9 bg-transparent border-transparent" />
                                         </td>
@@ -626,7 +632,7 @@ export default function PickupCalendarPage() {
                                 ))
                             )}
 
-                            <tr><td colSpan={products.length + 6} className="h-6 bg-muted/10 border-b border-t-2 border-t-slate-300"></td></tr>
+                            <tr><td colSpan={products.length + 7} className="h-6 bg-muted/10 border-b border-t-2 border-t-slate-300"></td></tr>
 
                             <tr className="bg-blue-50/60 hover:bg-blue-50 transition-colors">
                                 <th colSpan={6} className="border-b border-r p-3 text-right bg-blue-50/80 sticky left-0 z-10 px-4 font-bold text-[15px] text-blue-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">총 주문 합계</th>
