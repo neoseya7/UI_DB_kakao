@@ -147,3 +147,30 @@ CREATE POLICY "Chat logs full access" ON public.chat_logs
 
 -- [7] super_admin_config: 일반 매장은 열람 불가. 이후 Role-based 접근 통제 필요.
 -- (TODO: DB 어드민이나 Service_key 통신시에만 접근하는 것으로 제한)
+
+-- ==========================
+-- STORAGE BUCKET & RLS POLICIES
+-- ==========================
+-- 1. 'product-images' 버킷 생성 및 퍼블릭 접근 허용
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. 누구나 이미지를 볼 수 있도록 SELECT 허용 (퍼블릭)
+CREATE POLICY "Public view access for product-images" 
+ON storage.objects FOR SELECT 
+USING ( bucket_id = 'product-images' );
+
+-- 3. 가맹점 로그인 사용자(authenticated)만 업로드 허용
+CREATE POLICY "Authenticated uploads for product-images" 
+ON storage.objects FOR INSERT 
+WITH CHECK ( bucket_id = 'product-images' AND auth.role() = 'authenticated' );
+
+-- 4. 가맹점 로그인 사용자만 수정 및 삭제 허용
+CREATE POLICY "Authenticated updates for product-images" 
+ON storage.objects FOR UPDATE 
+USING ( bucket_id = 'product-images' AND auth.role() = 'authenticated' );
+
+CREATE POLICY "Authenticated deletes for product-images" 
+ON storage.objects FOR DELETE 
+USING ( bucket_id = 'product-images' AND auth.role() = 'authenticated' );

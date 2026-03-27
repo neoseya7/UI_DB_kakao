@@ -136,7 +136,7 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10">
             <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
                 <div className="flex flex-col gap-2">
-                    <h2 className="text-2xl font-bold tracking-tight">통계 (Analytics)</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">매출통계</h2>
                     <p className="text-muted-foreground">픽업 완료된 주문을 기준으로 매장 재무 실적을 요약합니다.</p>
                 </div>
                 <div className="flex items-center gap-2 bg-muted/40 p-1.5 rounded-lg border shadow-sm shrink-0">
@@ -167,29 +167,29 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-3 border rounded-lg shadow-sm gap-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center bg-white p-3 border rounded-lg shadow-sm gap-4">
                 <div className="flex items-center gap-3">
                     <CalendarDays className="h-5 w-5 text-indigo-500" />
                     <span className="font-semibold text-sm text-slate-700">조회 기간 설정</span>
                 </div>
-                <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-md border text-sm font-medium">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 bg-slate-50/50 p-2 rounded-md border text-sm font-medium w-full sm:w-auto">
                     <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-slate-600"
+                        className="bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-slate-600 flex-1 min-w-[130px]"
                     />
                     <span className="text-slate-400">~</span>
                     <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-slate-600"
+                        className="bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-slate-600 flex-1 min-w-[130px]"
                     />
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="ml-2 h-7 px-2 text-xs text-rose-500 hover:bg-rose-50"
+                        className="h-8 md:h-7 px-3 md:px-2 w-full sm:w-auto mt-2 sm:mt-0 text-sm md:text-xs text-rose-500 hover:bg-rose-50 border border-slate-200 sm:border-transparent font-semibold shadow-sm sm:shadow-none bg-white sm:bg-transparent"
                         onClick={() => { setStartDate(""); setEndDate(""); }}
                     >
                         초기화

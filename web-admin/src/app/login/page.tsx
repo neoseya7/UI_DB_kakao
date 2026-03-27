@@ -94,9 +94,6 @@ export default function LoginPage() {
                         <div className="text-sm text-center mt-1 text-slate-500">
                             아직 가맹점이 아니신가요? <Link href="/signup" className="text-indigo-600 font-bold hover:text-indigo-800 hover:underline">가맹점 등록 신청</Link>
                         </div>
-                        <div className="text-xs text-muted-foreground text-center bg-indigo-50/50 p-2.5 rounded-md border border-indigo-100 leading-relaxed mt-2">
-                            💡 최고 관리자(Super Admin) 로그인 시<br />가맹점 승인 및 프롬프트 관리 메뉴가 활성화됩니다.
-                        </div>
                     </CardFooter>
                 </form>
             </Card>

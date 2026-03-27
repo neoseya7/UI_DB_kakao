@@ -12,7 +12,7 @@ import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, Ar
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
 
-type Product = { id: string, name: string, price: number, required: number, stock: number }
+type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean }
 type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean }
 
 export default function PickupCalendarPage() {
@@ -20,6 +20,10 @@ export default function PickupCalendarPage() {
     const [isMerged, setIsMerged] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, isUploading: false })
+
+    const [posSyncEnabled, setPosSyncEnabled] = useState(false)
+    const [selectedPosOrders, setSelectedPosOrders] = useState<string[]>([])
+    const [isPosPaying, setIsPosPaying] = useState(false)
 
     const [currentDate, setCurrentDate] = useState(() => {
         const today = new Date();
@@ -34,7 +38,8 @@ export default function PickupCalendarPage() {
     const [receiptFilter, setReceiptFilter] = useState("all")
 
     const [newNick, setNewNick] = useState("")
-    const [newProductIdx, setNewProductIdx] = useState<string>("")
+    const [newDate, setNewDate] = useState("")
+    const [newProductId, setNewProductId] = useState<string>("")
     const [newQty, setNewQty] = useState("")
 
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
@@ -49,13 +54,23 @@ export default function PickupCalendarPage() {
     useEffect(() => {
         const initUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (user) setStoreId(user.id)
+            if (user) {
+                setStoreId(user.id)
+                const { data: sData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
+                if (sData) {
+                    const isPosEnabled = sData.crm_tags?.find((t:any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false;
+                    setPosSyncEnabled(isPosEnabled)
+                }
+            }
         }
         initUser()
     }, [])
 
     useEffect(() => {
-        if (storeId) fetchMatrixData()
+        if (storeId) {
+            fetchMatrixData()
+            setSelectedPosOrders([])
+        }
     }, [storeId, currentDate, searchScope])
 
     const fetchMatrixData = async () => {
@@ -74,7 +89,9 @@ export default function PickupCalendarPage() {
             name: p.display_name || p.collect_name,
             price: p.price || 0,
             required: p.allocated_stock || 0,
-            stock: p.allocated_stock || 0
+            stock: p.allocated_stock || 0,
+            target_date: p.target_date,
+            is_regular_sale: p.is_regular_sale
         }))
         setProducts(mappedProducts)
 
@@ -295,15 +312,19 @@ export default function PickupCalendarPage() {
     }
 
     const handleAddOrder = async () => {
-        if (!newNick || !newProductIdx || !newQty || !storeId) return
+        if (!newNick || !newProductId || !newQty) {
+            alert("입력값을 확인해주세요.")
+            return
+        }
 
         setIsLoading(true)
         const qty = parseInt(newQty)
-        const pId = products[parseInt(newProductIdx)].id
+        const pId = newProductId
+        const actualDate = newDate || currentDate
 
         const { data: oData, error: oErr } = await supabase.from('orders').insert({
             store_id: storeId,
-            pickup_date: currentDate,
+            pickup_date: actualDate,
             customer_nickname: newNick,
             is_received: false
         }).select().single()
@@ -332,11 +353,21 @@ export default function PickupCalendarPage() {
         if (!confirm(`[${name}] 고객의 이 주문 내역을 완전히 삭제하시겠습니까?`)) return
 
         setIsLoading(true)
-        const { error } = await supabase.from('orders').delete().eq('id', id)
-        if (!error) {
-            setRawCustomers(prev => prev.filter(c => c.id !== id))
-        } else {
-            alert("주문 삭제 중 오류 발생: " + error.message)
+        try {
+            const res = await fetch('/api/orders/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                setRawCustomers(prev => prev.filter(c => c.id !== id))
+            } else {
+                alert("주문 삭제 실패: " + (result.error || "알 수 없는 오류"))
+            }
+        } catch (err: any) {
+            alert("서버 통신 오류: " + err.message)
         }
         setIsLoading(false)
     }
@@ -352,6 +383,26 @@ export default function PickupCalendarPage() {
         const mm = String(d.getMonth() + 1).padStart(2, '0')
         const dd = String(d.getDate()).padStart(2, '0')
         setCurrentDate(`${yyyy}-${mm}-${dd}`)
+    }
+
+    const togglePosSelect = (id: string) => {
+        setSelectedPosOrders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+    }
+
+    const executePosPayment = async () => {
+        setIsPosPaying(true)
+        // Hardware delay mock
+        await new Promise(r => setTimeout(r, 3500))
+        
+        alert("✅ POS 결제가 성공적으로 승인되었습니다!\n(실제 VAN사 연동 시 이 시점에 결제완료 데이터가 넘어옵니다.)")
+        
+        // Mock successful UI update
+        for (const id of selectedPosOrders) {
+            await supabase.from('orders').update({ is_received: true }).eq('id', id)
+            setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: true } : c))
+        }
+        setSelectedPosOrders([])
+        setIsPosPaying(false)
     }
 
     const customers = isMerged
@@ -378,6 +429,21 @@ export default function PickupCalendarPage() {
 
     const getSummary = (items: number[]) => {
         return items.map((qty, index) => qty > 0 ? `${products[index]?.name} ${qty}개` : null).filter(Boolean).join(" / ")
+    }
+
+    const calculatePosTotal = () => {
+        return filteredCustomers.filter(c => selectedPosOrders.includes(c.id)).reduce((total, c) => {
+            return total + c.items.reduce((t, qty, idx) => t + (qty * (products[idx]?.price || 0)), 0)
+        }, 0)
+    }
+
+    const togglePosSelectAll = () => {
+        const available = filteredCustomers.filter(c => !c.checked && c.id)
+        if (selectedPosOrders.length === available.length) {
+            setSelectedPosOrders([])
+        } else {
+            setSelectedPosOrders(available.map(c => c.id))
+        }
     }
 
     const handleExportExcel = () => {
@@ -437,7 +503,7 @@ export default function PickupCalendarPage() {
             )}
 
             <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-bold tracking-tight">날짜별 픽업 (주문 매트릭스 DB 연동됨)</h2>
+                <h2 className="text-2xl font-bold tracking-tight">주문관리</h2>
                 <p className="text-muted-foreground">판매 등록된 상품과 수집된 주문정보를 교차 조회합니다.</p>
             </div>
 
@@ -499,10 +565,35 @@ export default function PickupCalendarPage() {
                 </div>
 
                 {/* 2번째 줄: 액션 버튼 그룹 */}
-                <div className="flex flex-col md:flex-row flex-wrap items-center justify-end gap-3 border-t pt-4 border-slate-200/60 mt-2">
+                <div className="flex flex-col md:flex-row flex-wrap items-center justify-between xl:justify-end gap-3 border-t pt-4 border-slate-200/60 mt-2">
+                    
+                    <div className="flex flex-col sm:flex-row items-center gap-2 bg-indigo-50/50 p-1.5 rounded-md border border-indigo-100 shadow-sm w-full xl:w-auto xl:mr-auto">
+                        <span className="text-sm font-bold flex items-center gap-1.5 min-w-[max-content] text-indigo-900 border-r border-indigo-200 px-2 shrink-0">
+                            <PlusCircle className="h-4 w-4" /> 수동 추가
+                        </span>
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                            <Input type="date" value={newDate || currentDate} onChange={e => { setNewDate(e.target.value); setNewProductId(""); }} className="w-[125px] h-9 bg-white shadow-sm shrink-0 px-2" />
+                            <Input placeholder="닉네임" value={newNick} onChange={e => setNewNick(e.target.value)} className="w-[85px] h-9 bg-white shadow-sm shrink-0 px-2" />
+                            <Select value={newProductId} onValueChange={setNewProductId}>
+                                <SelectTrigger className="w-[130px] h-9 bg-white shadow-sm shrink-0 px-2">
+                                    <SelectValue placeholder="상품명" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {products.filter(p => p.is_regular_sale || p.target_date === (newDate || currentDate)).map((p) => (
+                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Input type="number" placeholder="수량" value={newQty} onChange={e => setNewQty(e.target.value)} className="w-[60px] h-9 bg-white shadow-sm shrink-0 px-2" min="1" />
+                            <Button onClick={handleAddOrder} size="sm" className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white min-w-[50px] shadow-sm shrink-0 px-3">
+                                등록
+                            </Button>
+                        </div>
+                    </div>
+
                     <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" className="gap-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100 shadow-sm transition-all h-10 w-full sm:w-auto px-3">
+                            <Button variant="outline" className="gap-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100 shadow-sm transition-all h-10 w-full sm:w-auto px-3 shrink-0">
                                 <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 변경
                             </Button>
                         </DialogTrigger>
@@ -574,47 +665,86 @@ export default function PickupCalendarPage() {
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center gap-3 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 shadow-sm">
-                <span className="text-sm font-semibold flex items-center gap-1.5 min-w-[max-content] text-indigo-900 border-r border-indigo-200 pr-3">
-                    <PlusCircle className="h-4 w-4" /> DB 수동 단건 추가
-                </span>
-                <Input placeholder="고객 닉네임" value={newNick} onChange={e => setNewNick(e.target.value)} className="w-full md:w-[160px] h-9 bg-white shadow-sm" />
-                <Select value={newProductIdx} onValueChange={setNewProductIdx}>
-                    <SelectTrigger className="w-full md:w-[240px] h-9 bg-white shadow-sm">
-                        <SelectValue placeholder="상품 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {products.map((p, i) => (
-                            <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                    <Input type="number" placeholder="수량" value={newQty} onChange={e => setNewQty(e.target.value)} className="w-[80px] h-9 bg-white shadow-sm" min="1" />
-                    <span className="text-sm font-medium">개</span>
-                </div>
-                <Button onClick={handleAddOrder} size="sm" className="w-full md:w-auto h-9 bg-indigo-600 hover:bg-indigo-700 text-white min-w-[100px] shadow-sm">
-                    DB에 추가
-                </Button>
-            </div>
-
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
                 <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 360px)" }}>
                     <table className="w-full text-sm text-center border-collapse min-w-max relative">
                         <thead className="bg-muted/90 sticky top-0 z-30 shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
-                                <th rowSpan={4} className="border-b border-r p-3 min-w-[160px] bg-muted/90 sticky left-0 z-40 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap">고객 닉네임</th>
-                                <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">수령확인</th>
-                                <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">관리</th>
-                                <th rowSpan={4} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
-                                <th rowSpan={4} className="border-b border-r px-3 py-3 w-[110px] min-w-[110px] bg-blue-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-center">결제 금액</th>
-                                <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
-                                <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 2</th>
-                                {products.map((p, i) => <th key={i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">{p.name}</th>)}
+                                <th rowSpan={6} className="border-b border-r p-3 w-[100px] sm:w-[160px] min-w-[100px] sm:min-w-[160px] max-w-[100px] sm:max-w-[160px] bg-muted/90 sticky left-0 z-40 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap text-xs sm:text-sm">
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        {posSyncEnabled && (
+                                            <Checkbox 
+                                                disabled={isMerged || filteredCustomers.filter(c => !c.checked).length === 0} 
+                                                checked={selectedPosOrders.length > 0 && selectedPosOrders.length === filteredCustomers.filter(c => !c.checked && c.id).length}
+                                                onCheckedChange={togglePosSelectAll} 
+                                                className="h-4 w-4 shrink-0 border-indigo-300 data-[state=checked]:bg-indigo-600 cursor-pointer disabled:opacity-30" 
+                                                title="전체 결제 선택" 
+                                            />
+                                        )}
+                                        <span>고객 닉네임</span>
+                                    </div>
+                                </th>
+                                <th rowSpan={6} className="border-b border-r px-1 sm:px-2 py-3 w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm sticky left-[100px] sm:left-[160px] z-40 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help" title="수령확인">수령</th>
+                                <th rowSpan={6} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">관리</th>
+                                <th rowSpan={6} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
+                                <th rowSpan={6} className="border-b border-r px-3 py-3 w-[110px] min-w-[110px] bg-blue-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-center">결제 금액</th>
+                                <th rowSpan={6} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
+                                <th rowSpan={2} className="border-b border-r p-3 min-w-[100px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객찜</th>
+                                {products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}
                             </tr>
-                            <tr>{products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}</tr>
-                            <tr>{products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/60 font-normal"><Input placeholder="상품 비고 2" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}</tr>
-                            <tr>{products.map((p, i) => <th key={i} className="border-b border-r p-2 bg-muted/30 font-mono text-[13px] text-muted-foreground">{p.price.toLocaleString()}원</th>)}</tr>
+                            <tr>
+                                {products.map((p, i) => (
+                                    <th key={i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
+                                        <div>{p.name}</div>
+                                        <div className="font-mono text-[12px] text-muted-foreground font-normal mt-1">{p.price.toLocaleString()}원</div>
+                                    </th>
+                                ))}
+                            </tr>
+                            <tr>
+                                <th className="border-b border-r py-2 px-1 bg-blue-50/40 text-[12px] font-bold text-blue-800 tracking-tight">재고수량</th>
+                                {products.map((p, i) => (
+                                    <th key={i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
+                                        {p.stock}
+                                    </th>
+                                ))}
+                            </tr>
+                            <tr>
+                                <th className="border-b border-r py-2 px-1 bg-slate-50/80 text-[12px] font-bold text-slate-700 tracking-tight">합계수량</th>
+                                {products.map((p, i) => {
+                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                    return (
+                                        <th key={i} className="border-b border-r py-2 px-1 bg-slate-50/80 text-[13px] font-semibold text-slate-700">
+                                            {orderSum}
+                                        </th>
+                                    )
+                                })}
+                            </tr>
+                            <tr>
+                                <th className="border-b border-r py-2 px-1 bg-amber-50/40 text-[12px] font-bold text-amber-700 tracking-tight">남은수량</th>
+                                {products.map((p, i) => {
+                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                    const remaining = p.stock - orderSum;
+                                    return (
+                                        <th key={i} className="border-b border-r py-2 px-1 bg-amber-50/40 text-[13px] font-bold text-amber-700">
+                                            {remaining}
+                                        </th>
+                                    )
+                                })}
+                            </tr>
+                            <tr>
+                                <th className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[11px] font-bold text-emerald-800 tracking-tighter leading-tight">남은+미체크</th>
+                                {products.map((p, i) => {
+                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                    const remaining = p.stock - orderSum;
+                                    const unreceivedSum = rawCustomers.filter(c => !c.checked).reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                    const physicalTarget = remaining + unreceivedSum;
+                                    return (
+                                        <th key={i} className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[14px] font-extrabold text-emerald-800 shadow-inner">
+                                            {physicalTarget}
+                                        </th>
+                                    )
+                                })}
+                            </tr>
                         </thead>
 
                         <tbody>
@@ -626,17 +756,27 @@ export default function PickupCalendarPage() {
                                 <tr><td colSpan={products.length + 7} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
                             ) : (
                                 filteredCustomers.map((c, i) => (
-                                    <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'}`}>
-                                        <td className="border-b border-r p-3 font-semibold bg-background group-hover:bg-muted/40 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap truncate max-w-[180px]">
-                                            {c.checked ? <span className="line-through text-muted-foreground">{c.name}</span> : <span>{c.name}</span>}
+                                    <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>
+                                        <td className="border-b border-r p-2 sm:p-3 text-xs sm:text-sm font-semibold bg-background group-hover:bg-muted/40 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap truncate w-[100px] sm:w-[160px] min-w-[100px] sm:min-w-[160px] max-w-[100px] sm:max-w-[160px]">
+                                            <div className="flex items-center gap-2">
+                                                {posSyncEnabled && (
+                                                    <Checkbox 
+                                                        disabled={c.checked || isMerged} 
+                                                        checked={selectedPosOrders.includes(c.id)} 
+                                                        onCheckedChange={() => togglePosSelect(c.id)} 
+                                                        className="h-4 w-4 shrink-0 border-indigo-300 data-[state=checked]:bg-indigo-600 cursor-pointer disabled:opacity-30" 
+                                                    />
+                                                )}
+                                                {c.checked ? <span className="line-through text-muted-foreground truncate">{c.name}</span> : <span className="truncate">{c.name}</span>}
+                                            </div>
                                         </td>
-                                        <td className="border-b border-r px-2 py-1 bg-emerald-50/10">
+                                        <td className="border-b border-r px-1 sm:px-2 py-1 bg-emerald-50/10 sticky left-[100px] sm:left-[160px] z-10 w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] group-hover:bg-emerald-50/20">
                                             <div className="flex justify-center items-center h-full pt-1">
                                                 <Checkbox
                                                     checked={c.checked}
                                                     onCheckedChange={() => !isMerged && toggleCheck(c.id, c.checked)}
                                                     disabled={isMerged}
-                                                    className="h-6 w-6 border-slate-300 data-[state=checked]:bg-emerald-500 rounded-sm cursor-pointer disabled:opacity-50"
+                                                    className="h-5 w-5 sm:h-6 sm:w-6 border-slate-300 data-[state=checked]:bg-emerald-500 rounded-sm cursor-pointer disabled:opacity-50"
                                                 />
                                             </div>
                                         </td>
@@ -669,20 +809,31 @@ export default function PickupCalendarPage() {
                                     </tr>
                                 ))
                             )}
-
-                            <tr><td colSpan={products.length + 7} className="h-6 bg-muted/10 border-b border-t-2 border-t-slate-300"></td></tr>
-
-                            <tr className="bg-blue-50/60 hover:bg-blue-50 transition-colors">
-                                <th colSpan={6} className="border-b border-r p-3 text-right bg-blue-50/80 sticky left-0 z-10 px-4 font-bold text-[15px] text-blue-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">총 주문 합계</th>
-                                {products.map((p, i) => {
-                                    const sum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0)
-                                    return <td key={i} className="border-b border-r p-3 font-extrabold text-xl text-blue-700">{sum > 0 ? sum : "-"}</td>
-                                })}
-                            </tr>
                         </tbody>
                     </table>
                 </div>
             </Card>
+
+            {/* Floating POS Action Bar */}
+            {selectedPosOrders.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-slate-900/95 backdrop-blur-md text-white rounded-full px-5 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex items-center gap-5 md:gap-8 animate-in slide-in-from-bottom-5 duration-300 border border-slate-700/50">
+                    <div className="flex flex-col border-r border-slate-600/60 pr-5 md:pr-8">
+                        <span className="text-[13px] font-semibold text-slate-400">결제 대기 리스트 <strong className="text-white bg-slate-800 px-1.5 py-0.5 rounded-md ml-1">{selectedPosOrders.length}</strong>건</span>
+                        <span className="text-xl md:text-2xl font-black text-emerald-400 tracking-tight">{calculatePosTotal().toLocaleString()}<span className="text-base font-bold ml-0.5 text-emerald-500/80">원</span></span>
+                    </div>
+                    <Button 
+                        onClick={executePosPayment} 
+                        disabled={isPosPaying} 
+                        className="bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold px-6 md:px-8 text-white text-base h-12 shadow-lg transition-all active:scale-95"
+                    >
+                        {isPosPaying ? (
+                            <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> 포스기 응답 대기중...</span>
+                        ) : (
+                            <span className="flex items-center gap-2">💳 POS 결제 전송</span>
+                        )}
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { Menu, UserCircle, LogOut } from "lucide-react"
+import { Menu, UserCircle, LogOut, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { Sidebar } from "./sidebar"
@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 
 export function Header() {
     const [userEmail, setUserEmail] = useState<string | null>(null)
+    const [userId, setUserId] = useState<string | null>(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
@@ -18,6 +19,7 @@ export function Header() {
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (user && user.email) {
                 setUserEmail(user.email)
+                setUserId(user.id)
             }
         })
     }, [])
@@ -36,6 +38,17 @@ export function Header() {
         await supabase.auth.signOut()
         router.push('/login')
     }
+
+    const copyStoreLink = () => {
+        if (!userId) return;
+        const url = `${window.location.origin}/store/${userId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("📋 고객이 접속할 수 있는 매장 주문검색 페이지 주소가 복사되었습니다!\n\n" + url);
+        }).catch(() => {
+            alert("주소 복사에 실패했습니다. 권한을 확인해주세요.");
+        });
+    }
+
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 shadow-sm">
             <Sheet>
@@ -55,12 +68,27 @@ export function Header() {
                 </SheetContent>
             </Sheet>
             <div className="w-full flex-1">
-                <h1 className="text-lg font-semibold tracking-tight my-0 py-0">Dashboard</h1>
+                <h1 className="text-lg font-semibold tracking-tight my-0 py-0 hidden sm:block">Dashboard</h1>
             </div>
+            
+            {userId && (
+                <div className="flex items-center">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={copyStoreLink} 
+                        className="gap-1.5 h-8 text-[11px] sm:text-xs font-bold text-indigo-700 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 shadow-sm mr-2" 
+                        title="고객 주문 검색 페이지 주소 복사"
+                    >
+                        <Copy className="h-3.5 w-3.5" /> <span className="hidden min-[400px]:inline">퍼블릭 주소 복사</span>
+                    </Button>
+                </div>
+            )}
+
             <div className="relative" ref={menuRef}>
                 <Button
                     variant="ghost"
-                    className="flex items-center gap-2 rounded-full px-3 hover:bg-muted"
+                    className="flex items-center gap-2 rounded-full px-2 sm:px-3 hover:bg-muted"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                     <UserCircle className="h-6 w-6 text-slate-600" />

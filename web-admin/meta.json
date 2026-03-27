@@ -1,0 +1,38 @@
+[
+  {
+    "e": "test@test.com",
+    "m": {
+      "brand_name": "우리동네국민상회",
+      "email": "test@test.com",
+      "email_verified": true,
+      "name": "테스트",
+      "phone_verified": false,
+      "role": "store_owner",
+      "sub": "fe202530-fc74-4f7c-8e7c-0adc71f83838"
+    }
+  },
+  {
+    "e": "admin@example.com",
+    "m": {
+      "brand_name": "우리동네국민상회",
+      "email": "admin@example.com",
+      "email_verified": true,
+      "name": "관리자",
+      "phone_verified": false,
+      "role": "store_owner",
+      "sub": "7a9414ee-02c9-4926-a145-1dd1b049ed1a"
+    }
+  },
+  {
+    "e": "neoseya@naver.com",
+    "m": {
+      "brand_name": "우리동네국민상회",
+      "email": "neoseya@naver.com",
+      "email_verified": true,
+      "name": "국민상회 테스트",
+      "phone_verified": false,
+      "role": "store_owner",
+      "sub": "cd98e4a5-82f8-4507-ab35-3989339edb6c"
+    }
+  }
+]

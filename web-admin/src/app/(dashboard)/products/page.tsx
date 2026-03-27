@@ -39,9 +39,11 @@ export default function ProductsPage() {
         deadline_time: "",
         description: "",
         image_url: "",
-        is_visible: true
+        image_urls: [] as string[],
+        is_visible: true,
+        is_stocked: false
     })
-    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+    const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([])
     const [isSaving, setIsSaving] = useState(false)
 
     // Search and filter UX (Duplicate detection logic)
@@ -90,32 +92,51 @@ export default function ProductsPage() {
         e.preventDefault()
         if (!storeId) return
 
-        setIsSaving(true)
-        let finalImageUrl = formData.image_url
+        if (editingProductId) {
+            const originalProduct = products.find(p => p.id === editingProductId)
+            const oldDate = originalProduct?.target_date || ""
+            const newDate = formData.target_date || ""
 
-        // 1. 이미지 파일이 새로 선택된 경우 Storage에 업로드
-        if (selectedImageFile) {
-            const fileExt = selectedImageFile.name.split('.').pop()
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`
-            const filePath = `${storeId}/${fileName}`
-
-            const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('product-images')
-                .upload(filePath, selectedImageFile)
-
-            if (uploadError) {
-                alert("이미지 업로드 실패 (버킷 권한 및 이름을 확인해주세요): " + uploadError.message)
-                setIsSaving(false)
-                return
-            }
-
-            if (uploadData) {
-                const { data: publicUrlData } = supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(filePath)
-                finalImageUrl = publicUrlData.publicUrl
+            if (originalProduct && oldDate !== newDate) {
+                const { count, error } = await supabase.from('order_items').select('*', { count: 'exact', head: true }).eq('product_id', editingProductId)
+                
+                if (count && count > 0) {
+                    alert("⚠️ 이미 주문이 있는 상품입니다.\n날짜를 변경하시려면 반드시 [주문관리] 메뉴의 '상품 픽업일 변경' 버튼을 이용해주세요.")
+                    return
+                }
             }
         }
+
+        setIsSaving(true)
+        
+        const finalImageUrls = [...formData.image_urls]
+
+        if (selectedImageFiles.length > 0) {
+            for (const file of selectedImageFiles) {
+                const fileExt = file.name.split('.').pop()
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`
+                const filePath = `${storeId}/${fileName}`
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(filePath, file)
+
+                if (uploadError) {
+                    alert(`이미지 업로드 실패 (${file.name}): ` + uploadError.message)
+                    continue
+                }
+
+                if (uploadData) {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(filePath)
+                    finalImageUrls.push(publicUrlData.publicUrl)
+                }
+            }
+        }
+
+        const strictFinalImageUrls = finalImageUrls.slice(0, 10)
+        let primaryImageUrl = strictFinalImageUrls.length > 0 ? strictFinalImageUrls[0] : ""
 
         // 2. 최종 Payload 구성
         let finalStock = parseInt(formData.allocated_stock) || 0
@@ -131,8 +152,10 @@ export default function ProductsPage() {
             deadline_date: formData.deadline_date || null,
             deadline_time: formData.deadline_time || null,
             description: formData.description,
-            image_url: finalImageUrl,
-            is_visible: formData.is_visible
+            image_url: primaryImageUrl,
+            image_urls: strictFinalImageUrls,
+            is_visible: formData.is_visible,
+            is_stocked: formData.is_stocked
         }
 
         if (editingProductId) {
@@ -159,9 +182,9 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", is_visible: true
+                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
                 })
-                setSelectedImageFile(null)
+                setSelectedImageFiles([])
                 fetchProducts(storeId)
             } else {
                 alert("상품 등록 중 오류가 발생했습니다: " + error.message)
@@ -174,14 +197,22 @@ export default function ProductsPage() {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", is_visible: true
+            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
         })
-        setSelectedImageFile(null)
+        setSelectedImageFiles([])
         setIsDialogOpen(true)
     }
 
     const openEditProductDialog = (product: any) => {
         setEditingProductId(product.id)
+        
+        let loadedUrls: string[] = []
+        if (Array.isArray(product.image_urls) && product.image_urls.length > 0) {
+            loadedUrls = product.image_urls
+        } else if (product.image_url) {
+            loadedUrls = [product.image_url]
+        }
+
         setFormData({
             target_date: product.target_date || "",
             collect_name: product.collect_name || "",
@@ -193,9 +224,11 @@ export default function ProductsPage() {
             deadline_time: product.deadline_time || "",
             description: product.description || "",
             image_url: product.image_url || "",
-            is_visible: product.is_visible !== false
+            image_urls: loadedUrls,
+            is_visible: product.is_visible !== false,
+            is_stocked: product.is_stocked === true
         })
-        setSelectedImageFile(null)
+        setSelectedImageFiles([])
         setIsDialogOpen(true)
     }
 
@@ -250,6 +283,7 @@ export default function ProductsPage() {
             deadline_time: prod.deadline_time,
             description: prod.description,
             image_url: prod.image_url,
+            image_urls: prod.image_urls || (prod.image_url ? [prod.image_url] : []),
             is_visible: true,
             is_regular_sale: prod.is_regular_sale,
             target_date: new Date().toISOString().split('T')[0] // Default to today
@@ -267,11 +301,41 @@ export default function ProductsPage() {
         }
     }
 
+    const handleBulkStockUpdate = async (status: boolean) => {
+        if (!storeId || products.length === 0) return;
+        
+        const targetProducts = products
+            .filter(p => filterDate === "all" || (filterDate === "regular" && p.is_regular_sale) || p.target_date === filterDate)
+            .filter(p => {
+                if (!searchQuery) return true
+                const lowerQ = searchQuery.toLowerCase()
+                return (p.collect_name && p.collect_name.toLowerCase().includes(lowerQ)) ||
+                       (p.display_name && p.display_name.toLowerCase().includes(lowerQ))
+            });
+
+        if (targetProducts.length === 0) {
+            alert("변경할 수 있는 상품이 현재 화면에 없습니다.");
+            return;
+        }
+
+        if (!confirm(`현재 화면에 필터링된 ${targetProducts.length}개의 상품을 모두 [${status ? '입고 완료🟢' : '미입고🔴'}] 상태로 일괄 변경하시겠습니까?`)) return;
+
+        setIsLoading(true);
+        const ids = targetProducts.map(p => p.id);
+        const { error } = await supabase.from('products').update({ is_stocked: status }).in('id', ids);
+
+        if (!error) {
+            setProducts(products.map(p => ids.includes(p.id) ? { ...p, is_stocked: status } : p));
+        } else {
+            alert("일괄 변경 중 오류가 발생했습니다: " + error.message);
+        }
+        setIsLoading(false);
+    }
+
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10">
+        <div className="flex flex-col gap-6 w-full max-w-[1900px] mx-auto pb-10 px-2 md:px-4">
             <div className="flex flex-col gap-2">
                 <h2 className="text-2xl font-bold tracking-tight">상품 관리</h2>
-                <p className="text-muted-foreground">특정 날짜에 고객에게 선보일 상품 정보가 실제 데이터베이스에 실시간 동기화됩니다.</p>
             </div>
 
             <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 bg-muted/30 p-4 rounded-lg border shadow-sm">
@@ -309,7 +373,12 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                    <div className="relative w-full sm:w-[220px]">
+                    <div className="flex items-center gap-1.5 mr-auto md:mr-2 shrink-0">
+                        <Button onClick={() => handleBulkStockUpdate(true)} variant="outline" size="sm" className="h-9 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-bold px-2">전체 입고전환</Button>
+                        <Button onClick={() => handleBulkStockUpdate(false)} variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 font-bold px-2">미입고로 전환</Button>
+                    </div>
+
+                    <div className="relative w-full sm:w-[200px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="상품명 검색..."
@@ -374,6 +443,21 @@ export default function ProductsPage() {
                                         {formData.is_visible ? "노출 켜짐" : "숨김 처리"}
                                     </Button>
                                 </div>
+                                <div className="flex items-center justify-between pb-3 mb-1">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base text-slate-800 font-bold">오프라인 현장 입고 여부</Label>
+                                        <p className="text-[12px] text-muted-foreground leading-tight">입고 처리 시 상품 카드에 강조 스티커가 나타납니다.</p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={formData.is_stocked ? "default" : "secondary"}
+                                        className={`w-28 gap-1.5 shadow-sm transition-all ${formData.is_stocked ? 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold' : 'text-slate-500 bg-slate-200 hover:bg-slate-300 font-bold'}`}
+                                        onClick={() => setFormData({ ...formData, is_stocked: !formData.is_stocked })}
+                                    >
+                                        {formData.is_stocked ? "🟢 입고 완료" : "🔴 미입고"}
+                                    </Button>
+                                </div>
                                 <Label htmlFor="name">상품명 (고객 노출용 - <span className="font-normal text-muted-foreground">선택사항</span>)</Label>
                                 <Input
                                     id="name"
@@ -405,34 +489,71 @@ export default function ProductsPage() {
                             </div>
 
                             <div className="space-y-3 border-t pt-4">
-                                <Label>대표 이미지 첨부</Label>
-                                <div className="flex items-center gap-4">
-                                    {formData.image_url || selectedImageFile ? (
-                                        <div className="h-16 w-16 relative bg-muted rounded-md overflow-hidden border flex-shrink-0 shadow-sm">
-                                            <img
-                                                src={selectedImageFile ? URL.createObjectURL(selectedImageFile) : formData.image_url}
-                                                alt="미리보기"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="h-16 w-16 bg-muted/40 rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground flex-shrink-0">
-                                            <ImageIcon className="h-6 w-6 opacity-50" />
-                                        </div>
-                                    )}
-                                    <div className="flex-1 space-y-1.5">
-                                        <Input
-                                            type="file"
-                                            accept="image/png, image/jpeg, image/jpg, image/webp"
-                                            onChange={e => {
-                                                const file = e.target.files?.[0];
-                                                if (file) setSelectedImageFile(file);
-                                            }}
-                                            className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:border-0 file:rounded-md file:mr-4 file:px-3 file:-ml-2 file:-my-2 h-9"
-                                        />
-                                        <p className="text-[11px] text-muted-foreground font-medium">최대 5MB, 1:1 비율 이미지를 권장합니다.</p>
-                                    </div>
+                                <div className="flex items-center justify-between">
+                                    <Label>상품 이미지 첨부 (최대 10장)</Label>
+                                    <Badge variant="outline" className="font-mono bg-slate-50 border-slate-200 text-slate-500 shadow-sm">{formData.image_urls.length + selectedImageFiles.length} / 10</Badge>
                                 </div>
+                                <div className="flex flex-wrap gap-3">
+                                    {/* Existing Uploaded Images */}
+                                    {formData.image_urls.map((url, idx) => (
+                                        <div key={`exist-${idx}`} className="h-20 w-20 relative bg-muted rounded-md overflow-hidden border shadow-sm group">
+                                            <img src={url} alt={`저장된 이미지 ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <button 
+                                                type="button"
+                                                onClick={() => setFormData({...formData, image_urls: formData.image_urls.filter((_, i) => i !== idx)})}
+                                                className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                            </button>
+                                            {idx === 0 && <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-[9px] text-white text-center font-bold py-0.5">대표</span>}
+                                        </div>
+                                    ))}
+                                    
+                                    {/* New Selected Files Preview */}
+                                    {selectedImageFiles.map((file, idx) => (
+                                        <div key={`new-${idx}`} className="h-20 w-20 relative bg-indigo-50/50 rounded-md overflow-hidden border border-indigo-200 shadow-sm group">
+                                            <img src={URL.createObjectURL(file)} alt={`새 첨부 이미지 ${idx + 1}`} className="w-full h-full object-cover opacity-80" />
+                                            <div className="absolute inset-x-0 top-0 h-full ring-2 ring-inset ring-indigo-400/50 pointer-events-none rounded-md"></div>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setSelectedImageFiles(selectedImageFiles.filter((_, i) => i !== idx))}
+                                                className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                            </button>
+                                            <span className="absolute bottom-1 right-1 bg-indigo-600 text-[8px] text-white px-1 leading-tight rounded-sm font-bold shadow-sm">NEW</span>
+                                        </div>
+                                    ))}
+
+                                    {/* Add Button */}
+                                    {(formData.image_urls.length + selectedImageFiles.length) < 10 && (
+                                        <label className="h-20 w-20 cursor-pointer bg-muted/20 hover:bg-indigo-50/50 rounded-md border-2 border-dashed border-slate-300 hover:border-indigo-300 flex flex-col items-center justify-center text-muted-foreground hover:text-indigo-600 transition-colors group shadow-sm">
+                                            <input 
+                                                type="file" 
+                                                multiple 
+                                                accept="image/png, image/jpeg, image/jpg, image/webp" 
+                                                className="hidden" 
+                                                onChange={e => {
+                                                    const files = Array.from(e.target.files || [])
+                                                    const availableSlots = 10 - (formData.image_urls.length + selectedImageFiles.length)
+                                                    const filesToAdd = files.slice(0, availableSlots)
+                                                    if (filesToAdd.length > 0) {
+                                                        setSelectedImageFiles([...selectedImageFiles, ...filesToAdd])
+                                                    }
+                                                    if (files.length > availableSlots) {
+                                                        alert(`최대 10장까지만 업로드 가능합니다. 초과된 ${files.length - availableSlots}장은 제외되었습니다.`)
+                                                    }
+                                                    e.target.value = ""
+                                                }} 
+                                            />
+                                            <div className="bg-white rounded-full p-1 shadow-sm mb-1 group-hover:scale-110 transition-transform">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                            </div>
+                                            <span className="text-[10px] font-bold">사진 첨부</span>
+                                        </label>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-muted-foreground font-medium pt-0.5">여러 장을 선택할 수 있으며, 첫 번째 사진이 썸네일(대표 이미지)이 됩니다. 최대 5MB 권장.</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 mt-1 pt-4 border-t border-red-100 bg-red-50/50 p-3 rounded-lg">
@@ -451,15 +572,15 @@ export default function ProductsPage() {
                                 <textarea id="desc" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="상세 설명을 적어주세요." />
                             </div>
                         </div>
-                        <DialogFooter className="sm:justify-between w-full gap-2 mt-4">
+                        <DialogFooter className="flex-col sm:flex-row w-full gap-2 mt-4 sm:justify-between">
                             {editingProductId ? (
                                 <Button type="button" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto" onClick={() => handleDeleteProduct(editingProductId)}>
                                     이 상품 영구 삭제
                                 </Button>
-                            ) : <div />}
-                            <div className="flex gap-2 w-full sm:w-auto">
-                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>취소</Button>
-                                <Button type="submit" className="font-semibold" disabled={isSaving}>
+                            ) : <div className="hidden sm:block" />}
+                            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>취소</Button>
+                                <Button type="submit" className="font-semibold w-full sm:w-auto" disabled={isSaving}>
                                     {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
                                 </Button>
                             </div>
@@ -477,8 +598,7 @@ export default function ProductsPage() {
                             {sharedBrandName && <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-200">{sharedBrandName}</Badge>}
                         </DialogTitle>
                         <DialogDescription>
-                            같은 본사(브랜드)에 속한 다른 매장들이 올려둔 상품 템플릿입니다. <br />
-                            <span className="text-emerald-600 font-medium">복사하더라도 원본이나 타 매장에는 전혀 영향을 주지 않으며, 이미지 용량도 100% 절약됩니다.</span>
+                            다른 매장들이 올려둔 상품 템플릿입니다.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -494,9 +614,14 @@ export default function ProductsPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {sharedProducts.map(prod => (
                                     <div key={prod.id} className="border rounded-lg overflow-hidden flex flex-col bg-white shadow-sm hover:border-indigo-300 transition-colors">
-                                        {prod.image_url ? (
+                                        {prod.image_url || (prod.image_urls && prod.image_urls.length > 0) ? (
                                             <div className="w-full h-32 bg-slate-100 relative">
-                                                <img src={prod.image_url} alt="상품" className="w-full h-full object-cover" />
+                                                <img src={prod.image_urls && prod.image_urls.length > 0 ? prod.image_urls[0] : prod.image_url} alt="상품" className="w-full h-full object-cover" />
+                                                {prod.image_urls && prod.image_urls.length > 1 && (
+                                                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 font-bold shadow-sm backdrop-blur-sm">
+                                                       <ImageIcon className="w-3 h-3" /> +{prod.image_urls.length - 1}
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="w-full h-32 bg-slate-50 flex items-center justify-center text-slate-300">
@@ -550,6 +675,7 @@ export default function ProductsPage() {
                                         <div className="flex flex-col gap-1 w-full">
                                             <CardTitle className="text-[14px] leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>
                                                 {product.is_visible === false && <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0 rounded-sm text-[9px] font-bold mr-1 align-middle shadow-sm"><EyeOff className="w-2.5 h-2.5" />숨김</span>}
+                                                {product.is_stocked && <span className="inline-flex items-center gap-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 px-1 py-0 rounded-sm text-[10px] font-extrabold mr-1 align-middle shadow-sm tracking-tight">입고🟢</span>}
                                                 {product.collect_name}
                                             </CardTitle>
                                             <div className="flex items-center gap-1.5">

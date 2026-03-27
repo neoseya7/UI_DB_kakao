@@ -27,7 +27,8 @@ export default function SettingsPage() {
         crm_tags: [] as any[],
         manager_nicks: [] as string[], // Extra local combined to CRM tags or just separate for UI
         order_alert_enabled: true,
-        alert_minutes_before: 5
+        alert_minutes_before: 5,
+        pos_sync_enabled: false
     })
 
     useEffect(() => {
@@ -48,7 +49,8 @@ export default function SettingsPage() {
                         crm_tags: data.crm_tags?.filter((t: any) => t.type === 'crm') || [],
                         manager_nicks: data.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || ["강남1점장"],
                         order_alert_enabled: data.order_alert_enabled ?? true,
-                        alert_minutes_before: data.alert_minutes_before || 5
+                        alert_minutes_before: data.alert_minutes_before || 5,
+                        pos_sync_enabled: data.crm_tags?.find((t: any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false
                     })
                 }
             }
@@ -64,7 +66,8 @@ export default function SettingsPage() {
         // Combine manager_nicks and crm_tags into one JSONB array for the DB
         const combinedTags = [
             ...settings.manager_nicks.map(n => ({ type: 'manager', name: n })),
-            ...settings.crm_tags.map(t => ({ type: 'crm', ...t }))
+            ...settings.crm_tags.map(t => ({ type: 'crm', ...t })),
+            { type: 'setting', key: 'pos_sync_enabled', value: settings.pos_sync_enabled }
         ]
 
         const payload = {
@@ -148,10 +151,35 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid gap-6">
-                {/* 1. Global View Toggles */}
+                {/* 1. POS Sync Settings */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>1. 주문 검색 페이지 표시 설정</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md text-sm">1</span> 
+                            포스와 연동
+                        </CardTitle>
+                        <CardDescription>매장의 오프라인 POS 기기와의 양방향 데이터 연동 여부를 결정합니다.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="pos-sync" className="flex flex-col gap-1 cursor-pointer">
+                                <span className="text-base font-semibold">본사 POS 시스템 연동 켜기</span>
+                                <span className="font-normal text-sm text-amber-600 font-medium">[현재 개발 중입니다. 주문관리에 결제창이 생깁니다. 결제 버튼을 누르면 바로 결제가 이루어집니다.]</span>
+                            </Label>
+                            <Switch
+                                id="pos-sync"
+                                checked={settings.pos_sync_enabled}
+                                onCheckedChange={(v) => setSettings({ ...settings, pos_sync_enabled: v })}
+                                className="data-[state=checked]:bg-indigo-600"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 2. Global View Toggles */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>2. 주문 검색 페이지 표시 설정</CardTitle>
                         <CardDescription>고객이 조회/검색할 때 노출되는 기본 정보를 제어합니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -168,8 +196,8 @@ export default function SettingsPage() {
                         </div>
                         <div className="flex items-center justify-between">
                             <Label htmlFor="show-stock" className="flex flex-col gap-1 cursor-pointer">
-                                <span className="text-base font-semibold">실시간 재고 노출 활성화</span>
-                                <span className="font-normal text-sm text-muted-foreground">품절 및 잔여 재고 상태를 밖으로 노출합니다.</span>
+                                <span className="text-base font-semibold">상품 입고/미입고 노출 활성화</span>
+                                <span className="font-normal text-sm text-muted-foreground">고객용 상품 카드의 하단에 구체적 수량 대신 '입고 완료🟢 / 미입고🔴' 상태를 표시합니다.</span>
                             </Label>
                             <Switch
                                 id="show-stock"
@@ -180,10 +208,10 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* 2. Notice Texts Array */}
+                {/* 3. Notice Texts Array */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>2. 외부 노출 공지사항 (배너/알림)</CardTitle>
+                        <CardTitle>3. 외부 노출 공지사항 (배너/알림)</CardTitle>
                         <CardDescription>고객 메인 페이지 상단에 띄울 필독 공지사항입니다. 최대 10줄까지 등록할 수 있습니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -196,7 +224,7 @@ export default function SettingsPage() {
                                     placeholder="공지사항 내용을 입력하세요"
                                     className="flex-1 bg-white shadow-sm"
                                 />
-                                <Button onClick={() => removeNotice(i)} variant="outline" className="text-destructive hover:bg-destructive/10 px-3">삭제</Button>
+                                <Button onClick={() => removeNotice(i)} variant="outline" className="text-destructive hover:bg-destructive/10 px-3 shrink-0">삭제</Button>
                             </div>
                         ))}
                         <Button onClick={addNotice} variant="secondary" className="w-full mt-2 font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 border-dashed">
@@ -205,10 +233,10 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* 3. Product Guide Page Configuration */}
+                {/* 4. Product Guide Page Configuration */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>3. 상품 안내 페이지 설정</CardTitle>
+                        <CardTitle>4. 상품 안내 페이지 설정</CardTitle>
                         <CardDescription>고객에게 노출되는 개별 상품 페이지의 디자인 요소 활성화 및 재고 배지 임계값을 설정합니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -271,21 +299,21 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* 4. Manager Nicknames Set */}
+                {/* 5. Manager Nicknames Set */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>4. 점장 전용 챗봇 닉네임 필터링 (명령어 통과용)</CardTitle>
+                        <CardTitle>5. 점장 전용 챗봇 닉네임 필터링 (명령어 통과용)</CardTitle>
                         <CardDescription>고객 채팅이 아닌 '점장 명령'으로 강제 분류되어 스킵될 카카오 인증 닉네임 리스트입니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <Input
                                 value={newManager} onChange={e => setNewManager(e.target.value)}
                                 placeholder="등록할 점장의 챗봇 닉네임 정확히 입력 (예: 강남단골1)"
-                                className="max-w-[400px] shadow-sm bg-white"
+                                className="w-full sm:max-w-[400px] shadow-sm bg-white"
                                 onKeyDown={(e) => { if (e.key === 'Enter') addManager() }}
                             />
-                            <Button onClick={addManager} className="font-semibold shadow-sm">닉네임 추가</Button>
+                            <Button onClick={addManager} className="font-semibold shadow-sm w-full sm:w-auto shrink-0">닉네임 추가</Button>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2 pt-4 border-t">
                             {settings.manager_nicks.length === 0 && <span className="text-sm text-muted-foreground">등록된 점장 닉네임이 없습니다.</span>}
@@ -299,10 +327,10 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* 5. Production Orders Alert */}
+                {/* 6. Production Orders Alert */}
                 <Card className="border-red-100 shadow-sm">
                     <CardHeader className="bg-red-50/50 border-b border-red-100 py-4">
-                        <CardTitle className="text-red-900 flex items-center gap-2">5. 자동 발주시간 도래 마감 알림 설정</CardTitle>
+                        <CardTitle className="text-red-900 flex items-center gap-2">6. 자동 발주시간 도래 마감 알림 설정</CardTitle>
                         <CardDescription>각 상품 등록 시 개별 지정된 '발주 마감 시간'이 임박하면 화면 전체에 강제 팝업을 띄웁니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-5 bg-white rounded-b-lg">

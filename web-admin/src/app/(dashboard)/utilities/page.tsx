@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,21 +11,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Copy, Blocks, RefreshCw, MessageCircle } from "lucide-react"
 
 export default function UtilitiesPage() {
-    // Mock products with stock
-    const products = [
-        { id: 1, name: "치마살제비추리", stock: 0 },
-        { id: 2, name: "초코룹스", stock: 0 },
-        { id: 3, name: "힘이나나밤", stock: 0 },
-        { id: 4, name: "차돌박이", stock: 0 },
-        { id: 5, name: "도깨비살", stock: 0 },
-        { id: 6, name: "키위", stock: 0 },
-        { id: 7, name: "대저토마토", stock: 0 },
-        { id: 8, name: "포항초", stock: 0 },
-        { id: 9, name: "바닐라 마카롱 5구", stock: 3 },
-        { id: 10, name: "딸기 생크림 1조각", stock: 15 },
-    ]
+    const [products, setProducts] = useState<any[]>([])
+    
+    // Fetch real products from DB
+    useEffect(() => {
+        const fetchProducts = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .eq('store_id', user.id)
+                .order('created_at', { ascending: false })
+            
+            if (data) setProducts(data)
+        }
+        fetchProducts()
+    }, [])
 
     const [filterType, setFilterType] = useState<string>("soldout") // "all" | "soldout" | "instock"
+    const [selectedDate, setSelectedDate] = useState<string>("all") // "all" | "regular" | "YYYY-MM-DD"
+    
+    // Derived dates for filter
+    const uniqueDates = Array.from(new Set(products.filter(p => !p.is_regular_sale && p.target_date).map(p => p.target_date))).sort()
+    const hasRegular = products.some(p => p.is_regular_sale)
 
     // 5 Templates State
     const [templates, setTemplates] = useState([
@@ -49,18 +60,27 @@ export default function UtilitiesPage() {
         }
 
         const filtered = products.filter(p => {
+            // Date logic
+            if (selectedDate !== "all") {
+                if (selectedDate === "regular" && !p.is_regular_sale) return false;
+                if (selectedDate !== "regular" && p.target_date !== selectedDate) return false;
+            }
+            
+            // Stock logic
             if (filterType === "all") return true;
-            if (filterType === "soldout") return p.stock === 0;
-            if (filterType === "instock") return p.stock > 0;
+            if (filterType === "soldout") return p.allocated_stock === 0;
+            if (filterType === "instock") return p.allocated_stock > 0;
             return true;
         });
 
-        const result = filtered.map(p =>
-            template
-                .replace(/\[상품명\]/g, p.name)
-                .replace(/\[수량\]/g, p.stock.toString())
-                .replace(/\[재고\]/g, p.stock.toString())
-        ).join("\n");
+        const result = filtered.map(p => {
+            const prodName = p.display_name || p.collect_name;
+            const stockStr = (p.allocated_stock || 0).toString();
+            return template
+                .replace(/\[상품명\]/g, prodName)
+                .replace(/\[수량\]/g, stockStr)
+                .replace(/\[재고\]/g, stockStr)
+        }).join("\n");
 
         setEditableText(result);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,26 +120,34 @@ export default function UtilitiesPage() {
                                 1. 대상 상품 필터
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-4 grid gap-4">
+                        <CardContent className="pt-4 grid sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">템플릿을 적용하여 텍스트로 치환할 상품의 기준</Label>
-                                <Select value={filterType} onValueChange={setFilterType}>
-                                    <SelectTrigger className="w-full bg-slate-50 border-input h-12 shadow-sm font-bold text-base">
-                                        <SelectValue placeholder="상품 기준을 선택하세요" />
+                                <Label className="text-sm font-semibold text-slate-700">판매 일자 기준</Label>
+                                <Select value={selectedDate} onValueChange={setSelectedDate}>
+                                    <SelectTrigger className="w-full bg-slate-50 border-input h-10 shadow-sm font-bold text-sm">
+                                        <SelectValue placeholder="일자 선택" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">
-                                            모든 등록 상품 전체
-                                        </SelectItem>
-                                        <SelectItem value="soldout">
-                                            <span className="text-rose-600">품절 (마감) 처리된 상품만</span>
-                                        </SelectItem>
-                                        <SelectItem value="instock">
-                                            <span className="text-emerald-600">현재 잔여 재고가 있는 상품만</span>
-                                        </SelectItem>
+                                        <SelectItem value="all">전체 일자 및 상시판매</SelectItem>
+                                        {hasRegular && <SelectItem value="regular">매장 구비 제품 (상시판매)</SelectItem>}
+                                        {uniqueDates.map((date: any) => (
+                                            <SelectItem key={date} value={date}>{date} 픽업/예약건</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-muted-foreground mt-2 px-1">선택된 조건에 맞는 모든 상품에 대해 템플릿이 각각 1줄씩 반복 생성됩니다.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-slate-700">재고 상태 기준</Label>
+                                <Select value={filterType} onValueChange={setFilterType}>
+                                    <SelectTrigger className="w-full bg-slate-50 border-input h-10 shadow-sm font-bold text-sm">
+                                        <SelectValue placeholder="재고 상태" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">상태 무관 (전체)</SelectItem>
+                                        <SelectItem value="soldout"><span className="text-rose-600">품절 (마감) 처리된 상품만</span></SelectItem>
+                                        <SelectItem value="instock"><span className="text-emerald-600">현재 잔여 재고가 있는 상품만</span></SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </CardContent>
                     </Card>

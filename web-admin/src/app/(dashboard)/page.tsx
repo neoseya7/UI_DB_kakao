@@ -316,9 +316,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full mx-auto pb-10 max-w-[1600px] px-2 md:px-4">
+    <div className="flex flex-col gap-6 w-full mx-auto pb-10 max-w-[1900px] px-2 md:px-4">
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold tracking-tight">오늘의 대화 (Live Chat Log)</h2>
+        <h2 className="text-2xl font-bold tracking-tight">오늘의 대화</h2>
         <p className="text-muted-foreground">
           실시간으로 챗봇을 통해 접수되는 모든 대화 및 주문 로그를 관리합니다. 일괄 상태 변경이나 삭제 등 통합 처리가 가능합니다.
         </p>
@@ -409,7 +409,12 @@ export default function Dashboard() {
               <SelectValue placeholder="변경 상품명 일괄선택" />
             </SelectTrigger>
             <SelectContent>
-              {Array.from(new Set(activeProducts.map(p => p.collect_name).filter(Boolean))).sort().map(name => (
+              {Array.from(new Set(
+                activeProducts
+                  .filter(p => !bulkDate || bulkDate === "-" || p.target_date === bulkDate || p.is_regular_sale)
+                  .map(p => p.collect_name)
+                  .filter(Boolean)
+              )).sort().map(name => (
                 <SelectItem key={name} value={name}>{name}</SelectItem>
               ))}
               <SelectItem value="-">초기화 (선택안함)</SelectItem>

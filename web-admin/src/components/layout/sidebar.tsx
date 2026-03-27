@@ -46,14 +46,14 @@ export function Sidebar() {
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-brand font-medium bg-muted/50 transition-all hover:text-brand"
                 >
                   <MessageSquare className="h-4 w-4" />
-                  오늘의 대화 (Live)
+                  오늘의 대화
                 </Link>
                 <Link
                   href="/pickup"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
                   <Calendar className="h-4 w-4" />
-                  날짜별 픽업 (달력)
+                  주문관리
                 </Link>
                 <Link
                   href="/products"
@@ -67,14 +67,14 @@ export function Sidebar() {
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
                   <Blocks className="h-4 w-4" />
-                  부가기능 (단축 매크로)
+                  부가기능
                 </Link>
                 <Link
                   href="/analytics"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  통계 (Analytics)
+                  매출통계
                 </Link>
                 <Link
                   href="/settings"

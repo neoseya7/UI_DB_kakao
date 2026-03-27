@@ -64,6 +64,20 @@ export default function SignupPage() {
         }
 
         if (data.user) {
+            try {
+                // Call secure backend to insert into public.stores table bypassing RLS
+                await fetch('/api/auth/register-store', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: data.user.id,
+                        email: email,
+                        store_name: storeName
+                    })
+                })
+            } catch (err) {
+                console.error("Failed to insert store record", err)
+            }
             setIsSuccess(true)
         }
     }

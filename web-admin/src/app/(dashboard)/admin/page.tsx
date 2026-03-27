@@ -72,7 +72,7 @@ export default function AdminPage() {
     const [newBrand, setNewBrand] = useState("")
 
     // Security & Logic states
-    const [pendingMetadata, setPendingMetadata] = useState<Record<string, any>>({})
+    const [storeMetadata, setStoreMetadata] = useState<Record<string, any>>({})
 
     // Approval Dialog states
     const [approveModalOpen, setApproveModalOpen] = useState(false)
@@ -88,18 +88,18 @@ export default function AdminPage() {
             if (storesData) {
                 setStores(storesData)
 
-                // Fetch isolated extra B2B metadata for pending accounts securely without exposing total network scopes
-                const pendingIds = storesData.filter(s => s.status === 'pending').map(s => s.id)
-                if (pendingIds.length > 0) {
+                // Fetch metadata securely for all listed accounts
+                const allStoreIds = storesData.map(s => s.id)
+                if (allStoreIds.length > 0) {
                     try {
                         const res = await fetch('/api/admin/pending-details', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ store_ids: pendingIds })
+                            body: JSON.stringify({ store_ids: allStoreIds })
                         })
                         const json = await res.json()
                         if (json.success && json.metadata) {
-                            setPendingMetadata(json.metadata)
+                            setStoreMetadata(json.metadata)
                         }
                     } catch (err) { console.error("Failed fetching metadata", err) }
                 }
@@ -359,7 +359,7 @@ export default function AdminPage() {
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2">
                                 {pendingAccounts.map((acc: any) => {
-                                    const meta = pendingMetadata[acc.id] || {}
+                                    const meta = storeMetadata[acc.id] || {}
                                     return (
                                         <Card key={acc.id} className="flex flex-col xl:flex-row xl:items-center justify-between p-5 bg-white shadow-sm border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
                                             <div className="flex flex-col gap-1.5 mb-4 xl:mb-0">
@@ -398,28 +398,42 @@ export default function AdminPage() {
                             <table className="w-full text-left text-sm whitespace-nowrap">
                                 <thead className="bg-slate-50/80 border-b">
                                     <tr>
-                                        <th className="px-5 py-3.5 font-semibold text-slate-600">ID</th>
-                                        <th className="px-5 py-3.5 font-semibold text-slate-600">가맹점 명</th>
+                                        <th className="px-5 py-3.5 font-semibold text-slate-600">ID / 로그인</th>
+                                        <th className="px-5 py-3.5 font-semibold text-slate-600">가맹점(브랜드) 및 사업자 상세</th>
                                         <th className="px-5 py-3.5 font-semibold text-slate-600">수집 매장명(카톡)</th>
-                                        <th className="px-5 py-3.5 font-semibold text-slate-600">대표 계정</th>
                                         <th className="px-5 py-3.5 font-semibold text-slate-600">상태</th>
                                         <th className="px-5 py-3.5 font-semibold text-slate-600 text-right">옵션</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/60">
                                     {activeStores.length === 0 && (<tr><td colSpan={5} className="p-6 text-center text-muted-foreground">현재 운영 중인 매장이 없습니다.</td></tr>)}
-                                    {activeStores.map((store: any) => (
+                                    {activeStores.map((store: any) => {
+                                        const meta = storeMetadata[store.id] || {}
+                                        return (
                                         <tr key={store.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-5 py-3 font-mono text-slate-500">
+                                            <td className="px-5 py-3 font-mono text-slate-500 align-top pt-4">
                                                 <div className="flex items-center gap-1.5">
                                                     {store.id.substring(0, 8)}...
                                                     <button onClick={() => { navigator.clipboard.writeText(store.id); alert("매장 UUID가 복사되었습니다!\n\n" + store.id); }} className="text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 p-1 rounded transition-colors" title="전체 UUID 복사">
                                                         <Copy className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
+                                                <div className="text-xs text-slate-500 mt-1">{store.email}</div>
                                             </td>
-                                            <td className="px-5 py-3 font-bold text-slate-800">{store.name}</td>
-                                            <td className="px-5 py-3">
+                                            <td className="px-5 py-3 align-top pt-4">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-lg text-slate-800">{store.name}</span>
+                                                        {meta.brand_name && <Badge className="bg-indigo-600 text-white border-none shrink-0 font-bold px-2">{meta.brand_name}</Badge>}
+                                                    </div>
+                                                    <div className="text-[12px] text-slate-600 mt-0.5 grid gap-0.5">
+                                                        {meta.owner_name && <span><strong className="text-slate-700">대표:</strong> {meta.owner_name} / {meta.phone}</span>}
+                                                        {meta.biz_number && <span><strong className="text-slate-700">사업자:</strong> {meta.biz_number} ({meta.biz_address})</span>}
+                                                        {meta.biz_type && <span><strong className="text-slate-700">종목:</strong> {meta.biz_type} / {meta.biz_category}</span>}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3 align-top pt-4">
                                                 <div className="flex items-center gap-2">
                                                     <Input
                                                         value={kakaoRoomNames[store.id] || ''}
@@ -430,21 +444,20 @@ export default function AdminPage() {
                                                     <Button onClick={() => handleSaveKakaoRoomName(store.id)} size="sm" variant="outline" className="h-8">저장</Button>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-3 text-slate-600">{store.email}</td>
-                                            <td className="px-5 py-3">
+                                            <td className="px-5 py-3 align-top pt-4">
                                                 {store.status === "active" ? (
                                                     <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">정상운영</Badge>
                                                 ) : (
                                                     <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">일시정지</Badge>
                                                 )}
                                             </td>
-                                            <td className="px-5 py-3 text-right">
+                                            <td className="px-5 py-3 text-right align-top pt-4">
                                                 <Button onClick={() => handleToggleStoreStatus(store.id, store.status)} variant="secondary" size="sm" className={`h-8 gap-1.5 font-medium ${store.status === 'active' ? 'text-rose-600 bg-rose-50 hover:bg-rose-100' : 'text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
                                                     <Power className="w-3.5 h-3.5" /> {store.status === 'active' ? '정지' : '재개'}
                                                 </Button>
                                             </td>
                                         </tr>
-                                    ))}
+                                    )})}
                                 </tbody>
                             </table>
                         </div>
