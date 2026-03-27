@@ -191,7 +191,8 @@ export default function Dashboard() {
           collect_date: targetDate,
           product_name: targetProduct,
           is_processed: true,
-          category: 'ORDER'
+          category: 'ORDER',
+          classification: '분류:수정'
         }).eq('id', log.id)
 
         if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-") {
@@ -286,6 +287,7 @@ export default function Dashboard() {
               <SelectItem value="상품후기">상품후기</SelectItem>
               <SelectItem value="문의">픽업/상품문의</SelectItem>
               <SelectItem value="주문취소">주문취소</SelectItem>
+              <SelectItem value="수정">수정 (관리자수동복구)</SelectItem>
               <SelectItem value="기타">기타</SelectItem>
             </SelectContent>
           </Select>
