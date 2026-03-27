@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LayoutDashboard, MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks } from "lucide-react"
+import { MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks } from "lucide-react"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
@@ -47,13 +47,6 @@ export function Sidebar() {
                 >
                   <MessageSquare className="h-4 w-4" />
                   오늘의 대화 (Live)
-                </Link>
-                <Link
-                  href="/orders"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  전체 주문 관리
                 </Link>
                 <Link
                   href="/pickup"
