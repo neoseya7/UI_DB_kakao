@@ -66,6 +66,11 @@ export default function Dashboard() {
       const { data: settingsData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
       const managerNicks = settingsData?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
 
+      // Fetch active products mapping to append target dates
+      const { data: prodData } = await supabase.from('products').select('*').eq('store_id', user.id)
+      const currentProducts = prodData || []
+      setActiveProducts(currentProducts)
+
       let query = supabase
         .from('chat_logs')
         .select('*')
@@ -109,6 +114,19 @@ export default function Dashboard() {
                 row.category === "INQUIRY" ? "문의" : "기타";
           }
 
+          let matchedDateInfo = ""
+          if (row.product_name && row.product_name !== "-") {
+            const matchedProd = currentProducts.find(p => p.collect_name === row.product_name || p.display_name === row.product_name)
+            if (matchedProd) {
+              matchedDateInfo = matchedProd.target_date ? `🎯 [${matchedProd.target_date}]` : `🎯 [상시판매]`
+            }
+          }
+
+          let finalClassification = otherClassifications.join(", ")
+          if (matchedDateInfo) {
+            finalClassification = finalClassification ? `${matchedDateInfo} ${finalClassification}` : matchedDateInfo
+          }
+
           return {
             id: row.id,
             date: row.collect_date || "-",
@@ -118,7 +136,7 @@ export default function Dashboard() {
             nickname: row.nickname || "알수없음",
             product: row.product_name || "-",
             quantity: row.quantity || 0,
-            classification: otherClassifications.join(", "),
+            classification: finalClassification,
             isOrder: row.is_processed ? "Y" : (displayCat === "픽업고지" ? "대기" : "N"),
             raw_category: displayCat
           }
@@ -144,6 +162,30 @@ export default function Dashboard() {
 
   const toggleRow = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  // Row Clone
+  const duplicateRow = async (e: React.MouseEvent, rowId: string) => {
+    e.stopPropagation()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    try {
+      setIsLoading(true)
+      const { data: originalLog, error: fetchErr } = await supabase.from('chat_logs').select('*').eq('id', rowId).single()
+      if (fetchErr) throw fetchErr
+
+      const { id, created_at, updated_at, ...copyData } = originalLog
+      const { error: insertErr } = await supabase.from('chat_logs').insert(copyData)
+      if (insertErr) throw insertErr
+
+      alert("📋 채팅 내역이 복제되었습니다. 각 데이터에 개별 상품을 할당할 수 있습니다!")
+      fetchLogs()
+    } catch (err: any) {
+      alert("데이터 복제 실패: " + err.message)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Bulk Actions
@@ -411,6 +453,7 @@ export default function Dashboard() {
                       <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap">수량</th>
                       <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap">분류</th>
                       <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap">주문여부</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap bg-indigo-50/50">관리</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -453,6 +496,16 @@ export default function Dashboard() {
                             <span className={`font-bold ${log.isOrder === 'Y' ? 'text-blue-600' : 'text-slate-400'}`}>
                               {log.isOrder}
                             </span>
+                          </td>
+                          <td className="px-4 py-3 text-center bg-indigo-50/20">
+                            <Button
+                              variant="outline" size="sm"
+                              onClick={(e) => duplicateRow(e, log.id)}
+                              className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-2"
+                              title="다중 상품을 처리하기 위해 채팅 내역 줄을 하나 더 복사합니다."
+                            >
+                              📋 복제
+                            </Button>
                           </td>
                         </tr>
                       )
