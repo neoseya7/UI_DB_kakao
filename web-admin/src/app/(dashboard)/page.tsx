@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("")
-  const [dateFilter, setDateFilter] = useState("today")
+  const [dateFilter, setDateFilter] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }))
   const [categoryFilter, setCategoryFilter] = useState("all_category")
   const [orderFilter, setOrderFilter] = useState("all_order")
 
@@ -72,12 +72,8 @@ export default function Dashboard() {
         .eq('store_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (dateFilter === "today") {
-        query = query.eq('collect_date', new Date().toISOString().split('T')[0])
-      } else if (dateFilter === "yesterday") {
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        query = query.eq('collect_date', yesterday.toISOString().split('T')[0])
+      if (dateFilter && dateFilter !== "all") {
+        query = query.eq('collect_date', dateFilter)
       }
 
       const { data, error } = await query
@@ -188,7 +184,6 @@ export default function Dashboard() {
         const targetProduct = bulkProduct && bulkProduct !== "-" ? bulkProduct : log.product
 
         await supabase.from('chat_logs').update({
-          collect_date: targetDate,
           product_name: targetProduct,
           is_processed: true,
           category: 'ORDER',
@@ -267,16 +262,18 @@ export default function Dashboard() {
       {/* Top Search & Filter Controls */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-[150px] bg-white">
-              <SelectValue placeholder="조회 날짜" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">오늘</SelectItem>
-              <SelectItem value="yesterday">어제</SelectItem>
-              <SelectItem value="all">전체 내역</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1 bg-white rounded-md border px-2 h-10 shadow-sm focus-within:ring-1 focus-within:ring-ring">
+            <Input
+              type="date"
+              value={dateFilter === "all" ? "" : dateFilter}
+              onChange={(e) => setDateFilter(e.target.value || "all")}
+              className="border-0 focus-visible:ring-0 h-8 w-[130px] shadow-none px-1"
+              title="수집일 선택 (비우면 전체보기)"
+            />
+            {dateFilter !== "all" && (
+              <Button variant="ghost" size="sm" onClick={() => setDateFilter("all")} className="h-7 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground">전체</Button>
+            )}
+          </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[140px] bg-white">
               <SelectValue placeholder="카테고리" />
@@ -375,16 +372,7 @@ export default function Dashboard() {
           }
 
           if (dateFilter !== "all" && match) {
-            const today = new Date();
-            if (dateFilter === "today") {
-              const todayStr = today.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-              match = match && log.date === todayStr;
-            } else if (dateFilter === "yesterday") {
-              const yesterday = new Date(today);
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-              match = match && log.date === yesterdayStr;
-            }
+            match = match && log.date === dateFilter;
           }
 
           if (categoryFilter !== "all_category" && match) {
