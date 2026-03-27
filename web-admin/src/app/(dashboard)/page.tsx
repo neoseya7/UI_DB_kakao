@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<any[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [activeProducts, setActiveProducts] = useState<any[]>([])
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("")
@@ -29,6 +30,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchLogs()
+
+    const fetchProducts = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('products').select('*').eq('store_id', user.id)
+      if (data) setActiveProducts(data)
+    }
+    fetchProducts()
 
     // Subscribe to realtime changes
     const channel = supabase
@@ -274,22 +283,27 @@ export default function Dashboard() {
           {/* Change Settings Tools */}
           <span className="text-sm font-semibold text-indigo-800 shrink-0">일괄 변경 옵션:</span>
 
-          <Input
-            type="date"
-            value={bulkDate}
-            onChange={e => setBulkDate(e.target.value)}
-            className="w-full sm:w-[150px] h-9 bg-white shadow-sm"
-          />
+          <Select value={bulkDate} onValueChange={setBulkDate}>
+            <SelectTrigger className="w-full sm:w-[150px] h-9 bg-white shadow-sm">
+              <SelectValue placeholder="변경 날짜 일괄선택" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from(new Set(activeProducts.map(p => p.target_date).filter(Boolean))).sort().map(date => (
+                <SelectItem key={date} value={date}>{date}</SelectItem>
+              ))}
+              <SelectItem value="-">초기화 (선택안함)</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Select value={bulkProduct} onValueChange={setBulkProduct}>
             <SelectTrigger className="w-full sm:w-[220px] h-9 bg-white shadow-sm">
               <SelectValue placeholder="변경 상품명 일괄선택" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="아메리카노">아메리카노</SelectItem>
-              <SelectItem value="바닐라 마카롱 5구">바닐라 마카롱 5구</SelectItem>
-              <SelectItem value="초코 케이크 1호">초코 케이크 1호</SelectItem>
-              <SelectItem value="-">상품 없음 (-)</SelectItem>
+              {Array.from(new Set(activeProducts.map(p => p.collect_name).filter(Boolean))).sort().map(name => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+              <SelectItem value="-">초기화 (선택안함)</SelectItem>
             </SelectContent>
           </Select>
 
