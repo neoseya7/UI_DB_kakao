@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -17,6 +18,8 @@ export default function ProductsPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [filterDate, setFilterDate] = useState<string>("all")
     const [editingProductId, setEditingProductId] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [sortOrder, setSortOrder] = useState("latest")
 
     // Form states
     const [formData, setFormData] = useState({
@@ -150,7 +153,7 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: ""
+                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", is_visible: true
                 })
                 setSelectedImageFile(null)
                 fetchProducts(storeId)
@@ -247,190 +250,227 @@ export default function ProductsPage() {
                     ))}
                 </div>
 
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button onClick={openNewProductDialog} className="shrink-0 font-medium shadow-sm transition-transform active:scale-95 text-sm h-9">+ 새 상품 등록</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[480px]">
-                        <form onSubmit={handleSaveProduct}>
-                            <DialogHeader>
-                                <DialogTitle>{editingProductId ? "상품 정보 수정" : "새 상품 등록"}</DialogTitle>
-                                <DialogDescription>특정 날짜에 판매할 상품 정보를 {editingProductId ? "수정" : "입력"}합니다.<br /><span className="text-destructive font-medium">수집상품명과 적용 날짜는 필수 정보입니다.</span></DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-5 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="date">적용 날짜 <span className="text-destructive">*</span></Label>
-                                        <Input id="date" type="date" value={formData.target_date} onChange={e => setFormData({ ...formData, target_date: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="collect-name">수집상품명 <span className="text-destructive">*</span></Label>
-                                        <Input id="collect-name" placeholder="예: 바닐라마카롱5구" value={formData.collect_name} onChange={e => setFormData({ ...formData, collect_name: e.target.value })} required className="bg-muted/50 focus:bg-background" />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2 border-t pt-4">
-                                    <div className="flex items-center justify-between pb-3 mb-1">
-                                        <div className="space-y-0.5">
-                                            <Label className="text-base text-slate-800 font-bold">상품 카탈로그 노출</Label>
-                                            <p className="text-[12px] text-muted-foreground leading-tight">이 상품을 고객 방문자용 상품 리스트에 보여줄지 결정합니다.</p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant={formData.is_visible ? "default" : "secondary"}
-                                            className={`w-24 gap-1.5 shadow-sm transition-all ${formData.is_visible ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-slate-500 bg-slate-200 hover:bg-slate-300'}`}
-                                            onClick={() => setFormData({ ...formData, is_visible: !formData.is_visible })}
-                                        >
-                                            {formData.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                            {formData.is_visible ? "노출 켜짐" : "숨김 처리"}
-                                        </Button>
-                                    </div>
-                                    <Label htmlFor="name">상품명 (고객 노출용 - <span className="font-normal text-muted-foreground">선택사항</span>)</Label>
-                                    <Input
-                                        id="name"
-                                        placeholder="미입력 시 수집상품명으로 노출됩니다."
-                                        value={formData.display_name}
-                                        onChange={e => setFormData({ ...formData, display_name: e.target.value })}
-                                    />
-                                    {isDuplicate && duplicateProduct && (
-                                        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[13px] font-medium animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
-                                            ⚠️ <strong>{duplicateProduct.target_date}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
-                                            재고 혼선을 막기 위해, 즉시 자동 이관(기존 재고 0 처리) 로직이 트리거됩니다.
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 mt-3">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="price">최종 판매 가격</Label>
-                                        <Input id="price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="예: 15000" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="incoming_price">입고가 (원가)</Label>
-                                        <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="stock">당일 할당 픽업(재고) 수량</Label>
-                                    <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
-                                </div>
-
-                                <div className="space-y-3 border-t pt-4">
-                                    <Label>대표 이미지 첨부</Label>
-                                    <div className="flex items-center gap-4">
-                                        {formData.image_url || selectedImageFile ? (
-                                            <div className="h-16 w-16 relative bg-muted rounded-md overflow-hidden border flex-shrink-0 shadow-sm">
-                                                <img
-                                                    src={selectedImageFile ? URL.createObjectURL(selectedImageFile) : formData.image_url}
-                                                    alt="미리보기"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="h-16 w-16 bg-muted/40 rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground flex-shrink-0">
-                                                <ImageIcon className="h-6 w-6 opacity-50" />
-                                            </div>
-                                        )}
-                                        <div className="flex-1 space-y-1.5">
-                                            <Input
-                                                type="file"
-                                                accept="image/png, image/jpeg, image/jpg, image/webp"
-                                                onChange={e => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) setSelectedImageFile(file);
-                                                }}
-                                                className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:border-0 file:rounded-md file:mr-4 file:px-3 file:-ml-2 file:-my-2 h-9"
-                                            />
-                                            <p className="text-[11px] text-muted-foreground font-medium">최대 5MB, 1:1 비율 이미지를 권장합니다.</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 mt-1 pt-4 border-t border-red-100 bg-red-50/50 p-3 rounded-lg">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="deadline-date" className="text-red-900 font-bold">발주 마감 날짜</Label>
-                                        <Input id="deadline-date" type="date" value={formData.deadline_date} onChange={e => setFormData({ ...formData, deadline_date: e.target.value })} className="border-red-200 bg-white" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="deadline-time" className="text-red-900 font-bold">발주 마감 시간</Label>
-                                        <Input id="deadline-time" type="time" value={formData.deadline_time} onChange={e => setFormData({ ...formData, deadline_time: e.target.value })} className="border-red-200 bg-white" />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="desc">상세 설명</Label>
-                                    <textarea id="desc" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="상세 설명을 적어주세요." />
-                                </div>
-                            </div>
-                            <DialogFooter className="sm:justify-between w-full gap-2 mt-4">
-                                {editingProductId ? (
-                                    <Button type="button" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto" onClick={() => handleDeleteProduct(editingProductId)}>
-                                        이 상품 영구 삭제
-                                    </Button>
-                                ) : <div />}
-                                <div className="flex gap-2 w-full sm:w-auto">
-                                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>취소</Button>
-                                    <Button type="submit" className="font-semibold" disabled={isSaving}>
-                                        {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
-                                    </Button>
-                                </div>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                    <div className="relative w-full sm:w-[220px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="상품명 검색..."
+                            className="pl-8 bg-white h-9 text-sm"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <Select value={sortOrder} onValueChange={setSortOrder}>
+                        <SelectTrigger className="w-full sm:w-[130px] h-9 bg-white text-sm">
+                            <SelectValue placeholder="정렬 방식" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="latest">최신 등록순</SelectItem>
+                            <SelectItem value="name_asc">이름 가나다순</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button onClick={openNewProductDialog} className="shrink-0 font-medium shadow-sm transition-transform active:scale-95 text-sm h-9">+ 새 상품 등록</Button>
+                        </DialogTrigger>
+                    </Dialog>
+                </div>
             </div>
 
-            {isLoading ? (
-                <div className="py-20 text-center text-muted-foreground animate-pulse">DB에서 상품 목록을 불러오는 중입니다...</div>
-            ) : products.length === 0 ? (
-                <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-xl border-muted">등록된 상품이 없습니다. [+ 새 상품 등록] 버튼을 눌러 추가해주세요.</div>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {products
-                        .filter(p => filterDate === "all" || (filterDate === "regular" && p.is_regular_sale) || p.target_date === filterDate)
-                        .map((product) => (
-                            <Card
-                                key={product.id}
-                                className={`overflow-hidden flex flex-col shadow-sm border transition-all duration-200 cursor-pointer ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50 hover:shadow-md'}`}
-                                onClick={() => openEditProductDialog(product)}
-                            >
-                                <CardHeader className="pb-2 pt-4 flex flex-row items-start justify-between gap-2">
-                                    <div className="flex flex-col gap-1.5 w-full">
-                                        <CardTitle className="text-base leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>
-                                            {product.is_visible === false && <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-sm text-[10px] font-bold mr-1.5 align-text-bottom shadow-sm"><EyeOff className="w-3 h-3" />숨김</span>}
-                                            {product.collect_name}
-                                        </CardTitle>
-                                        <div className="flex items-center gap-2">
-                                            {product.is_regular_sale ? (
-                                                <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm px-2 py-0 text-[11px]">상시판매</Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="shadow-sm px-2 py-0 bg-slate-100 border-slate-200 text-slate-700 text-[11px] font-mono">{product.target_date}</Badge>
-                                            )}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-[480px]">
+                    <form onSubmit={handleSaveProduct}>
+                        <DialogHeader>
+                            <DialogTitle>{editingProductId ? "상품 정보 수정" : "새 상품 등록"}</DialogTitle>
+                            <DialogDescription>특정 날짜에 판매할 상품 정보를 {editingProductId ? "수정" : "입력"}합니다.<br /><span className="text-destructive font-medium">수집상품명과 적용 날짜는 필수 정보입니다.</span></DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-5 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="date">적용 날짜 <span className="text-destructive">*</span></Label>
+                                    <Input id="date" type="date" value={formData.target_date} onChange={e => setFormData({ ...formData, target_date: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="collect-name">수집상품명 <span className="text-destructive">*</span></Label>
+                                    <Input id="collect-name" placeholder="예: 바닐라마카롱5구" value={formData.collect_name} onChange={e => setFormData({ ...formData, collect_name: e.target.value })} required className="bg-muted/50 focus:bg-background" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 border-t pt-4">
+                                <div className="flex items-center justify-between pb-3 mb-1">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base text-slate-800 font-bold">상품 카탈로그 노출</Label>
+                                        <p className="text-[12px] text-muted-foreground leading-tight">이 상품을 고객 방문자용 상품 리스트에 보여줄지 결정합니다.</p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={formData.is_visible ? "default" : "secondary"}
+                                        className={`w-24 gap-1.5 shadow-sm transition-all ${formData.is_visible ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-slate-500 bg-slate-200 hover:bg-slate-300'}`}
+                                        onClick={() => setFormData({ ...formData, is_visible: !formData.is_visible })}
+                                    >
+                                        {formData.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                        {formData.is_visible ? "노출 켜짐" : "숨김 처리"}
+                                    </Button>
+                                </div>
+                                <Label htmlFor="name">상품명 (고객 노출용 - <span className="font-normal text-muted-foreground">선택사항</span>)</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="미입력 시 수집상품명으로 노출됩니다."
+                                    value={formData.display_name}
+                                    onChange={e => setFormData({ ...formData, display_name: e.target.value })}
+                                />
+                                {isDuplicate && duplicateProduct && (
+                                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[13px] font-medium animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
+                                        ⚠️ <strong>{duplicateProduct.target_date}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
+                                        재고 혼선을 막기 위해, 즉시 자동 이관(기존 재고 0 처리) 로직이 트리거됩니다.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-3">
+                                <div className="space-y-2">
+                                    <Label htmlFor="price">최종 판매 가격</Label>
+                                    <Input id="price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="예: 15000" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="incoming_price">입고가 (원가)</Label>
+                                    <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="stock">당일 할당 픽업(재고) 수량</Label>
+                                <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
+                            </div>
+
+                            <div className="space-y-3 border-t pt-4">
+                                <Label>대표 이미지 첨부</Label>
+                                <div className="flex items-center gap-4">
+                                    {formData.image_url || selectedImageFile ? (
+                                        <div className="h-16 w-16 relative bg-muted rounded-md overflow-hidden border flex-shrink-0 shadow-sm">
+                                            <img
+                                                src={selectedImageFile ? URL.createObjectURL(selectedImageFile) : formData.image_url}
+                                                alt="미리보기"
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
-                                    </div>
-                                    {product.allocated_stock === 0 && <Badge variant="destructive" className="shadow-sm shrink-0 whitespace-nowrap">품절</Badge>}
-                                </CardHeader>
-                                <CardContent className="mt-auto px-4 pb-4 pt-0">
-                                    <div className={`flex items-center justify-between gap-3 p-2 rounded-md border ${product.allocated_stock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-muted/30 border-border/50'}`} onClick={(e) => e.stopPropagation()}>
-                                        <span className={`text-[11px] font-bold tracking-tight whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>수동재고 제한</span>
+                                    ) : (
+                                        <div className="h-16 w-16 bg-muted/40 rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground flex-shrink-0">
+                                            <ImageIcon className="h-6 w-6 opacity-50" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 space-y-1.5">
                                         <Input
-                                            type="number"
-                                            defaultValue={product.allocated_stock}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== String(product.allocated_stock)) {
-                                                    handleUpdateStock(product.id, parseInt(e.target.value) || 0)
-                                                }
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/jpg, image/webp"
+                                            onChange={e => {
+                                                const file = e.target.files?.[0];
+                                                if (file) setSelectedImageFile(file);
                                             }}
-                                            className={`w-16 h-7 text-center font-bold px-1 py-0 shadow-inner ${product.allocated_stock === 0 ? 'text-red-700 border-red-300' : ''}`}
+                                            className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:border-0 file:rounded-md file:mr-4 file:px-3 file:-ml-2 file:-my-2 h-9"
                                         />
+                                        <p className="text-[11px] text-muted-foreground font-medium">최대 5MB, 1:1 비율 이미지를 권장합니다.</p>
                                     </div>
-                                    <p className="text-[10px] text-center text-muted-foreground mt-2 mb-0">상세정보 열기 및 수정하기</p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                </div>
-            )}
-        </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-1 pt-4 border-t border-red-100 bg-red-50/50 p-3 rounded-lg">
+                                <div className="space-y-2">
+                                    <Label htmlFor="deadline-date" className="text-red-900 font-bold">발주 마감 날짜</Label>
+                                    <Input id="deadline-date" type="date" value={formData.deadline_date} onChange={e => setFormData({ ...formData, deadline_date: e.target.value })} className="border-red-200 bg-white" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="deadline-time" className="text-red-900 font-bold">발주 마감 시간</Label>
+                                    <Input id="deadline-time" type="time" value={formData.deadline_time} onChange={e => setFormData({ ...formData, deadline_time: e.target.value })} className="border-red-200 bg-white" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="desc">상세 설명</Label>
+                                <textarea id="desc" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="상세 설명을 적어주세요." />
+                            </div>
+                        </div>
+                        <DialogFooter className="sm:justify-between w-full gap-2 mt-4">
+                            {editingProductId ? (
+                                <Button type="button" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto" onClick={() => handleDeleteProduct(editingProductId)}>
+                                    이 상품 영구 삭제
+                                </Button>
+                            ) : <div />}
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>취소</Button>
+                                <Button type="submit" className="font-semibold" disabled={isSaving}>
+                                    {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
+                                </Button>
+                            </div>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {
+                isLoading ? (
+                    <div className="py-20 text-center text-muted-foreground animate-pulse">DB에서 상품 목록을 불러오는 중입니다...</div>
+                ) : products.length === 0 ? (
+                    <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-xl border-muted">등록된 상품이 없습니다. [+ 새 상품 등록] 버튼을 눌러 추가해주세요.</div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {products
+                            .filter(p => filterDate === "all" || (filterDate === "regular" && p.is_regular_sale) || p.target_date === filterDate)
+                            .filter(p => {
+                                if (!searchQuery) return true
+                                const lowerQ = searchQuery.toLowerCase()
+                                return (p.collect_name && p.collect_name.toLowerCase().includes(lowerQ)) ||
+                                    (p.display_name && p.display_name.toLowerCase().includes(lowerQ))
+                            })
+                            .sort((a, b) => {
+                                if (sortOrder === "name_asc") {
+                                    return (a.collect_name || "").localeCompare(b.collect_name || "")
+                                }
+                                return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+                            })
+                            .map((product) => (
+                                <Card
+                                    key={product.id}
+                                    className={`overflow-hidden flex flex-col shadow-sm border transition-all duration-200 cursor-pointer ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50 hover:shadow-md'}`}
+                                    onClick={() => openEditProductDialog(product)}
+                                >
+                                    <CardHeader className="pb-1 pt-3 flex flex-row items-start justify-between gap-1.5 px-3">
+                                        <div className="flex flex-col gap-1 w-full">
+                                            <CardTitle className="text-[14px] leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>
+                                                {product.is_visible === false && <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0 rounded-sm text-[9px] font-bold mr-1 align-middle shadow-sm"><EyeOff className="w-2.5 h-2.5" />숨김</span>}
+                                                {product.collect_name}
+                                            </CardTitle>
+                                            <div className="flex items-center gap-1.5">
+                                                {product.is_regular_sale ? (
+                                                    <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm px-1.5 py-0 text-[10px]">상시판매</Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="shadow-sm px-1.5 py-0 bg-slate-100 border-slate-200 text-slate-700 text-[10px] font-mono">{product.target_date}</Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {product.allocated_stock === 0 && <Badge variant="destructive" className="shadow-sm shrink-0 whitespace-nowrap text-[10px] px-1.5 py-0">품절</Badge>}
+                                    </CardHeader>
+                                    <CardContent className="mt-auto px-3 pb-3 pt-0">
+                                        <div className={`flex items-center justify-between gap-2 p-1.5 rounded-md border ${product.allocated_stock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-muted/30 border-border/50'}`} onClick={(e) => e.stopPropagation()}>
+                                            <span className={`text-[10px] font-bold tracking-tight whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>수동재고 제한</span>
+                                            <Input
+                                                type="number"
+                                                defaultValue={product.allocated_stock}
+                                                onBlur={(e) => {
+                                                    if (e.target.value !== String(product.allocated_stock)) {
+                                                        handleUpdateStock(product.id, parseInt(e.target.value) || 0)
+                                                    }
+                                                }}
+                                                className={`w-14 h-6 text-xs text-center font-bold px-1 py-0 shadow-inner ${product.allocated_stock === 0 ? 'text-red-700 border-red-300' : ''}`}
+                                            />
+                                        </div>
+                                        <p className="text-[9px] text-center text-muted-foreground mt-1.5 mb-0">상세정보 열기 및 수정하기</p>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                    </div>
+                )
+            }
+        </div >
     )
 }
