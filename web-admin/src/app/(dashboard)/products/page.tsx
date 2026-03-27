@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Search, CalendarDays } from "lucide-react"
+import { Search, CalendarDays, ImageIcon } from "lucide-react"
 
 export default function ProductsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -24,11 +24,15 @@ export default function ProductsPage() {
         collect_name: "",
         display_name: "",
         price: "",
+        incoming_price: "",
         allocated_stock: "",
         deadline_date: "",
         deadline_time: "",
-        description: ""
+        description: "",
+        image_url: ""
     })
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+    const [isSaving, setIsSaving] = useState(false)
 
     // Search and filter UX (Duplicate detection logic)
     const isDuplicate = formData.collect_name.length > 0 && products.some(p => p.collect_name === formData.collect_name && p.target_date !== formData.target_date)
@@ -59,8 +63,35 @@ export default function ProductsPage() {
         e.preventDefault()
         if (!storeId) return
 
-        let finalStock = parseInt(formData.allocated_stock) || 0
+        setIsSaving(true)
+        let finalImageUrl = formData.image_url
 
+        // 1. 이미지 파일이 새로 선택된 경우 Storage에 업로드
+        if (selectedImageFile) {
+            const fileExt = selectedImageFile.name.split('.').pop()
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`
+            const filePath = `${storeId}/${fileName}`
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('product-images')
+                .upload(filePath, selectedImageFile)
+
+            if (uploadError) {
+                alert("이미지 업로드 실패 (버킷 권한 및 이름을 확인해주세요): " + uploadError.message)
+                setIsSaving(false)
+                return
+            }
+
+            if (uploadData) {
+                const { data: publicUrlData } = supabase.storage
+                    .from('product-images')
+                    .getPublicUrl(filePath)
+                finalImageUrl = publicUrlData.publicUrl
+            }
+        }
+
+        // 2. 최종 Payload 구성
+        let finalStock = parseInt(formData.allocated_stock) || 0
         const payload = {
             store_id: storeId,
             target_date: formData.target_date || null,
@@ -68,10 +99,12 @@ export default function ProductsPage() {
             collect_name: formData.collect_name,
             display_name: formData.display_name || formData.collect_name,
             price: parseInt(formData.price) || 0,
+            incoming_price: parseInt(formData.incoming_price) || 0,
             allocated_stock: finalStock,
             deadline_date: formData.deadline_date || null,
             deadline_time: formData.deadline_time || null,
-            description: formData.description
+            description: formData.description,
+            image_url: finalImageUrl
         }
 
         if (editingProductId) {
@@ -98,21 +131,24 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: ""
+                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: ""
                 })
+                setSelectedImageFile(null)
                 fetchProducts(storeId)
             } else {
                 alert("상품 등록 중 오류가 발생했습니다: " + error.message)
             }
         }
+        setIsSaving(false)
     }
 
     const openNewProductDialog = () => {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: ""
+            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: ""
         })
+        setSelectedImageFile(null)
         setIsDialogOpen(true)
     }
 
@@ -123,11 +159,14 @@ export default function ProductsPage() {
             collect_name: product.collect_name || "",
             display_name: product.display_name || "",
             price: product.price?.toString() || "",
+            incoming_price: product.incoming_price?.toString() || "",
             allocated_stock: product.allocated_stock?.toString() || "0",
             deadline_date: product.deadline_date || "",
             deadline_time: product.deadline_time || "",
-            description: product.description || ""
+            description: product.description || "",
+            image_url: product.image_url || ""
         })
+        setSelectedImageFile(null)
         setIsDialogOpen(true)
     }
 
@@ -222,12 +261,47 @@ export default function ProductsPage() {
                                         <Input id="price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="예: 15000" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="stock">당일 할당 재고</Label>
-                                        <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
+                                        <Label htmlFor="incoming_price">입고가 (원가)</Label>
+                                        <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="stock">당일 할당 픽업(재고) 수량</Label>
+                                    <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
+                                </div>
+
+                                <div className="space-y-3 border-t pt-4">
+                                    <Label>대표 이미지 첨부</Label>
+                                    <div className="flex items-center gap-4">
+                                        {formData.image_url || selectedImageFile ? (
+                                            <div className="h-16 w-16 relative bg-muted rounded-md overflow-hidden border flex-shrink-0 shadow-sm">
+                                                <img
+                                                    src={selectedImageFile ? URL.createObjectURL(selectedImageFile) : formData.image_url}
+                                                    alt="미리보기"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-16 bg-muted/40 rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground flex-shrink-0">
+                                                <ImageIcon className="h-6 w-6 opacity-50" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1 space-y-1.5">
+                                            <Input
+                                                type="file"
+                                                accept="image/png, image/jpeg, image/jpg, image/webp"
+                                                onChange={e => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) setSelectedImageFile(file);
+                                                }}
+                                                className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:border-0 file:rounded-md file:mr-4 file:px-3 file:-ml-2 file:-my-2 h-9"
+                                            />
+                                            <p className="text-[11px] text-muted-foreground font-medium">최대 5MB, 1:1 비율 이미지를 권장합니다.</p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 mt-3 pt-4 border-t border-red-100 bg-red-50/50 p-3 rounded-lg">
+                                <div className="grid grid-cols-2 gap-4 mt-1 pt-4 border-t border-red-100 bg-red-50/50 p-3 rounded-lg">
                                     <div className="space-y-2">
                                         <Label htmlFor="deadline-date" className="text-red-900 font-bold">발주 마감 날짜</Label>
                                         <Input id="deadline-date" type="date" value={formData.deadline_date} onChange={e => setFormData({ ...formData, deadline_date: e.target.value })} className="border-red-200 bg-white" />
@@ -244,8 +318,10 @@ export default function ProductsPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">취소</Button>
-                                <Button type="submit" className="w-full sm:w-auto font-semibold">데이터베이스에 저장하기</Button>
+                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto" disabled={isSaving}>취소</Button>
+                                <Button type="submit" className="w-full sm:w-auto font-semibold" disabled={isSaving}>
+                                    {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
+                                </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
@@ -263,19 +339,30 @@ export default function ProductsPage() {
                         .map(product => (
                             <Card key={product.id} className={`overflow-hidden flex flex-col shadow-sm border-border/80 transition-colors duration-200 ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50'}`}>
                                 <div className="h-40 bg-muted/40 relative flex flex-col items-center justify-center border-b group">
-                                    <span className="text-muted-foreground text-sm flex flex-col items-center gap-2">이미지 (추후개발)</span>
+                                    {product.image_url ? (
+                                        <img src={product.image_url} alt={product.display_name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-muted-foreground text-sm flex flex-col items-center gap-2 opacity-50"><ImageIcon className="h-8 w-8" />이미지 없음</span>
+                                    )}
                                     {product.is_regular_sale ? (
                                         <Badge className="absolute top-3 right-3 bg-blue-500 hover:bg-blue-600 shadow-sm px-2 py-0.5 z-10">상시 판매중</Badge>
                                     ) : (
-                                        <Badge variant="secondary" className="absolute top-3 right-3 shadow-sm px-2 py-0.5 z-10 bg-white border-slate-200">{product.target_date}</Badge>
+                                        <Badge variant="secondary" className="absolute top-3 right-3 shadow-sm px-2 py-0.5 z-10 bg-white border-slate-200 text-slate-700">{product.target_date}</Badge>
                                     )}
-                                    {product.allocated_stock === 0 && <Badge variant="destructive" className="absolute top-3 left-3 px-2 py-0.5 shadow-sm z-10">품절</Badge>}
+                                    {product.allocated_stock === 0 && <Badge variant="destructive" className="absolute top-3 left-3 px-2 py-0.5 shadow-sm z-10 font-bold border-white border">품절</Badge>}
                                 </div>
                                 <CardHeader className="pb-2 pt-4">
-                                    <CardDescription className="text-xs font-mono mb-1 truncate text-muted-foreground bg-muted/50 px-2 py-0.5 rounded w-fit">수집 ID: {product.collect_name}</CardDescription>
-                                    <CardTitle className={`text-lg leading-tight line-clamp-1 mt-1 ${product.allocated_stock === 0 ? 'text-red-950' : ''}`}>{product.display_name}</CardTitle>
-                                    <div className="flex justify-between items-end mt-2">
-                                        <span className="font-semibold text-foreground text-lg tracking-tight">{product.price.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">원</span></span>
+                                    <div className="flex justify-between items-start mb-1 h-5">
+                                        <CardDescription className="text-xs font-mono truncate text-muted-foreground bg-slate-100 px-2 flex items-center rounded w-fit border border-slate-200">수집: {product.collect_name}</CardDescription>
+                                        {(product.incoming_price > 0 || product.incoming_price !== null) && (
+                                            <span className="text-[11px] font-bold text-emerald-600 tracking-tight whitespace-nowrap bg-emerald-50 px-1.5 rounded flex items-center">
+                                                입고단가 {(product.incoming_price || 0).toLocaleString()}원
+                                            </span>
+                                        )}
+                                    </div>
+                                    <CardTitle className={`text-lg leading-tight line-clamp-1 mt-1 ${product.allocated_stock === 0 ? 'text-red-950/70' : ''}`}>{product.display_name}</CardTitle>
+                                    <div className="flex justify-between items-end mt-1">
+                                        <span className="font-exrabold text-foreground text-[22px] tracking-tight font-sans">{product.price.toLocaleString()}<span className="text-sm font-medium text-muted-foreground ml-0.5">원</span></span>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="mt-auto space-y-4 pt-3">
