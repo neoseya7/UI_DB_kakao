@@ -114,18 +114,28 @@ export default function Dashboard() {
                 row.category === "INQUIRY" ? "문의" : "기타";
           }
 
-          let matchedDateInfo = ""
+          // Generate Multi-Item Match Badges dynamically
+          const matchBadges: { name: string, isMatched: boolean }[] = []
+
           if (row.product_name && row.product_name !== "-") {
-            const matchedProd = currentProducts.find(p => p.collect_name === row.product_name || p.display_name === row.product_name)
-            if (matchedProd) {
-              matchedDateInfo = matchedProd.target_date ? `🎯 [${matchedProd.target_date}]` : `🎯 [상시판매]`
-            }
+            const items = row.product_name.split(", ")
+            items.forEach((itemText: string) => {
+              let rawName = itemText
+              const qtyMatch = itemText.match(/(.+?)(?:\(\d+\))$/)
+              if (qtyMatch) {
+                rawName = qtyMatch[1].trim()
+              }
+
+              const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
+              if (matchedProd) {
+                matchBadges.push({ name: rawName, isMatched: true })
+              } else {
+                matchBadges.push({ name: rawName, isMatched: false })
+              }
+            })
           }
 
           let finalClassification = otherClassifications.join(", ")
-          if (matchedDateInfo) {
-            finalClassification = finalClassification ? `${matchedDateInfo} ${finalClassification}` : matchedDateInfo
-          }
 
           return {
             id: row.id,
@@ -137,6 +147,7 @@ export default function Dashboard() {
             product: row.product_name || "-",
             quantity: row.quantity || 0,
             classification: finalClassification,
+            matchBadges: matchBadges,
             isOrder: row.is_processed ? "Y" : (displayCat === "픽업고지" ? "대기" : "N"),
             raw_category: displayCat
           }
@@ -484,13 +495,27 @@ export default function Dashboard() {
                           <td className="px-4 py-3 text-primary/90 font-semibold">{log.product}</td>
                           <td className="px-4 py-3 text-center font-bold">{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">
-                            {log.classification ? (
-                              <Badge variant="outline" className={`font-normal whitespace-nowrap ${log.classification === 'VIP' || log.classification === '우수고객' || log.classification.includes('🎯') ? 'border-emerald-300 text-emerald-700 bg-emerald-50 font-medium' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
-                                {log.classification}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
+                            <div className="flex flex-col gap-1 items-center justify-center">
+                              {log.matchBadges && log.matchBadges.length > 0 && (
+                                <div className="flex flex-col gap-0.5">
+                                  {log.matchBadges.map((badge: any, idx: number) => (
+                                    <Badge key={idx} variant="outline" className={`font-medium whitespace-nowrap text-[11px] px-1.5 py-0 shadow-sm ${badge.isMatched ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
+                                      {badge.isMatched ? '✅' : '❌'}{badge.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+
+                              {log.classification && (
+                                <Badge variant="outline" className={`font-normal whitespace-nowrap mt-0.5 ${log.classification === 'VIP' || log.classification.includes('우수') ? 'border-amber-300 text-amber-700 bg-amber-50 font-medium' : 'border-slate-300 text-slate-700 bg-slate-50'}`}>
+                                  {log.classification}
+                                </Badge>
+                              )}
+
+                              {(!log.matchBadges?.length && !log.classification) && (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span className={`font-bold ${log.isOrder === 'Y' ? 'text-blue-600' : 'text-slate-400'}`}>
