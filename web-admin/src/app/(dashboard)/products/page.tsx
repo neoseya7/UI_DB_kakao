@@ -21,6 +21,12 @@ export default function ProductsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [sortOrder, setSortOrder] = useState("latest")
 
+    // Shared Clone Dialog States
+    const [isSharedDialogOpen, setIsSharedDialogOpen] = useState(false)
+    const [sharedProducts, setSharedProducts] = useState<any[]>([])
+    const [isLoadingShared, setIsLoadingShared] = useState(false)
+    const [sharedBrandName, setSharedBrandName] = useState<string>("")
+
     // Form states
     const [formData, setFormData] = useState({
         target_date: new Date().toISOString().split('T')[0],
@@ -209,6 +215,58 @@ export default function ProductsPage() {
         }
     }
 
+    const openSharedProductsDialog = async () => {
+        setIsSharedDialogOpen(true)
+        setIsLoadingShared(true)
+        try {
+            const res = await fetch(`/api/products/shared?store_id=${storeId}`)
+            const json = await res.json()
+            if (json.success) {
+                setSharedProducts(json.products || [])
+                if (json.brand_name) setSharedBrandName(json.brand_name)
+            } else {
+                setSharedProducts([])
+            }
+        } catch (e) {
+            console.error(e)
+            setSharedProducts([])
+        } finally {
+            setIsLoadingShared(false)
+        }
+    }
+
+    const handleCloneProduct = async (prod: any) => {
+        if (!confirm(`[${prod.display_name || prod.collect_name}] 상품 정보와 이미지를 내 매장으로 복사하시겠습니까?`)) return
+
+        setIsLoadingShared(true)
+        const newPayload = {
+            store_id: storeId,
+            collect_name: prod.collect_name,
+            display_name: prod.display_name,
+            price: prod.price,
+            incoming_price: prod.incoming_price,
+            allocated_stock: null, // Reset stock logic on clone
+            deadline_date: prod.deadline_date,
+            deadline_time: prod.deadline_time,
+            description: prod.description,
+            image_url: prod.image_url,
+            is_visible: true,
+            is_regular_sale: prod.is_regular_sale,
+            target_date: new Date().toISOString().split('T')[0] // Default to today
+        }
+
+        const { error } = await supabase.from('products').insert(newPayload)
+        setIsLoadingShared(false)
+
+        if (error) {
+            alert("상품 복사 실패: " + error.message)
+        } else {
+            alert("✅ 상품을 성공적으로 복사했습니다! 이제 내 매장 상황에 맞게 수정할 수 있습니다.")
+            fetchProducts(storeId!)
+            setIsSharedDialogOpen(false)
+        }
+    }
+
     return (
         <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10">
             <div className="flex flex-col gap-2">
@@ -269,6 +327,9 @@ export default function ProductsPage() {
                             <SelectItem value="name_asc">이름 가나다순</SelectItem>
                         </SelectContent>
                     </Select>
+                    <Button onClick={openSharedProductsDialog} variant="secondary" className="shrink-0 font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 shadow-sm h-9">
+                        🎁 타 매장 상품 불러오기
+                    </Button>
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                             <Button onClick={openNewProductDialog} className="shrink-0 font-medium shadow-sm transition-transform active:scale-95 text-sm h-9">+ 새 상품 등록</Button>
@@ -404,6 +465,57 @@ export default function ProductsPage() {
                             </div>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* BRAND TEMPLATE CLONE DIALOG (Option B) */}
+            <Dialog open={isSharedDialogOpen} onOpenChange={setIsSharedDialogOpen}>
+                <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <span className="text-xl">🎁 우리 브랜드 상품 가져오기</span>
+                            {sharedBrandName && <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-200">{sharedBrandName}</Badge>}
+                        </DialogTitle>
+                        <DialogDescription>
+                            같은 본사(브랜드)에 속한 다른 매장들이 올려둔 상품 템플릿입니다. <br />
+                            <span className="text-emerald-600 font-medium">복사하더라도 원본이나 타 매장에는 전혀 영향을 주지 않으며, 이미지 용량도 100% 절약됩니다.</span>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-4">
+                        {isLoadingShared ? (
+                            <div className="py-20 text-center text-muted-foreground animate-pulse font-medium">✨ 브랜드 카탈로그를 조회 중입니다...</div>
+                        ) : sharedProducts.length === 0 ? (
+                            <div className="py-20 text-center text-muted-foreground">
+                                현재 등록된 [우리 브랜드] 상품 템플릿이 없습니다.<br />
+                                <span className="text-sm">가맹점 가입 시 브랜드명을 정확히 입력했는지 확인해 주세요.</span>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {sharedProducts.map(prod => (
+                                    <div key={prod.id} className="border rounded-lg overflow-hidden flex flex-col bg-white shadow-sm hover:border-indigo-300 transition-colors">
+                                        {prod.image_url ? (
+                                            <div className="w-full h-32 bg-slate-100 relative">
+                                                <img src={prod.image_url} alt="상품" className="w-full h-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-32 bg-slate-50 flex items-center justify-center text-slate-300">
+                                                <ImageIcon className="w-8 h-8 opacity-20" />
+                                            </div>
+                                        )}
+                                        <div className="p-3 flex-1 flex flex-col">
+                                            <div className="font-bold text-sm mb-1 truncate">{prod.display_name || prod.collect_name}</div>
+                                            <div className="text-xs text-muted-foreground flex-1 line-clamp-2 mb-2">{prod.description || "상세 설명 없음"}</div>
+                                            <div className="text-sm font-semibold text-slate-700 mb-3">{prod.price ? `${prod.price.toLocaleString()}원` : '가격 미정'}</div>
+                                            <Button onClick={(e) => { e.preventDefault(); handleCloneProduct(prod); }} size="sm" className="w-full font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
+                                                [내 매장으로 복사]
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
 

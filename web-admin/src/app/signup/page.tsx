@@ -10,6 +10,7 @@ import { CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 
 export default function SignupPage() {
+    const [brandName, setBrandName] = useState("")
     const [storeName, setStoreName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -35,6 +36,7 @@ export default function SignupPage() {
             password,
             options: {
                 data: {
+                    brand_name: brandName,
                     name: storeName,
                     role: 'store_pending'
                 }
@@ -61,7 +63,7 @@ export default function SignupPage() {
                         <CheckCircle2 className="w-16 h-16 text-emerald-500" />
                         <h2 className="text-2xl font-bold text-slate-800 mt-2">가입 신청 완료!</h2>
                         <p className="text-slate-600 px-4 leading-relaxed">
-                            <strong className="text-indigo-700">[{storeName}]</strong> 가맹점 등록이 정상적으로 신청되었습니다.<br />
+                            <strong className="text-indigo-700">[{brandName}] {storeName}</strong> 가맹점 등록이 정상적으로 신청되었습니다.<br />
                             본 최고관리자의 승인이 완료되는 대로<br />
                             작성하신 이메일로 접속하실 수 있습니다.
                         </p>
@@ -90,9 +92,15 @@ export default function SignupPage() {
                                 {errorMsg}
                             </div>
                         )}
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="storeName">가맹점 (지점) 명 <span className="text-destructive">*</span></Label>
-                            <Input id="storeName" placeholder="예: 홍대본점" value={storeName} onChange={(e) => setStoreName(e.target.value)} required />
+                        <div className="grid grid-cols-2 gap-2 text-left">
+                            <div className="grid gap-2 text-left">
+                                <Label htmlFor="brandName">브랜드 (본사) 명 <span className="text-destructive">*</span></Label>
+                                <Input id="brandName" placeholder="예: 무시호떡" value={brandName} onChange={(e) => setBrandName(e.target.value)} required />
+                            </div>
+                            <div className="grid gap-2 text-left">
+                                <Label htmlFor="storeName">가맹점 (지점) 명 <span className="text-destructive">*</span></Label>
+                                <Input id="storeName" placeholder="예: 홍대본점" value={storeName} onChange={(e) => setStoreName(e.target.value)} required />
+                            </div>
                         </div>
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="email">이메일 계정 <span className="text-destructive">*</span></Label>
