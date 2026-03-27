@@ -11,6 +11,9 @@ import Link from "next/link"
 
 export default function SignupPage() {
     const [brandName, setBrandName] = useState("")
+    const [allowedBrands, setAllowedBrands] = useState<string[]>([])
+    const [isLoadingBrands, setIsLoadingBrands] = useState(true)
+
     const [storeName, setStoreName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -19,12 +22,36 @@ export default function SignupPage() {
     const [errorMsg, setErrorMsg] = useState("")
     const [isSuccess, setIsSuccess] = useState(false)
 
+    useEffect(() => {
+        const fetchBrands = async () => {
+            try {
+                const res = await fetch('/api/brands')
+                const json = await res.json()
+                if (json.success && json.brands) {
+                    setAllowedBrands(json.brands)
+                    if (json.brands.length > 0) {
+                        setBrandName(json.brands[0])
+                    }
+                }
+            } catch (e) {
+                console.error("Brand fetch error:", e)
+            } finally {
+                setIsLoadingBrands(false)
+            }
+        }
+        fetchBrands()
+    }, [])
+
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
         setErrorMsg("")
 
         if (password !== passwordConfirm) {
             setErrorMsg("비밀번호가 서로 일치하지 않습니다.")
+            return
+        }
+        if (!brandName) {
+            setErrorMsg("시스템에 등록된 공식 브랜드가 없습니다. 최고 관리자에게 문의하세요.")
             return
         }
 
@@ -92,10 +119,28 @@ export default function SignupPage() {
                                 {errorMsg}
                             </div>
                         )}
-                        <div className="grid grid-cols-2 gap-2 text-left">
+                        <div className="grid grid-cols-2 gap-2 text-left mt-2">
                             <div className="grid gap-2 text-left">
                                 <Label htmlFor="brandName">브랜드 (본사) 명 <span className="text-destructive">*</span></Label>
-                                <Input id="brandName" placeholder="예: 무시호떡" value={brandName} onChange={(e) => setBrandName(e.target.value)} required />
+                                {isLoadingBrands ? (
+                                    <div className="h-10 px-3 py-2 border rounded-md bg-muted animate-pulse text-sm text-muted-foreground flex items-center">로딩 중...</div>
+                                ) : allowedBrands.length > 0 ? (
+                                    <select
+                                        id="brandName"
+                                        value={brandName}
+                                        onChange={(e) => setBrandName(e.target.value)}
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        required
+                                    >
+                                        {allowedBrands.map((b, i) => (
+                                            <option key={i} value={b} className="font-medium text-slate-800">{b}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="h-10 px-3 py-2 border border-rose-200 bg-rose-50 text-rose-600 rounded-md text-[13px] flex items-center font-bold shadow-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                        ❌ 시스템 등록 브랜드 없음
+                                    </div>
+                                )}
                             </div>
                             <div className="grid gap-2 text-left">
                                 <Label htmlFor="storeName">가맹점 (지점) 명 <span className="text-destructive">*</span></Label>

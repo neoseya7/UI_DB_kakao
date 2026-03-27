@@ -64,8 +64,11 @@ export default function AdminPage() {
     const [kakaoRoomNames, setKakaoRoomNames] = useState<Record<string, string>>({})
     const [adminConfig, setAdminConfig] = useState<any>({
         gemini_api_key: "", gemini_model: "gemini-1.5-flash", openai_api_key: "", openai_model: "gpt-4o-mini",
-        prompt_set_1: {}, prompt_set_2: {}
+        prompt_set_1: {}, prompt_set_2: {}, allowed_brands: []
     })
+
+    // Brand tag input state
+    const [newBrand, setNewBrand] = useState("")
 
     useEffect(() => {
         const fetchAdminData = async () => {
@@ -103,6 +106,11 @@ export default function AdminPage() {
                 const parsedConfig = { ...configData }
                 if (typeof parsedConfig.prompt_set_1 === 'string') parsedConfig.prompt_set_1 = JSON.parse(parsedConfig.prompt_set_1)
                 if (typeof parsedConfig.prompt_set_2 === 'string') parsedConfig.prompt_set_2 = JSON.parse(parsedConfig.prompt_set_2)
+                if (typeof parsedConfig.allowed_brands === 'string') parsedConfig.allowed_brands = JSON.parse(parsedConfig.allowed_brands)
+
+                // Fallback ensure it is an array
+                if (!Array.isArray(parsedConfig.allowed_brands)) parsedConfig.allowed_brands = []
+
                 setAdminConfig(parsedConfig)
             }
 
@@ -190,6 +198,26 @@ export default function AdminPage() {
         handleSaveMultipleConfig({ [configKey]: newObj })
     }
 
+    // Brand Logic Methods
+    const handleAddBrand = () => {
+        const b = newBrand.trim()
+        if (!b) return
+        if (adminConfig.allowed_brands.includes(b)) {
+            alert("이미 등록된 브랜드입니다.")
+            return
+        }
+
+        const newBrands = [...adminConfig.allowed_brands, b]
+        handleSaveMultipleConfig({ allowed_brands: newBrands })
+        setNewBrand("")
+    }
+
+    const handleRemoveBrand = (brandToRemove: string) => {
+        if (!confirm(`'${brandToRemove}' 브랜드를 정말 삭제하시겠습니까? (기존에 가입된 가맹점에는 영향을 주지 않습니다)`)) return
+        const newBrands = adminConfig.allowed_brands.filter((b: string) => b !== brandToRemove)
+        handleSaveMultipleConfig({ allowed_brands: newBrands })
+    }
+
     const renderPromptSet = (setName: string, configKey: 'prompt_set_1' | 'prompt_set_2') => (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex flex-col gap-2 mb-6 p-4 bg-indigo-50/50 rounded-lg border border-indigo-100">
@@ -254,8 +282,12 @@ export default function AdminPage() {
 
             <div className="flex overflow-x-auto bg-muted/40 border rounded-lg p-1.5 w-full md:w-fit shadow-sm gap-1 scrollbar-hide">
                 <button onClick={() => setActiveTab("stores")} className={`px-4 py-2.5 text-sm font-bold rounded-md transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[140px] ${activeTab === 'stores' ? 'bg-white shadow border border-slate-200/60 text-indigo-700' : 'text-slate-600 hover:text-indigo-900 hover:bg-white/50'}`}>
-                    <Store className="w-4 h-4" /> 가맹점 관리
+                    <Store className="w-4 h-4" /> 가맹점 승인/관리
                 </button>
+                <button onClick={() => setActiveTab("brands")} className={`px-4 py-2.5 text-sm font-bold rounded-md transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[140px] ${activeTab === 'brands' ? 'bg-amber-600 shadow border border-amber-700 text-white' : 'text-slate-600 hover:text-amber-900 hover:bg-white/50'}`}>
+                    <Store className="w-4 h-4 opacity-80" /> 공식 브랜드 등록
+                </button>
+                <div className="w-px h-6 bg-slate-300 mx-2 self-center shrink-0"></div>
                 <button onClick={() => setActiveTab("prompt1")} className={`px-4 py-2.5 text-sm font-bold rounded-md transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[160px] ${activeTab === 'prompt1' ? 'bg-indigo-600 shadow-md text-white' : 'text-slate-600 hover:text-indigo-900 hover:bg-white/50'}`}>
                     <FileText className="w-4 h-4 opacity-80" /> 프롬프트 세트 1호기
                 </button>
@@ -362,6 +394,60 @@ export default function AdminPage() {
                             </table>
                         </div>
                     </section>
+                </div>
+            )}
+
+            {activeTab === 'brands' && (
+                <div className="space-y-6 animate-in fade-in duration-300 ease-out mt-2">
+                    <div className="flex flex-col gap-2 p-4 bg-amber-50/50 rounded-lg border border-amber-100">
+                        <h3 className="text-xl font-bold tracking-tight text-amber-900 flex items-center gap-2">
+                            <Store className="w-5 h-5" /> 공식 브랜드명 통합 레지스트리
+                        </h3>
+                        <p className="text-sm text-amber-800/70">
+                            이곳에 등록된 공식 브랜드 이름만 신규 가입자(가맹점)의 드롭다운 선택 메뉴에 노출됩니다. 띄어쓰기 오타 발생 및 파편화를 원천 차단하여 카탈로그의 정합성을 보장합니다.
+                        </p>
+                    </div>
+
+                    <Card className="border-slate-200 shadow-sm bg-white">
+                        <CardHeader className="bg-slate-50 border-b border-slate-100 py-4">
+                            <CardTitle className="text-lg text-slate-800 font-extrabold flex items-center gap-2">신규 브랜드 발행하기</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-6">
+                            <div className="flex gap-2 w-full max-w-sm">
+                                <Input
+                                    value={newBrand}
+                                    onChange={e => setNewBrand(e.target.value)}
+                                    placeholder="정확한 공식 브랜드명 입력 (예: 스타벅스)"
+                                    className="font-bold border-slate-300 focus-visible:ring-amber-500 h-11"
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddBrand() }}
+                                />
+                                <Button onClick={handleAddBrand} className="bg-amber-600 hover:bg-amber-700 font-bold shadow-sm h-11 px-6">
+                                    <Check className="w-4 h-4 mr-1" /> 추가
+                                </Button>
+                            </div>
+
+                            <div className="pt-2 border-t mt-6">
+                                <Label className="font-bold text-sm text-slate-800 block mb-4">현재 시스템에 등록된 스토어 프랜차이즈 목록</Label>
+                                <div className="flex flex-wrap gap-2.5">
+                                    {(!adminConfig.allowed_brands || adminConfig.allowed_brands.length === 0) && (
+                                        <span className="text-muted-foreground text-sm italic">등록된 브랜드가 없습니다.</span>
+                                    )}
+                                    {adminConfig.allowed_brands?.map((brand: string, idx: number) => (
+                                        <Badge key={idx} className="px-3.5 py-1.5 flex items-center gap-1.5 text-sm font-bold bg-white text-slate-800 border-2 border-slate-200 shadow-sm transition-all hover:border-amber-300">
+                                            {brand}
+                                            <button
+                                                onClick={() => handleRemoveBrand(brand)}
+                                                className="ml-1 text-slate-400 hover:text-red-500 transition-colors bg-slate-100 hover:bg-red-50 rounded-full p-0.5"
+                                                title="브랜드 삭제"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             )}
 
