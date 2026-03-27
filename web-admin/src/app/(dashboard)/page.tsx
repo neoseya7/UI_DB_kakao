@@ -116,26 +116,32 @@ export default function Dashboard() {
 
           // Generate Multi-Item Match Badges dynamically
           const matchBadges: { name: string, isMatched: boolean }[] = []
-
-          if (row.product_name && row.product_name !== "-") {
-            const items = row.product_name.split(", ")
-            items.forEach((itemText: string) => {
-              let rawName = itemText
-              const qtyMatch = itemText.match(/(.+?)(?:\(\d+\))$/)
-              if (qtyMatch) {
-                rawName = qtyMatch[1].trim()
-              }
-
-              const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
-              if (matchedProd) {
-                matchBadges.push({ name: rawName, isMatched: true })
-              } else {
-                matchBadges.push({ name: rawName, isMatched: false })
-              }
-            })
-          }
-
           let finalClassification = otherClassifications.join(", ")
+
+          const isOrderType = displayCat === "픽업고지" || row.category === "ORDER" || displayCat.includes("주문");
+
+          if (isOrderType) {
+            if (row.product_name && row.product_name !== "-") {
+              const items = row.product_name.split(", ")
+              items.forEach((itemText: string) => {
+                let rawName = itemText
+                const qtyMatch = itemText.match(/(.+?)(?:\(\d+\))$/)
+                if (qtyMatch) {
+                  rawName = qtyMatch[1].trim()
+                }
+
+                const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
+                if (matchedProd) {
+                  matchBadges.push({ name: rawName, isMatched: true })
+                } else {
+                  matchBadges.push({ name: rawName, isMatched: false })
+                }
+              })
+            }
+          } else {
+            // Hide completely if it's not an order classification
+            finalClassification = ""
+          }
 
           return {
             id: row.id,
