@@ -341,7 +341,7 @@ export default function PickupCalendarPage() {
 
     const filteredCustomers = customers.filter(c => {
         const matchName = c.name.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchReceipt = receiptFilter === "unreceived" ? !c.checked : true
+        const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
         return matchName && matchReceipt
     })
 
@@ -450,6 +450,7 @@ export default function PickupCalendarPage() {
                                 <SelectContent>
                                     <SelectItem value="all">모든 상태</SelectItem>
                                     <SelectItem value="unreceived" className="text-orange-600 font-semibold">미수령만</SelectItem>
+                                    <SelectItem value="received" className="text-emerald-600 font-semibold">수령만</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
