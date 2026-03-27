@@ -384,9 +384,9 @@ export default function ProductsPage() {
                                         </div>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="pt-0 flex gap-2">
-                                    <Button onClick={() => openEditProductDialog(product)} variant="secondary" className="w-full text-primary border border-primary/20 hover:bg-primary/5 hover:text-primary font-bold shadow-sm">정보 수정</Button>
-                                    <Button onClick={() => handleDeleteProduct(product.id)} variant="outline" className="w-full text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive font-bold shadow-sm">영구 삭제</Button>
+                                <CardFooter className="pt-0 flex gap-2 w-full">
+                                    <Button onClick={() => openEditProductDialog(product)} variant="secondary" className="flex-1 text-primary border border-primary/20 hover:bg-primary/5 hover:text-primary font-bold shadow-sm px-0">정보 수정</Button>
+                                    <Button onClick={() => handleDeleteProduct(product.id)} variant="outline" className="flex-1 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive font-bold shadow-sm px-0">영구 삭제</Button>
                                 </CardFooter>
                             </Card>
                         ))}
