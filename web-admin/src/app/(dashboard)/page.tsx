@@ -193,8 +193,13 @@ export default function Dashboard() {
       const { data: originalLog, error: fetchErr } = await supabase.from('chat_logs').select('*').eq('id', rowId).single()
       if (fetchErr) throw fetchErr
 
+      const clonedCreatedAt = new Date(new Date(originalLog.created_at).getTime() + 100).toISOString()
       const { id, created_at, updated_at, ...copyData } = originalLog
-      const { error: insertErr } = await supabase.from('chat_logs').insert(copyData)
+
+      const { error: insertErr } = await supabase.from('chat_logs').insert({
+        ...copyData,
+        created_at: clonedCreatedAt
+      })
       if (insertErr) throw insertErr
 
       alert("📋 채팅 내역이 복제되었습니다. 각 데이터에 개별 상품을 할당할 수 있습니다!")
