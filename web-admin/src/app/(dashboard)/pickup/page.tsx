@@ -411,17 +411,21 @@ export default function PickupCalendarPage() {
             <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
                 {/* 1번째 줄: 날짜 선택과 검색 영역 */}
                 <div className="flex flex-col xl:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 w-full xl:w-auto">
-                        <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block" />
-                        <div className="flex flex-wrap gap-2 items-center">
-                            <Button onClick={() => changeDate(-1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-4">◀ 이전</Button>
+                    <div className="flex items-center gap-2 sm:gap-4 w-full xl:w-auto">
+                        <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block shrink-0" />
+                        <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center w-full xl:w-auto">
+                            <Button onClick={() => changeDate(-1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-2.5 sm:px-4 shrink-0">
+                                ◀<span className="hidden min-[380px]:inline ml-1">이전</span>
+                            </Button>
                             <Input
                                 type="date"
-                                className="flex items-center justify-center px-4 h-10 font-bold text-lg bg-background border rounded-md min-w-[180px] shadow-sm text-center"
+                                className="flex-1 xl:flex-none items-center justify-center px-2 sm:px-4 h-10 font-bold text-[15px] sm:text-lg bg-background border rounded-md min-w-[130px] shadow-sm text-center"
                                 value={currentDate}
                                 onChange={(e) => setCurrentDate(e.target.value)}
                             />
-                            <Button onClick={() => changeDate(1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-4">다음 ▶</Button>
+                            <Button onClick={() => changeDate(1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-2.5 sm:px-4 shrink-0">
+                                <span className="hidden min-[380px]:inline mr-1">다음</span>▶
+                            </Button>
                         </div>
                     </div>
 
