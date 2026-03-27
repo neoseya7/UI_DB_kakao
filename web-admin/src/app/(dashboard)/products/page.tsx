@@ -182,6 +182,7 @@ export default function ProductsPage() {
         const { error } = await supabase.from('products').delete().eq('id', id)
         if (!error) {
             setProducts(products.filter(p => p.id !== id))
+            setIsDialogOpen(false)
         }
     }
 
@@ -317,11 +318,18 @@ export default function ProductsPage() {
                                     <textarea id="desc" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="상세 설명을 적어주세요." />
                                 </div>
                             </div>
-                            <DialogFooter>
-                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto" disabled={isSaving}>취소</Button>
-                                <Button type="submit" className="w-full sm:w-auto font-semibold" disabled={isSaving}>
-                                    {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
-                                </Button>
+                            <DialogFooter className="sm:justify-between w-full gap-2 mt-4">
+                                {editingProductId ? (
+                                    <Button type="button" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto" onClick={() => handleDeleteProduct(editingProductId)}>
+                                        이 상품 영구 삭제
+                                    </Button>
+                                ) : <div />}
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>취소</Button>
+                                    <Button type="submit" className="font-semibold" disabled={isSaving}>
+                                        {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
+                                    </Button>
+                                </div>
                             </DialogFooter>
                         </form>
                     </DialogContent>
@@ -333,61 +341,44 @@ export default function ProductsPage() {
             ) : products.length === 0 ? (
                 <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-xl border-muted">등록된 상품이 없습니다. [+ 새 상품 등록] 버튼을 눌러 추가해주세요.</div>
             ) : (
-                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-2">
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mt-2">
                     {products
                         .filter(p => filterDate === "all" || p.target_date === filterDate)
                         .map(product => (
-                            <Card key={product.id} className={`overflow-hidden flex flex-col shadow-sm border-border/80 transition-colors duration-200 ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50'}`}>
-                                <div className="h-40 bg-muted/40 relative flex flex-col items-center justify-center border-b group">
-                                    {product.image_url ? (
-                                        <img src={product.image_url} alt={product.display_name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-muted-foreground text-sm flex flex-col items-center gap-2 opacity-50"><ImageIcon className="h-8 w-8" />이미지 없음</span>
-                                    )}
-                                    {product.is_regular_sale ? (
-                                        <Badge className="absolute top-3 right-3 bg-blue-500 hover:bg-blue-600 shadow-sm px-2 py-0.5 z-10">상시 판매중</Badge>
-                                    ) : (
-                                        <Badge variant="secondary" className="absolute top-3 right-3 shadow-sm px-2 py-0.5 z-10 bg-white border-slate-200 text-slate-700">{product.target_date}</Badge>
-                                    )}
-                                    {product.allocated_stock === 0 && <Badge variant="destructive" className="absolute top-3 left-3 px-2 py-0.5 shadow-sm z-10 font-bold border-white border">품절</Badge>}
-                                </div>
-                                <CardHeader className="pb-2 pt-4">
-                                    <div className="flex justify-between items-start mb-1 h-5">
-                                        <CardDescription className="text-xs font-mono truncate text-muted-foreground bg-slate-100 px-2 flex items-center rounded w-fit border border-slate-200">수집: {product.collect_name}</CardDescription>
-                                        {(product.incoming_price > 0 || product.incoming_price !== null) && (
-                                            <span className="text-[11px] font-bold text-emerald-600 tracking-tight whitespace-nowrap bg-emerald-50 px-1.5 rounded flex items-center">
-                                                입고단가 {(product.incoming_price || 0).toLocaleString()}원
-                                            </span>
-                                        )}
-                                    </div>
-                                    <CardTitle className={`text-lg leading-tight line-clamp-1 mt-1 ${product.allocated_stock === 0 ? 'text-red-950/70' : ''}`}>{product.display_name}</CardTitle>
-                                    <div className="flex justify-between items-end mt-1">
-                                        <span className="font-exrabold text-foreground text-[22px] tracking-tight font-sans">{product.price.toLocaleString()}<span className="text-sm font-medium text-muted-foreground ml-0.5">원</span></span>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="mt-auto space-y-4 pt-3">
-                                    <div className={`flex flex-col gap-1.5 p-3 rounded-md border ${product.allocated_stock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-muted/20 border-border/50'}`}>
-                                        <span className={`text-xs font-semibold uppercase tracking-wider flex justify-between ${product.allocated_stock === 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                            <span>임의 수동 재고 변경</span>
-                                        </span>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <Input
-                                                type="number"
-                                                defaultValue={product.allocated_stock}
-                                                onBlur={(e) => {
-                                                    if (e.target.value !== String(product.allocated_stock)) {
-                                                        handleUpdateStock(product.id, parseInt(e.target.value) || 0)
-                                                    }
-                                                }}
-                                                className="w-full font-bold h-9 bg-background focus:ring-1"
-                                            />
+                            <Card
+                                key={product.id}
+                                className={`overflow-hidden flex flex-col shadow-sm border transition-all duration-200 cursor-pointer ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50 hover:shadow-md'}`}
+                                onClick={() => openEditProductDialog(product)}
+                            >
+                                <CardHeader className="pb-2 pt-4 flex flex-row items-start justify-between gap-2">
+                                    <div className="flex flex-col gap-1.5 w-full">
+                                        <CardTitle className="text-base leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>{product.collect_name}</CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            {product.is_regular_sale ? (
+                                                <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm px-2 py-0 text-[11px]">상시판매</Badge>
+                                            ) : (
+                                                <Badge variant="secondary" className="shadow-sm px-2 py-0 bg-slate-100 border-slate-200 text-slate-700 text-[11px] font-mono">{product.target_date}</Badge>
+                                            )}
                                         </div>
                                     </div>
+                                    {product.allocated_stock === 0 && <Badge variant="destructive" className="shadow-sm shrink-0 whitespace-nowrap">품절</Badge>}
+                                </CardHeader>
+                                <CardContent className="mt-auto px-4 pb-4 pt-0">
+                                    <div className={`flex items-center justify-between gap-3 p-2 rounded-md border ${product.allocated_stock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-muted/30 border-border/50'}`} onClick={(e) => e.stopPropagation()}>
+                                        <span className={`text-[11px] font-bold tracking-tight whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>수동재고 제한</span>
+                                        <Input
+                                            type="number"
+                                            defaultValue={product.allocated_stock}
+                                            onBlur={(e) => {
+                                                if (e.target.value !== String(product.allocated_stock)) {
+                                                    handleUpdateStock(product.id, parseInt(e.target.value) || 0)
+                                                }
+                                            }}
+                                            className={`w-16 h-7 text-center font-bold px-1 py-0 shadow-inner ${product.allocated_stock === 0 ? 'text-red-700 border-red-300' : ''}`}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-center text-muted-foreground mt-2 mb-0">상세정보 열기 및 수정하기</p>
                                 </CardContent>
-                                <CardFooter className="pt-0 flex gap-2 w-full">
-                                    <Button onClick={() => openEditProductDialog(product)} variant="secondary" className="flex-1 text-primary border border-primary/20 hover:bg-primary/5 hover:text-primary font-bold shadow-sm px-0">정보 수정</Button>
-                                    <Button onClick={() => handleDeleteProduct(product.id)} variant="outline" className="flex-1 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive font-bold shadow-sm px-0">영구 삭제</Button>
-                                </CardFooter>
                             </Card>
                         ))}
                 </div>
