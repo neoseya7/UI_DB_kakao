@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Search, CalendarDays, ImageIcon } from "lucide-react"
+import { Search, CalendarDays, ImageIcon, Eye, EyeOff } from "lucide-react"
 
 export default function ProductsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -29,7 +29,8 @@ export default function ProductsPage() {
         deadline_date: "",
         deadline_time: "",
         description: "",
-        image_url: ""
+        image_url: "",
+        is_visible: true
     })
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
     const [isSaving, setIsSaving] = useState(false)
@@ -121,7 +122,8 @@ export default function ProductsPage() {
             deadline_date: formData.deadline_date || null,
             deadline_time: formData.deadline_time || null,
             description: formData.description,
-            image_url: finalImageUrl
+            image_url: finalImageUrl,
+            is_visible: formData.is_visible
         }
 
         if (editingProductId) {
@@ -163,7 +165,7 @@ export default function ProductsPage() {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: ""
+            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", is_visible: true
         })
         setSelectedImageFile(null)
         setIsDialogOpen(true)
@@ -181,7 +183,8 @@ export default function ProductsPage() {
             deadline_date: product.deadline_date || "",
             deadline_time: product.deadline_time || "",
             description: product.description || "",
-            image_url: product.image_url || ""
+            image_url: product.image_url || "",
+            is_visible: product.is_visible !== false
         })
         setSelectedImageFile(null)
         setIsDialogOpen(true)
@@ -267,6 +270,22 @@ export default function ProductsPage() {
                                 </div>
 
                                 <div className="space-y-2 border-t pt-4">
+                                    <div className="flex items-center justify-between pb-3 mb-1">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-base text-slate-800 font-bold">상품 카탈로그 노출</Label>
+                                            <p className="text-[12px] text-muted-foreground leading-tight">이 상품을 고객 방문자용 상품 리스트에 보여줄지 결정합니다.</p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant={formData.is_visible ? "default" : "secondary"}
+                                            className={`w-24 gap-1.5 shadow-sm transition-all ${formData.is_visible ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-slate-500 bg-slate-200 hover:bg-slate-300'}`}
+                                            onClick={() => setFormData({ ...formData, is_visible: !formData.is_visible })}
+                                        >
+                                            {formData.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                            {formData.is_visible ? "노출 켜짐" : "숨김 처리"}
+                                        </Button>
+                                    </div>
                                     <Label htmlFor="name">상품명 (고객 노출용 - <span className="font-normal text-muted-foreground">선택사항</span>)</Label>
                                     <Input
                                         id="name"
@@ -378,7 +397,10 @@ export default function ProductsPage() {
                             >
                                 <CardHeader className="pb-2 pt-4 flex flex-row items-start justify-between gap-2">
                                     <div className="flex flex-col gap-1.5 w-full">
-                                        <CardTitle className="text-base leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>{product.collect_name}</CardTitle>
+                                        <CardTitle className="text-base leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>
+                                            {product.is_visible === false && <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-sm text-[10px] font-bold mr-1.5 align-text-bottom shadow-sm"><EyeOff className="w-3 h-3" />숨김</span>}
+                                            {product.collect_name}
+                                        </CardTitle>
                                         <div className="flex items-center gap-2">
                                             {product.is_regular_sale ? (
                                                 <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm px-2 py-0 text-[11px]">상시판매</Badge>
