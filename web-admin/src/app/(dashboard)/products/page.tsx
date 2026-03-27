@@ -39,15 +39,32 @@ export default function ProductsPage() {
     const duplicateProduct = products.find(p => p.collect_name === formData.collect_name && p.target_date !== formData.target_date)
 
     useEffect(() => {
+        let channel: any = null;
+
         const initData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
                 setStoreId(user.id)
                 await fetchProducts(user.id)
+
+                channel = supabase
+                    .channel('products_realtime')
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'products' },
+                        (payload) => {
+                            fetchProducts(user.id)
+                        }
+                    )
+                    .subscribe()
             }
             setIsLoading(false)
         }
         initData()
+
+        return () => {
+            if (channel) supabase.removeChannel(channel)
+        }
     }, [])
 
     const fetchProducts = async (sid: string) => {
