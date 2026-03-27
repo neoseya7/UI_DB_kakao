@@ -19,6 +19,9 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState({
         show_price: true,
         show_stock: true,
+        show_product_image: true,
+        show_product_desc: true,
+        show_stock_badge: true,
         notice_texts: ["[필독] 설 연휴 기간은 딸기 수급 문제로 일부 주문이 제한될 수 있습니다."],
         badge_stock_level: 3,
         crm_tags: [] as any[],
@@ -37,6 +40,9 @@ export default function SettingsPage() {
                     setSettings({
                         show_price: data.show_price ?? true,
                         show_stock: data.show_stock ?? true,
+                        show_product_image: data.show_product_image ?? true,
+                        show_product_desc: data.show_product_desc ?? true,
+                        show_stock_badge: data.show_stock_badge ?? true,
                         notice_texts: data.notice_texts || [],
                         badge_stock_level: data.badge_stock_level || 3,
                         crm_tags: data.crm_tags?.filter((t: any) => t.type === 'crm') || [],
@@ -64,6 +70,9 @@ export default function SettingsPage() {
         const payload = {
             show_price: settings.show_price,
             show_stock: settings.show_stock,
+            show_product_image: settings.show_product_image,
+            show_product_desc: settings.show_product_desc,
+            show_stock_badge: settings.show_stock_badge,
             notice_texts: settings.notice_texts,
             badge_stock_level: settings.badge_stock_level,
             crm_tags: combinedTags,
@@ -196,40 +205,67 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* 3. Product Badge Level Configuration */}
+                {/* 3. Product Guide Page Configuration */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>3. 상품 품절 임박(재고 배지) 수량 기준</CardTitle>
-                        <CardDescription>특정 수량 이하로 떨어졌을 때 상품 띠지가 '마감 임박' 등으로 변환되는 전역 허들 기준입니다.</CardDescription>
+                        <CardTitle>3. 상품 안내 페이지 설정</CardTitle>
+                        <CardDescription>고객에게 노출되는 개별 상품 페이지의 디자인 요소 활성화 및 재고 배지 임계값을 설정합니다.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between border-b pb-4 mb-4 mt-2">
-                            <Label htmlFor="low-stock" className="flex flex-col gap-1">
-                                <span className="text-base font-semibold text-slate-800">품절 임박 경고 허들 수량</span>
-                                <span className="font-normal text-sm text-muted-foreground">이 숫자 이하로 남은 상품은 색상이 붉은 톤으로 자동 변경 노출됩니다.</span>
-                            </Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    id="low-stock" type="number"
-                                    value={settings.badge_stock_level}
-                                    onChange={e => setSettings({ ...settings, badge_stock_level: parseInt(e.target.value) || 0 })}
-                                    className="w-24 text-center font-bold text-lg text-primary shadow-sm"
-                                />
-                                <span className="text-sm font-semibold">개 이하</span>
+                    <CardContent className="space-y-6">
+                        <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-6 pt-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="show-image" className="flex flex-col gap-1 cursor-pointer">
+                                    <span className="text-base font-semibold">상품 이미지 노출 여부</span>
+                                    <span className="font-normal text-sm text-muted-foreground">상품 목록 및 상세 모달창에 대표 이미지를 표시합니다.</span>
+                                </Label>
+                                <Switch id="show-image" checked={settings.show_product_image} onCheckedChange={(v) => setSettings({ ...settings, show_product_image: v })} />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="show-desc" className="flex flex-col gap-1 cursor-pointer">
+                                    <span className="text-base font-semibold">상품 안내문(Description) 노출 여부</span>
+                                    <span className="font-normal text-sm text-muted-foreground">상품 세부 안내글 및 유의사항을 노출할지 결정합니다.</span>
+                                </Label>
+                                <Switch id="show-desc" checked={settings.show_product_desc} onCheckedChange={(v) => setSettings({ ...settings, show_product_desc: v })} />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="show-badge" className="flex flex-col gap-1 cursor-pointer">
+                                    <span className="text-base font-semibold">재고 배지(품절임박) 상태 노출 여부</span>
+                                    <span className="font-normal text-sm text-muted-foreground">목록의 특정 상품명 옆에 시각적인 재고 배지를 띄웁니다.</span>
+                                </Label>
+                                <Switch id="show-badge" checked={settings.show_stock_badge} onCheckedChange={(v) => setSettings({ ...settings, show_stock_badge: v })} />
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                            <div className="p-3 bg-muted/30 border rounded-md text-center">
-                                <Label className="text-xs font-medium text-slate-500 block mb-1">허들 이상일 때 노출</Label>
-                                <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200 text-sm">구매 가능</Badge>
+
+                        {/* Inventory Threshold Section */}
+                        <div className={`transition-opacity duration-200 ${!settings.show_stock_badge ? 'opacity-40 pointer-events-none' : ''}`}>
+                            <div className="flex items-center justify-between pb-4 mb-4">
+                                <Label htmlFor="low-stock" className="flex flex-col gap-1">
+                                    <span className="text-base font-semibold text-slate-800">품절 임박 경고 허들 수량</span>
+                                    <span className="font-normal text-sm text-muted-foreground">이 숫자 이하로 남은 상품은 색상이 붉은 톤으로 자동 변경되어 위험을 표기합니다.</span>
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        id="low-stock" type="number" disabled={!settings.show_stock_badge}
+                                        value={settings.badge_stock_level}
+                                        onChange={e => setSettings({ ...settings, badge_stock_level: parseInt(e.target.value) || 0 })}
+                                        className="w-24 text-center font-bold text-lg text-primary shadow-sm"
+                                    />
+                                    <span className="text-sm font-semibold">개 이하</span>
+                                </div>
                             </div>
-                            <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-md text-center">
-                                <Label className="text-xs font-medium text-amber-700 block mb-1">허들 이하로 떨어질 때 노출 ({settings.badge_stock_level}개 이하)</Label>
-                                <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-sm">마감 임박</Badge>
-                            </div>
-                            <div className="p-3 bg-red-50/50 border border-red-200 rounded-md text-center">
-                                <Label className="text-xs font-medium text-red-500 block mb-1">재고가 아예 없을 때 (0개)</Label>
-                                <Badge variant="destructive" className="bg-red-500 hover:bg-red-600 text-sm">SOLD OUT</Badge>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                <div className="p-3 bg-muted/30 border rounded-md text-center">
+                                    <Label className="text-xs font-medium text-slate-500 block mb-1">허들 이상일 때 노출</Label>
+                                    <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200 text-sm">구매 가능</Badge>
+                                </div>
+                                <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-md text-center">
+                                    <Label className="text-xs font-medium text-amber-700 block mb-1">허들 이하로 떨어질 때 노출 ({settings.badge_stock_level}개 이하)</Label>
+                                    <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-sm">마감 임박</Badge>
+                                </div>
+                                <div className="p-3 bg-red-50/50 border border-red-200 rounded-md text-center">
+                                    <Label className="text-xs font-medium text-red-500 block mb-1">재고가 아예 없을 때 (0개)</Label>
+                                    <Badge variant="destructive" className="bg-red-500 hover:bg-red-600 text-sm">SOLD OUT</Badge>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
