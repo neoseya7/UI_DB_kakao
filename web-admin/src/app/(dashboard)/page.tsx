@@ -115,7 +115,7 @@ export default function Dashboard() {
           }
 
           // Generate Multi-Item Match Badges dynamically
-          const matchBadges: { name: string, isMatched: boolean }[] = []
+          const matchBadges: { name: string, isMatched: boolean, dateText: string }[] = []
           let finalClassification = otherClassifications.join(", ")
 
           const isOrderType = displayCat === "픽업고지" || row.category === "ORDER" || displayCat.includes("주문");
@@ -132,9 +132,10 @@ export default function Dashboard() {
 
                 const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
                 if (matchedProd) {
-                  matchBadges.push({ name: rawName, isMatched: true })
+                  const dateStr = matchedProd.target_date || "상시판매"
+                  matchBadges.push({ name: rawName, isMatched: true, dateText: dateStr })
                 } else {
-                  matchBadges.push({ name: rawName, isMatched: false })
+                  matchBadges.push({ name: rawName, isMatched: false, dateText: "날짜미지정" })
                 }
               })
             }
@@ -506,7 +507,7 @@ export default function Dashboard() {
                                 <div className="flex flex-col gap-0.5">
                                   {log.matchBadges.map((badge: any, idx: number) => (
                                     <Badge key={idx} variant="outline" className={`font-medium whitespace-nowrap text-[11px] px-1.5 py-0 shadow-sm ${badge.isMatched ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
-                                      {badge.isMatched ? '✅' : '❌'}{badge.name}
+                                      {badge.isMatched ? '✅' : '❌'} [{badge.dateText}] {badge.name}
                                     </Badge>
                                   ))}
                                 </div>
