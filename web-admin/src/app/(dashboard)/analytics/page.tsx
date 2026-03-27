@@ -13,6 +13,8 @@ export default function AnalyticsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [rawOrders, setRawOrders] = useState<any[]>([])
     const [timeRange, setTimeRange] = useState<"daily" | "weekly" | "monthly">("daily")
+    const [startDate, setStartDate] = useState<string>("")
+    const [endDate, setEndDate] = useState<string>("")
     const [metrics, setMetrics] = useState({
         totalRevenue: 0,
         totalCost: 0,
@@ -67,9 +69,17 @@ export default function AnalyticsPage() {
         let cost = 0
         const dateMap = new Map<string, { revenue: number, cost: number, profit: number }>()
 
-        rawOrders.forEach((order: any) => {
+        // 1. Filter the entire raw JSON array against the Date bounds
+        const filteredOrders = rawOrders.filter((order: any) => {
             const rawDate = order.pickup_date
-            if (!rawDate) return
+            if (!rawDate) return false
+            if (startDate && rawDate < startDate) return false
+            if (endDate && rawDate > endDate) return false
+            return true
+        })
+
+        filteredOrders.forEach((order: any) => {
+            const rawDate = order.pickup_date
 
             let dateKey = rawDate
             try {
@@ -120,7 +130,7 @@ export default function AnalyticsPage() {
             }))
 
         setChartData(sortedData)
-    }, [rawOrders, timeRange])
+    }, [rawOrders, timeRange, startDate, endDate])
 
     return (
         <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10">
@@ -153,6 +163,36 @@ export default function AnalyticsPage() {
                         className={`text-sm h-8 px-4 ${timeRange === "monthly" ? "shadow-sm" : ""}`}
                     >
                         월별
+                    </Button>
+                </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-3 border rounded-lg shadow-sm gap-4">
+                <div className="flex items-center gap-3">
+                    <CalendarDays className="h-5 w-5 text-indigo-500" />
+                    <span className="font-semibold text-sm text-slate-700">조회 기간 설정</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-md border text-sm font-medium">
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-slate-600"
+                    />
+                    <span className="text-slate-400">~</span>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-transparent border-none outline-none focus:ring-0 cursor-pointer text-slate-600"
+                    />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-2 h-7 px-2 text-xs text-rose-500 hover:bg-rose-50"
+                        onClick={() => { setStartDate(""); setEndDate(""); }}
+                    >
+                        초기화
                     </Button>
                 </div>
             </div>
