@@ -566,10 +566,10 @@ export default function PickupCalendarPage() {
                                 <th rowSpan={4} className="border-b border-r p-3 min-w-[160px] bg-muted/90 sticky left-0 z-40 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap">고객 닉네임</th>
                                 <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">수령확인</th>
                                 <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">관리</th>
-                                <th rowSpan={4} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left">주문 상품 요약</th>
-                                <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm">고객 비고 1</th>
-                                <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm">고객 비고 2</th>
-                                {products.map((p, i) => <th key={i} className="border-b border-r p-3 min-w-[140px] font-bold text-[15px] whitespace-nowrap bg-muted/80">{p.name}</th>)}
+                                <th rowSpan={4} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
+                                <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
+                                <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 2</th>
+                                {products.map((p, i) => <th key={i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">{p.name}</th>)}
                             </tr>
                             <tr>{products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}</tr>
                             <tr>{products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/60 font-normal"><Input placeholder="상품 비고 2" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}</tr>
