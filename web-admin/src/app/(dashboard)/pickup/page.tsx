@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud } from "lucide-react"
+import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2 } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
 
@@ -297,6 +297,19 @@ export default function PickupCalendarPage() {
         setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
     }
 
+    const handleDeleteOrder = async (id: string, name: string) => {
+        if (!confirm(`[${name}] 고객의 이 주문 내역을 완전히 삭제하시겠습니까?`)) return
+
+        setIsLoading(true)
+        const { error } = await supabase.from('orders').delete().eq('id', id)
+        if (!error) {
+            setRawCustomers(prev => prev.filter(c => c.id !== id))
+        } else {
+            alert("주문 삭제 중 오류 발생: " + error.message)
+        }
+        setIsLoading(false)
+    }
+
     const handleUpdateMemo = async (id: string, field: 'customer_memo_1' | 'customer_memo_2', val: string) => {
         await supabase.from('orders').update({ [field]: val }).eq('id', id)
     }
@@ -395,23 +408,24 @@ export default function PickupCalendarPage() {
                 <p className="text-muted-foreground">판매 등록된 상품과 수집된 주문정보를 교차 조회합니다.</p>
             </div>
 
-            <div className="flex flex-col 2xl:flex-row items-center justify-between gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
-                <div className="flex items-center gap-4 w-full 2xl:w-auto">
-                    <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block" />
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <Button onClick={() => changeDate(-1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-4">◀ 이전</Button>
-                        <Input
-                            type="date"
-                            className="flex items-center justify-center px-4 h-10 font-bold text-lg bg-background border rounded-md min-w-[180px] shadow-sm text-center"
-                            value={currentDate}
-                            onChange={(e) => setCurrentDate(e.target.value)}
-                        />
-                        <Button onClick={() => changeDate(1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-4">다음 ▶</Button>
+            <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
+                {/* 1번째 줄: 날짜 선택과 검색 영역 */}
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full xl:w-auto">
+                        <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block" />
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <Button onClick={() => changeDate(-1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-4">◀ 이전</Button>
+                            <Input
+                                type="date"
+                                className="flex items-center justify-center px-4 h-10 font-bold text-lg bg-background border rounded-md min-w-[180px] shadow-sm text-center"
+                                value={currentDate}
+                                onChange={(e) => setCurrentDate(e.target.value)}
+                            />
+                            <Button onClick={() => changeDate(1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-4">다음 ▶</Button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex flex-col xl:flex-row gap-4 w-full 2xl:w-auto justify-end items-center">
-                    <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto bg-muted/30 p-1.5 rounded-md border">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto bg-muted/30 p-1.5 rounded-md border shrink-0">
                         <div className="flex gap-2">
                             <Select value={searchScope} onValueChange={setSearchScope}>
                                 <SelectTrigger className="w-full sm:w-[130px] h-10 bg-white border-muted shadow-sm font-medium">
@@ -444,75 +458,75 @@ export default function PickupCalendarPage() {
                             />
                         </div>
                     </div>
+                </div>
 
-                    <div className="flex gap-2 w-full xl:w-auto">
-                        <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="gap-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100 shadow-sm transition-all h-10 w-full sm:w-auto px-3">
-                                    <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 변경
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[480px]">
-                                <DialogHeader>
-                                    <DialogTitle>선택 상품 픽업일 일괄 변경 (이관)</DialogTitle>
-                                    <DialogDescription>
-                                        현재 목록에 있는 주문 중 특정 상품이 포함된<br />주문서를 다른 날짜로 일괄 이동시킵니다.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-5 py-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-semibold">대상 상품 선택</label>
-                                            <Select value={transferProductIdx} onValueChange={setTransferProductIdx}>
-                                                <SelectTrigger className="w-full bg-white">
-                                                    <SelectValue placeholder="상품 선택" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {products.map((p, i) => (
-                                                        <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3 border-t pt-4">
-                                        <label className="text-sm font-semibold text-primary">이동할 새로운 픽업 날짜 지정</label>
-                                        <div className="flex flex-col gap-3">
-                                            <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
-                                        </div>
+                {/* 2번째 줄: 액션 버튼 그룹 */}
+                <div className="flex flex-col md:flex-row flex-wrap items-center justify-end gap-3 border-t pt-4 border-slate-200/60 mt-2">
+                    <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="gap-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100 shadow-sm transition-all h-10 w-full sm:w-auto px-3">
+                                <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 변경
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[480px]">
+                            <DialogHeader>
+                                <DialogTitle>선택 상품 픽업일 일괄 변경 (이관)</DialogTitle>
+                                <DialogDescription>
+                                    현재 목록에 있는 주문 중 특정 상품이 포함된<br />주문서를 다른 날짜로 일괄 이동시킵니다.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-5 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold">대상 상품 선택</label>
+                                        <Select value={transferProductIdx} onValueChange={setTransferProductIdx}>
+                                            <SelectTrigger className="w-full bg-white">
+                                                <SelectValue placeholder="상품 선택" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {products.map((p, i) => (
+                                                    <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
-                                <DialogFooter>
-                                    <Button variant="outline" onClick={() => setIsTransferModalOpen(false)}>취소</Button>
-                                    <Button onClick={handleTransferDate} className="bg-amber-600 hover:bg-amber-700 font-bold border-none text-white shadow-sm">이동 적용하기</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                                <div className="space-y-3 border-t pt-4">
+                                    <label className="text-sm font-semibold text-primary">이동할 새로운 픽업 날짜 지정</label>
+                                    <div className="flex flex-col gap-3">
+                                        <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsTransferModalOpen(false)}>취소</Button>
+                                <Button onClick={handleTransferDate} className="bg-amber-600 hover:bg-amber-700 font-bold border-none text-white shadow-sm">이동 적용하기</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
 
-                        <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
+                    <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
 
-                        <div className="flex items-center gap-1.5 bg-emerald-50/50 p-1 border border-emerald-100 rounded-md">
-                            <Button variant="outline" className="gap-1.5 bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-sm h-8 px-3 transition-colors" onClick={() => fileInputRef.current?.click()}>
-                                <UploadCloud className="h-3.5 w-3.5" /> 엑셀 일괄등록
-                            </Button>
-                            <Button onClick={handleDownloadTemplate} variant="ghost" size="sm" className="h-8 px-2 text-emerald-700/80 hover:text-emerald-900 border border-transparent hover:bg-emerald-100" title="엑셀 등록 양식 다운로드">
-                                <DownloadCloud className="h-3.5 w-3.5" /> 양식받기
-                            </Button>
-                            <div className="w-px h-4 bg-emerald-200 mx-1" />
-                            <Button onClick={handleExportExcel} variant="default" size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm h-8 px-3 transition-colors">
-                                <DownloadCloud className="h-3.5 w-3.5" /> 현재 날짜 추출
-                            </Button>
-                        </div>
-
-                        <Button
-                            variant={isMerged ? "default" : "outline"}
-                            className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 ${isMerged ? 'bg-primary' : 'bg-white'}`}
-                            onClick={() => setIsMerged(!isMerged)}
-                        >
-                            <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
+                    <div className="flex items-center gap-1.5 bg-emerald-50/50 p-1 border border-emerald-100 rounded-md w-full sm:w-auto justify-center">
+                        <Button variant="outline" className="gap-1.5 bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-sm h-8 px-3 transition-colors" onClick={() => fileInputRef.current?.click()}>
+                            <UploadCloud className="h-3.5 w-3.5" /> 엑셀 일괄등록
                         </Button>
-                        <Button variant="secondary" className="gap-2 bg-white shadow-sm border hidden lg:flex h-10 shrink-0"><Printer className="h-4 w-4" /> 인쇄</Button>
+                        <Button onClick={handleDownloadTemplate} variant="ghost" size="sm" className="h-8 px-2 text-emerald-700/80 hover:text-emerald-900 border border-transparent hover:bg-emerald-100" title="엑셀 등록 양식 다운로드">
+                            <DownloadCloud className="h-3.5 w-3.5" /> 양식받기
+                        </Button>
+                        <div className="w-px h-4 bg-emerald-200 mx-1" />
+                        <Button onClick={handleExportExcel} variant="default" size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm h-8 px-3 transition-colors">
+                            <DownloadCloud className="h-3.5 w-3.5" /> 현재 날짜 추출
+                        </Button>
                     </div>
+
+                    <Button
+                        variant={isMerged ? "default" : "outline"}
+                        className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 ${isMerged ? 'bg-primary' : 'bg-white'}`}
+                        onClick={() => setIsMerged(!isMerged)}
+                    >
+                        <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
+                    </Button>
                 </div>
             </div>
 
@@ -547,6 +561,7 @@ export default function PickupCalendarPage() {
                             <tr>
                                 <th rowSpan={4} className="border-b border-r p-3 min-w-[160px] bg-muted/90 sticky left-0 z-40 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap">고객 닉네임</th>
                                 <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">수령확인</th>
+                                <th rowSpan={4} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">관리</th>
                                 <th rowSpan={4} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left">주문 상품 요약</th>
                                 <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm">고객 비고 1</th>
                                 <th rowSpan={4} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm">고객 비고 2</th>
@@ -561,9 +576,9 @@ export default function PickupCalendarPage() {
                             <tr><td colSpan={products.length + 5} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
 
                             {isLoading ? (
-                                <tr><td colSpan={products.length + 5} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
+                                <tr><td colSpan={products.length + 6} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
                             ) : filteredCustomers.length === 0 ? (
-                                <tr><td colSpan={products.length + 5} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
+                                <tr><td colSpan={products.length + 6} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'}`}>
@@ -578,6 +593,15 @@ export default function PickupCalendarPage() {
                                                     disabled={isMerged}
                                                     className="h-6 w-6 border-slate-300 data-[state=checked]:bg-emerald-500 rounded-sm cursor-pointer disabled:opacity-50"
                                                 />
+                                            </div>
+                                        </td>
+                                        <td className="border-b border-r px-1 py-1 bg-red-50/10">
+                                            <div className="flex justify-center items-center h-full">
+                                                {!isMerged && (
+                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(c.id, c.name)} className="h-7 w-7 text-red-400 hover:text-red-700 hover:bg-red-100" title="이 주문 행 삭제">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="border-b border-r px-3 py-2 bg-slate-50/40 text-left">
@@ -598,10 +622,10 @@ export default function PickupCalendarPage() {
                                 ))
                             )}
 
-                            <tr><td colSpan={products.length + 5} className="h-6 bg-muted/10 border-b border-t-2 border-t-slate-300"></td></tr>
+                            <tr><td colSpan={products.length + 6} className="h-6 bg-muted/10 border-b border-t-2 border-t-slate-300"></td></tr>
 
                             <tr className="bg-blue-50/60 hover:bg-blue-50 transition-colors">
-                                <th colSpan={5} className="border-b border-r p-3 text-right bg-blue-50/80 sticky left-0 z-10 px-4 font-bold text-[15px] text-blue-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">총 주문 합계</th>
+                                <th colSpan={6} className="border-b border-r p-3 text-right bg-blue-50/80 sticky left-0 z-10 px-4 font-bold text-[15px] text-blue-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">총 주문 합계</th>
                                 {products.map((p, i) => {
                                     const sum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0)
                                     return <td key={i} className="border-b border-r p-3 font-extrabold text-xl text-blue-700">{sum > 0 ? sum : "-"}</td>
