@@ -143,6 +143,8 @@ export default function PickupCalendarPage() {
                 const pickupDateObj = row['픽업일']
                 let productName = (row['상품명'] || "").toString().trim()
                 const qty = parseInt(row['발주수량'] || row['수량'] || "1") || 1
+                const priceStr = row['가격'] || row['단가'] || "0"
+                const price = parseInt(priceStr.toString().replace(/,/g, '')) || 0
                 const isConfirmed = row['주문확인'] === 'O' || row['주문확인'] === 'o' || row['주문확인'] === 'Y' || row['주문확인'] === true
                 const memo1 = (row['고객비고1'] || "").toString().trim()
                 const memo2 = (row['고객비고2'] || "").toString().trim()
@@ -159,7 +161,7 @@ export default function PickupCalendarPage() {
                 if (!orderMap.has(key)) {
                     orderMap.set(key, { customerName, pickupDate: formattedDate, memos: [memo1, memo2], items: [], isReceived: isConfirmed })
                 }
-                orderMap.get(key).items.push({ productName, qty })
+                orderMap.get(key).items.push({ productName, qty, price })
             }
 
             const newOrders = Array.from(orderMap.values())
@@ -195,14 +197,16 @@ export default function PickupCalendarPage() {
                                 display_name: item.productName,
                                 target_date: order.pickupDate,
                                 is_regular_sale: false,
-                                price: 0,
+                                price: item.price || 0,
                                 allocated_stock: 0
                             }).select().single()
 
                             if (newProd && !pErr) {
-                                matchedProduct = { id: newProd.id, name: item.productName, price: 0, required: 0, stock: 0 }
+                                matchedProduct = { id: newProd.id, name: item.productName, price: item.price || 0, required: 0, stock: 0 }
                                 localProducts.push(matchedProduct)
                             }
+                        } else if (item.price && item.price > 0) {
+                            await supabase.from('products').update({ price: item.price }).eq('id', matchedProduct.id)
                         }
 
                         if (matchedProduct) {
@@ -236,6 +240,7 @@ export default function PickupCalendarPage() {
             "픽업일": "2026-03-31",
             "상품명": "딸기모찌",
             "발주수량": 2,
+            "가격": 15000,
             "주문확인": "X",
             "고객비고1": "비고작성",
             "고객비고2": ""
