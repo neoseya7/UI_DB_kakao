@@ -38,8 +38,10 @@ export default function PickupCalendarPage() {
     const [newQty, setNewQty] = useState("")
 
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
+    const [transferSourceDate, setTransferSourceDate] = useState("")
     const [transferProductIdx, setTransferProductIdx] = useState<string>("")
     const [transferNewDate, setTransferNewDate] = useState("")
+    const [isTransferToRegular, setIsTransferToRegular] = useState(false)
 
     const [products, setProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
@@ -244,21 +246,45 @@ export default function PickupCalendarPage() {
     }
 
     const handleTransferDate = async () => {
-        if (!transferProductIdx || !transferNewDate || !storeId) return alert("상품과 이동할 날짜를 선택해주세요.")
+        if (!transferProductIdx || !storeId) return alert("상품을 선택해주세요.")
+        if (!isTransferToRegular && !transferNewDate) return alert("이동할 새로운 픽업 날짜나 '상시판매' 전환을 선택해주세요.")
 
         const idx = parseInt(transferProductIdx)
         const targetProduct = products[idx]
+        const sourceDate = transferSourceDate || currentDate
 
-        if (!confirm(`[${targetProduct.name}] 상품이 포함된 모든 현재 화면 내 주문을 ${transferNewDate}(으)로 일괄 이동하시겠습니까?`)) return
+        if (!confirm(`[${targetProduct.name}] 상품 속성과 대상 주문들을 일괄 반영하시겠습니까?`)) return
 
         setIsLoading(true)
-        const affectedOrderIds = rawCustomers.filter(c => c.items[idx] > 0).map(c => c.id)
 
-        for (const oId of affectedOrderIds) {
-            await supabase.from('orders').update({ pickup_date: transferNewDate }).eq('id', oId)
+        // Find orders on the specified sourceDate
+        const { data: oData } = await supabase.from('orders').select('id').eq('store_id', storeId).eq('pickup_date', sourceDate)
+        if (oData && oData.length > 0) {
+            const orderIds = oData.map((o: any) => o.id)
+            const { data: oiData } = await supabase.from('order_items').select('order_id').eq('product_id', targetProduct.id).in('order_id', orderIds)
+
+            if (oiData && oiData.length > 0) {
+                const affectedOrderIds = oiData.map((oi: any) => oi.order_id)
+                if (isTransferToRegular) {
+                    await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
+                } else {
+                    for (const oId of affectedOrderIds) {
+                        await supabase.from('orders').update({ pickup_date: transferNewDate }).eq('id', oId)
+                    }
+                    await supabase.from('products').update({ target_date: transferNewDate, is_regular_sale: false }).eq('id', targetProduct.id)
+                }
+            } else {
+                // Product has no orders but we update it anyway
+                if (isTransferToRegular) await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
+                else await supabase.from('products').update({ target_date: transferNewDate, is_regular_sale: false }).eq('id', targetProduct.id)
+            }
+        } else {
+            // No orders exist on source date, just update the Product itself
+            if (isTransferToRegular) await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
+            else await supabase.from('products').update({ target_date: transferNewDate, is_regular_sale: false }).eq('id', targetProduct.id)
         }
 
-        alert("✅ 픽업일 이관이 완료되었습니다.")
+        alert("✅ 이관 및 상품 동기화 반영이 완료되었습니다.")
         setIsTransferModalOpen(false)
         fetchMatrixData()
     }
@@ -477,31 +503,37 @@ export default function PickupCalendarPage() {
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[480px]">
                             <DialogHeader>
-                                <DialogTitle>선택 상품 픽업일 일괄 변경 (이관)</DialogTitle>
+                                <DialogTitle>픽업일 일괄 변경 및 상시판매 전환</DialogTitle>
                                 <DialogDescription>
-                                    현재 목록에 있는 주문 중 특정 상품이 포함된<br />주문서를 다른 날짜로 일괄 이동시킵니다.
+                                    기존 날짜에 속한 상품의 주문들을 다른 날짜로 일괄 이동하거나,<br />물품을 '상시판매' 카테고리로 강제 동기화합니다.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-5 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold">대상 상품 선택</label>
-                                        <Select value={transferProductIdx} onValueChange={setTransferProductIdx}>
-                                            <SelectTrigger className="w-full bg-white">
-                                                <SelectValue placeholder="상품 선택" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {products.map((p, i) => (
-                                                    <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">1. 기존 날짜 선택 (From)</label>
+                                    <Input type="date" value={transferSourceDate || currentDate} onChange={e => setTransferSourceDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">2. 대상 상품 선택</label>
+                                    <Select value={transferProductIdx} onValueChange={setTransferProductIdx}>
+                                        <SelectTrigger className="w-full bg-white">
+                                            <SelectValue placeholder="상품 선택" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {products.map((p, i) => (
+                                                <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-3 border-t pt-4">
-                                    <label className="text-sm font-semibold text-primary">이동할 새로운 픽업 날짜 지정</label>
+                                    <label className="text-sm font-semibold text-primary">3. 목적지 (변경 날짜 / 상시판매)</label>
                                     <div className="flex flex-col gap-3">
-                                        <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
+                                        <div className="flex items-center gap-2 mb-1 p-2 bg-emerald-50 rounded border border-emerald-100">
+                                            <Checkbox id="regularSaleToggle" checked={isTransferToRegular} onCheckedChange={(val) => setIsTransferToRegular(!!val)} className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600" />
+                                            <label htmlFor="regularSaleToggle" className="text-sm font-semibold text-emerald-800 cursor-pointer">이 상품을 '상시판매' 모드로 전환합니다.</label>
+                                        </div>
+                                        <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} disabled={isTransferToRegular} className="bg-white border-primary/40 focus-visible:ring-primary/50 disabled:opacity-50 disabled:bg-slate-100" />
                                     </div>
                                 </div>
                             </div>

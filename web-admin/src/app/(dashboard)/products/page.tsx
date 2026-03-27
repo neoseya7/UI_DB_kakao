@@ -204,6 +204,15 @@ export default function ProductsPage() {
                     >
                         전체보기
                     </Button>
+                    <Button
+                        variant={filterDate === "regular" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFilterDate("regular")}
+                        className="rounded-full shadow-sm transition-all border-emerald-200 text-emerald-700 hover:bg-emerald-50 relative overflow-hidden"
+                    >
+                        <span className="relative z-10 font-bold">🌟 상시판매</span>
+                        {filterDate === "regular" && <div className="absolute inset-0 bg-emerald-100/50 z-0"></div>}
+                    </Button>
 
                     {Array.from(new Set(products.map(p => p.target_date).filter(Boolean))).sort().map(date => (
                         <Button
@@ -341,10 +350,10 @@ export default function ProductsPage() {
             ) : products.length === 0 ? (
                 <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-xl border-muted">등록된 상품이 없습니다. [+ 새 상품 등록] 버튼을 눌러 추가해주세요.</div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {products
-                        .filter(p => filterDate === "all" || p.target_date === filterDate)
-                        .map(product => (
+                        .filter(p => filterDate === "all" || (filterDate === "regular" && p.is_regular_sale) || p.target_date === filterDate)
+                        .map((product) => (
                             <Card
                                 key={product.id}
                                 className={`overflow-hidden flex flex-col shadow-sm border transition-all duration-200 cursor-pointer ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50 hover:shadow-md'}`}
