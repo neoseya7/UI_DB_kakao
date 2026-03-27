@@ -485,7 +485,7 @@ export default function Dashboard() {
                           <td className="px-4 py-3 text-center font-bold">{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">
                             {log.classification ? (
-                              <Badge variant="outline" className={`font-normal whitespace-nowrap ${log.classification === 'VIP' || log.classification === '우수고객' ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
+                              <Badge variant="outline" className={`font-normal whitespace-nowrap ${log.classification === 'VIP' || log.classification === '우수고객' || log.classification.includes('🎯') ? 'border-emerald-300 text-emerald-700 bg-emerald-50 font-medium' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
                                 {log.classification}
                               </Badge>
                             ) : (
