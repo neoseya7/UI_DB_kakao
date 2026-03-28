@@ -84,7 +84,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
             const data = await res.json()
             if (data.success) {
                 if (data.orders.length === 0) {
-                    setSearchMessage(`'${nickname}' 님으로 접수된 주문 내역이 없습니다.`)
+                    setSearchMessage(`'${nickname}' 님으로 접수된 픽업 대기 내역이 없습니다. (수령 완료된 주문은 노출되지 않습니다.)`)
                 }
                 setQueriedOrders(data.orders)
             } else {
