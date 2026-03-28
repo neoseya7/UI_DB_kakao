@@ -26,6 +26,7 @@ export default function ProductsPage() {
     const [sharedProducts, setSharedProducts] = useState<any[]>([])
     const [isLoadingShared, setIsLoadingShared] = useState(false)
     const [sharedBrandName, setSharedBrandName] = useState<string>("")
+    const [searchSharedQuery, setSearchSharedQuery] = useState("")
 
     // Form states
     const [formData, setFormData] = useState({
@@ -251,6 +252,7 @@ export default function ProductsPage() {
     const openSharedProductsDialog = async () => {
         setIsSharedDialogOpen(true)
         setIsLoadingShared(true)
+        setSearchSharedQuery("")
         try {
             const res = await fetch(`/api/products/shared?store_id=${storeId}`)
             const json = await res.json()
@@ -602,6 +604,16 @@ export default function ProductsPage() {
                         </DialogDescription>
                     </DialogHeader>
 
+                    <div className="relative w-full mt-2 shrink-0">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="불러올 템플릿 상품 이름 검색..."
+                            className="pl-9 bg-slate-50 border-indigo-200 focus-visible:ring-indigo-500 shadow-sm"
+                            value={searchSharedQuery}
+                            onChange={(e) => setSearchSharedQuery(e.target.value)}
+                        />
+                    </div>
+
                     <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-4">
                         {isLoadingShared ? (
                             <div className="py-20 text-center text-muted-foreground animate-pulse font-medium">✨ 브랜드 카탈로그를 조회 중입니다...</div>
@@ -612,7 +624,14 @@ export default function ProductsPage() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {sharedProducts.map(prod => (
+                                {sharedProducts
+                                    .filter(p => {
+                                        if (!searchSharedQuery) return true;
+                                        const q = searchSharedQuery.toLowerCase();
+                                        return (p.collect_name && p.collect_name.toLowerCase().includes(q)) || 
+                                               (p.display_name && p.display_name.toLowerCase().includes(q));
+                                    })
+                                    .map(prod => (
                                     <div key={prod.id} className="border rounded-lg overflow-hidden flex flex-col bg-white shadow-sm hover:border-indigo-300 transition-colors">
                                         {prod.image_url || (prod.image_urls && prod.image_urls.length > 0) ? (
                                             <div className="w-full h-32 bg-slate-100 relative">
