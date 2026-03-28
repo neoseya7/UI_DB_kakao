@@ -36,6 +36,7 @@ export default function PickupCalendarPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [searchScope, setSearchScope] = useState("today")
     const [customSearchDate, setCustomSearchDate] = useState("")
+    const [customEndDate, setCustomEndDate] = useState("")
     const [receiptFilter, setReceiptFilter] = useState("all")
 
     const [newNick, setNewNick] = useState("")
@@ -72,7 +73,7 @@ export default function PickupCalendarPage() {
             fetchMatrixData()
             setSelectedPosOrders([])
         }
-    }, [storeId, currentDate, searchScope, customSearchDate])
+    }, [storeId, currentDate, searchScope, customSearchDate, customEndDate])
 
     const fetchMatrixData = async () => {
         if (!storeId) return
@@ -100,7 +101,9 @@ export default function PickupCalendarPage() {
         let oQuery = supabase.from('orders').select('*').eq('store_id', storeId)
         if (searchScope === "today") {
             oQuery = oQuery.eq('pickup_date', currentDate)
-        } else if (searchScope === "custom_date" && customSearchDate) {
+        } else if (searchScope === "date_range" && customSearchDate && customEndDate) {
+            oQuery = oQuery.gte('pickup_date', customSearchDate).lte('pickup_date', customEndDate)
+        } else if (searchScope === "date_range" && customSearchDate && !customEndDate) {
             oQuery = oQuery.eq('pickup_date', customSearchDate)
         }
         const { data: oData } = await oQuery
@@ -595,18 +598,29 @@ export default function PickupCalendarPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="today">해당 달력선택일</SelectItem>
-                                    <SelectItem value="custom_date" className="text-indigo-600 font-bold">특정 날짜 지정</SelectItem>
+                                    <SelectItem value="date_range" className="text-indigo-600 font-bold">특정 기간 검색</SelectItem>
                                     <SelectItem value="all_dates" className="text-blue-600 font-semibold">모든 날짜(전체)</SelectItem>
                                 </SelectContent>
                             </Select>
 
-                            {searchScope === "custom_date" && (
-                                <Input
-                                    type="date"
-                                    value={customSearchDate}
-                                    onChange={(e) => setCustomSearchDate(e.target.value)}
-                                    className="w-[130px] h-10 bg-white shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 mx-1 shrink-0 px-2"
-                                />
+                            {searchScope === "date_range" && (
+                                <div className="flex items-center gap-1 shrink-0">
+                                    <Input
+                                        type="date"
+                                        value={customSearchDate}
+                                        onChange={(e) => setCustomSearchDate(e.target.value)}
+                                        className="w-[120px] sm:w-[130px] h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
+                                        title="시작일"
+                                    />
+                                    <span className="font-bold text-indigo-300">~</span>
+                                    <Input
+                                        type="date"
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                        className="w-[120px] sm:w-[130px] h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
+                                        title="종료일"
+                                    />
+                                </div>
                             )}
 
                             <Select value={receiptFilter} onValueChange={setReceiptFilter}>
