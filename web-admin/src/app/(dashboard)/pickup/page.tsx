@@ -170,8 +170,24 @@ export default function PickupCalendarPage() {
 
                 let formattedDate = pickupDateObj.toString().trim()
                 if (typeof pickupDateObj === 'number') {
+                    // standard excel date format conversion
                     const dateObj = new Date(Math.round((pickupDateObj - 25569) * 86400 * 1000))
                     formattedDate = dateObj.toISOString().split('T')[0]
+                } else {
+                    // manual text parse fallback (e.g. "3월 31일", "03.31", "2026. 03. 31.")
+                    const currentYear = new Date().getFullYear();
+                    
+                    // Match full year format first: YYYY년 M월 D일 or YYYY.MM.DD
+                    const fullParts = formattedDate.match(/(\d{4})[\-\.\/년\s]+(\d{1,2})[\-\.\/월\s]+(\d{1,2})[일\.]?/);
+                    if (fullParts) {
+                        formattedDate = `${fullParts[1]}-${fullParts[2].padStart(2, '0')}-${fullParts[3].padStart(2, '0')}`;
+                    } else {
+                        // Match partial format: M월 D일 or MM.DD
+                        const partialParts = formattedDate.match(/(\d{1,2})[\/\.월\s]+(\d{1,2})[일\.]?/);
+                        if (partialParts) {
+                            formattedDate = `${currentYear}-${partialParts[1].padStart(2, '0')}-${partialParts[2].padStart(2, '0')}`;
+                        }
+                    }
                 }
 
                 // 엑셀의 원본 내역 1줄을 1건의 주문으로 무조건 개별 등록
