@@ -43,7 +43,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                     
                     // Auto-select the first available date if no regular products exist
                     if (data.products && data.products.length > 0) {
-                        const hasRegular = data.products.some((p: any) => p.is_regular_sale || !p.target_date)
+                        const hasRegular = data.products.some((p: any) => p.is_regular_sale)
                         if (!hasRegular) {
                             const dates = data.products.map((p: any) => p.target_date).filter(Boolean)
                             if (dates.length > 0) {
@@ -99,7 +99,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
 
     // Extract unique dates for Pill Tabs
     const filterTabs = useMemo(() => {
-        const tabs = [{ id: 'regular', label: '매장 구비 제품' }]
+        const tabs = [{ id: 'regular', label: '상시판매제품' }]
         const dates = new Set<string>()
         products.forEach(p => {
             if (!p.is_regular_sale && p.target_date) {
@@ -114,7 +114,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
     // Filtered products list
     const filteredProducts = useMemo(() => {
         if (activeFilter === 'regular') {
-            return products.filter(p => p.is_regular_sale || !p.target_date)
+            return products.filter(p => p.is_regular_sale)
         }
         return products.filter(p => !p.is_regular_sale && p.target_date === activeFilter)
     }, [products, activeFilter])

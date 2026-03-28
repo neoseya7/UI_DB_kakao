@@ -129,7 +129,7 @@ export default function UtilitiesPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">전체 일자 및 상시판매</SelectItem>
-                                        {hasRegular && <SelectItem value="regular">매장 구비 제품 (상시판매)</SelectItem>}
+                                        {hasRegular && <SelectItem value="regular">상시판매제품</SelectItem>}
                                         {uniqueDates.map((date: any) => (
                                             <SelectItem key={date} value={date}>{date} 픽업/예약건</SelectItem>
                                         ))}
