@@ -92,7 +92,7 @@ export default function LoginPage() {
                             {loading ? "로그인 중..." : "로그인 (대시보드 입장)"}
                         </Button>
                         <div className="text-sm text-center mt-1 text-slate-500">
-                            아직 가맹점이 아니신가요? <Link href="/signup" className="text-indigo-600 font-bold hover:text-indigo-800 hover:underline">가맹점 등록 신청</Link>
+                            관리프로그램을 이용하려면 회원가입을 하셔야 합니다. <Link href="/signup" className="text-indigo-600 font-bold hover:text-indigo-800 hover:underline">회원가입 신청</Link>
                         </div>
                     </CardFooter>
                 </form>
