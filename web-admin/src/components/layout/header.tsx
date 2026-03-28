@@ -64,7 +64,7 @@ export function Header() {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[240px] p-0 border-r-0">
                     <SheetTitle className="sr-only">모바일 메뉴</SheetTitle>
-                    <Sidebar />
+                    <Sidebar className="w-full h-full bg-white border-r-0" />
                 </SheetContent>
             </Sheet>
             <div className="w-full flex-1">

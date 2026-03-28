@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3, TrendingUp, DollarSign, CalendarDays } from "lucide-react"
+import { BarChart3, TrendingUp, DollarSign, CalendarDays, Download } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts"
 import { Button } from "@/components/ui/button"
 import { format, startOfWeek, startOfMonth } from "date-fns"
@@ -44,6 +44,8 @@ export default function AnalyticsPage() {
                         quantity,
                         product_id,
                         products (
+                            collect_name,
+                            display_name,
                             price,
                             incoming_price
                         )
@@ -60,6 +62,54 @@ export default function AnalyticsPage() {
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleDownloadExcel = () => {
+        if (rawOrders.length === 0) {
+            alert("다운로드할 데이터가 없습니다.")
+            return
+        }
+
+        const filteredOrders = rawOrders.filter((order: any) => {
+            const rawDate = order.pickup_date
+            if (!rawDate) return false
+            if (startDate && rawDate < startDate) return false
+            if (endDate && rawDate > endDate) return false
+            return true
+        })
+
+        // 일자, 상품명, 판매량, 매출액, 상품원가, 순이익
+        const headers = ["일자", "상품명", "판매량", "매출액", "상품원가", "순이익"]
+        let csvContent = "\uFEFF" + headers.join(",") + "\n"
+
+        filteredOrders.forEach((order: any) => {
+            const date = order.pickup_date || ""
+            order.order_items?.forEach((item: any) => {
+                const prodName = item.products?.display_name || item.products?.collect_name || "알수없음"
+                const qty = item.quantity || 0
+                const price = item.products?.price || 0
+                const cost = item.products?.incoming_price || 0
+                
+                const revenue = qty * price
+                const totalCost = qty * cost
+                const profit = revenue - totalCost
+
+                // Handle commas in product name
+                const safeName = `"${prodName.replace(/"/g, '""')}"`
+
+                csvContent += `${date},${safeName},${qty},${revenue},${totalCost},${profit}\n`
+            })
+        })
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `매출자료_${format(new Date(), "yyyyMMdd")}.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
     }
 
     useEffect(() => {
@@ -139,7 +189,11 @@ export default function AnalyticsPage() {
                     <h2 className="text-2xl font-bold tracking-tight">매출통계</h2>
                     <p className="text-muted-foreground">픽업 완료된 주문을 기준으로 매장 재무 실적을 요약합니다.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-muted/40 p-1.5 rounded-lg border shadow-sm shrink-0">
+                <div className="flex items-center gap-2">
+                    <Button onClick={handleDownloadExcel} variant="outline" size="sm" className="h-9 gap-1.5 shadow-sm text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 font-bold shrink-0">
+                        <Download className="w-4 h-4" /> 엑셀 다운로드
+                    </Button>
+                    <div className="flex items-center gap-2 bg-muted/40 p-1.5 rounded-lg border shadow-sm shrink-0">
                     <Button
                         variant={timeRange === "daily" ? "default" : "ghost"}
                         size="sm"
@@ -164,6 +218,7 @@ export default function AnalyticsPage() {
                     >
                         월별
                     </Button>
+                </div>
                 </div>
             </div>
 

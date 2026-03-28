@@ -465,29 +465,28 @@ export default function Dashboard() {
           <>
             <Card className="overflow-hidden border-border/80 shadow-md bg-card">
               <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full">
-                <table className="w-full text-sm text-left border-collapse min-w-max">
+                <table className="w-full text-sm text-left border-collapse min-w-max table-fixed">
                   <thead className="bg-slate-100/90 sticky top-0 z-10 shadow-sm border-b border-border">
                     <tr>
                       <th className="px-4 py-3.5 w-12 text-center">
                         <Checkbox className="mx-auto border-slate-400 bg-white" checked={selectedIds.length === filteredLogs.length && filteredLogs.length > 0} onCheckedChange={() => toggleAll(filteredLogs)} />
                       </th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap">ID</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap">수집일</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap">대화시간</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 min-w-[280px]">대화</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap">카테고리</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap">닉네임</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 min-w-[150px]">상품명</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap">수량</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap">분류</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap">주문여부</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap bg-indigo-50/50">관리</th>
+                      <th className="px-3 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[75px] max-w-[75px]">수집일</th>
+                      <th className="px-3 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[60px] max-w-[60px]">대화시간</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 w-[260px]">대화</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[100px]">카테고리</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[120px]">닉네임</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 w-[200px]">상품명</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[60px]">수량</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[100px]">분류</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[80px]">주문여부</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap bg-indigo-50/50 w-[80px]">관리</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {filteredLogs.length === 0 && (
                       <tr>
-                        <td colSpan={11} className="text-center py-10 text-muted-foreground font-medium">검색된 대화 내역이 없습니다.</td>
+                        <td colSpan={10} className="text-center py-10 text-muted-foreground font-medium">검색된 대화 내역이 없습니다.</td>
                       </tr>
                     )}
                     {filteredLogs.map((log) => {
@@ -497,10 +496,9 @@ export default function Dashboard() {
                           <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                             <Checkbox className={`mx-auto border-slate-300 ${isSelected ? 'border-primary' : ''}`} checked={isSelected} onCheckedChange={() => toggleRow(log.id)} />
                           </td>
-                          <td className="px-4 py-3 font-mono text-muted-foreground text-[10px]" title={log.id}>{log.id.substring(0, 8)}</td>
-                          <td className="px-4 py-3 text-slate-600 font-medium">{log.date}</td>
-                          <td className="px-4 py-3 font-medium">{log.time}</td>
-                          <td className="px-4 py-3 text-slate-900 break-words max-w-[400px]">
+                          <td className="px-2 py-3 text-slate-600 font-medium w-[75px] max-w-[75px] tracking-tighter truncate text-xs" title={log.date}>{log.date}</td>
+                          <td className="px-2 py-3 font-medium w-[60px] max-w-[60px] tracking-tighter truncate text-xs" title={log.time}>{log.time}</td>
+                          <td className="px-4 py-3 text-slate-900 break-words whitespace-normal w-[260px] max-w-[260px]">
                             <span className="line-clamp-2" title={log.message}>{log.message}</span>
                           </td>
                           <td className="px-4 py-3">
@@ -508,8 +506,8 @@ export default function Dashboard() {
                               {log.raw_category || "기타"}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 font-semibold text-slate-800 group-hover:text-primary">{log.nickname}</td>
-                          <td className="px-4 py-3 text-primary/90 font-semibold">{log.product}</td>
+                          <td className="px-4 py-3 font-semibold text-slate-800 group-hover:text-primary truncate" title={log.nickname}>{log.nickname}</td>
+                          <td className="px-4 py-3 text-primary/90 font-semibold break-words whitespace-normal w-[200px] max-w-[200px] leading-tight" title={log.product}>{log.product}</td>
                           <td className="px-4 py-3 text-center font-bold">{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex flex-col gap-1 items-center justify-center">

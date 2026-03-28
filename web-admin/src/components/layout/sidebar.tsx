@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
 
-export function Sidebar() {
+export function Sidebar({ className }: { className?: string }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const router = useRouter()
@@ -26,10 +26,10 @@ export function Sidebar() {
     router.push('/login')
   }
 
-  if (!isLoaded) return <div className="hidden border-r bg-muted/40 md:block w-full min-h-screen h-full"></div>
+  if (!isLoaded) return <div className={className || "hidden border-r bg-muted/40 md:block w-full min-h-screen h-full"}></div>
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block w-full min-h-screen h-full">
+    <div className={className || "hidden border-r bg-muted/40 md:block w-full min-h-screen h-full"}>
       <div className="flex h-full max-h-screen flex-col gap-2 relative">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">

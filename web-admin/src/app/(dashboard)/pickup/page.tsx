@@ -376,6 +376,18 @@ export default function PickupCalendarPage() {
         await supabase.from('orders').update({ [field]: val }).eq('id', id)
     }
 
+    const handleUpdateProductField = async (productId: string, field: 'price' | 'allocated_stock', value: string) => {
+        if (!productId) return;
+        const numValue = parseInt(value) || 0
+        const { error } = await supabase.from('products').update({ [field]: numValue }).eq('id', productId)
+        if (!error) {
+            setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field === 'allocated_stock' ? 'stock' : 'price']: numValue } : p))
+        } else {
+            console.error(error)
+            alert("상품 정보 업데이트 실패: " + error.message)
+        }
+    }
+
     const changeDate = (days: number) => {
         const d = new Date(currentDate)
         d.setDate(d.getDate() + days)
@@ -694,17 +706,20 @@ export default function PickupCalendarPage() {
                             </tr>
                             <tr>
                                 {products.map((p, i) => (
-                                    <th key={i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
+                                    <th key={p.id || i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
                                         <div>{p.name}</div>
-                                        <div className="font-mono text-[12px] text-muted-foreground font-normal mt-1">{p.price.toLocaleString()}원</div>
+                                        <div className="flex items-center justify-center gap-1 mt-1">
+                                            <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-6 w-[70px] text-[12px] font-mono text-center px-1 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
+                                            <span className="text-[12px] text-muted-foreground font-normal">원</span>
+                                        </div>
                                     </th>
                                 ))}
                             </tr>
                             <tr>
                                 <th className="border-b border-r py-2 px-1 bg-blue-50/40 text-[12px] font-bold text-blue-800 tracking-tight">재고수량</th>
                                 {products.map((p, i) => (
-                                    <th key={i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
-                                        {p.stock}
+                                    <th key={p.id || i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
+                                        <Input type="number" defaultValue={p.stock} onBlur={(e) => handleUpdateProductField(p.id, 'allocated_stock', e.target.value)} className="h-6 w-[50px] text-[13px] font-bold text-center px-1 py-0 mx-auto border-blue-200 bg-white text-blue-800 shadow-sm" title="수량을 수정하고 바깥을 클릭하면 저장됩니다" />
                                     </th>
                                 ))}
                             </tr>

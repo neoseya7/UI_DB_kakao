@@ -408,7 +408,7 @@ export default function ProductsPage() {
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[480px]">
+                <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
                     <form onSubmit={handleSaveProduct}>
                         <DialogHeader>
                             <DialogTitle>{editingProductId ? "상품 정보 수정" : "새 상품 등록"}</DialogTitle>
