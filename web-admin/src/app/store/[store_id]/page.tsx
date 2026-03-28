@@ -294,7 +294,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                 const lowStock = product.allocated_stock !== null && product.allocated_stock > 0 && product.allocated_stock <= (settings?.badge_stock_level || 3);
                                 
                                 const renderImage = settings?.show_product_image ?? true;
-                                const renderConfigPrice = settings?.show_price ?? true;
+                                const renderConfigPrice = true; // Always show price in catalog
                                 const renderStockValue = settings?.show_stock ?? true;
                                 const renderStockBadge = settings?.show_stock_badge ?? true;
 
@@ -391,7 +391,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                         const outOfStock = selectedProduct.allocated_stock !== null && selectedProduct.allocated_stock <= 0;
                         const lowStock = selectedProduct.allocated_stock !== null && selectedProduct.allocated_stock > 0 && selectedProduct.allocated_stock <= (settings?.badge_stock_level || 3);
                         const renderImage = settings?.show_product_image ?? true;
-                        const renderConfigPrice = settings?.show_price ?? true;
+                        const renderConfigPrice = true; // Always show price in detail modal
                         const renderDesc = settings?.show_product_desc ?? true;
                         const renderStockValue = settings?.show_stock ?? true;
                         const renderStockBadge = settings?.show_stock_badge ?? true;
