@@ -254,10 +254,11 @@ export async function POST(request: Request) {
 
         // Determine if this is an actual order that must be saved to the database
         const isActualOrder = (promptCat === "픽업고지" || promptCat.includes("주문") || promptCat.includes("예약"))
-            && !promptCat.includes("취소") && !promptCat.includes("문의");
+            && !promptCat.includes("취소") && !promptCat.includes("문의")
+            && !classifications.includes("재고초과주문"); // BLOCK excess stock orders from proceeding directly to DB
 
         // 5.1 Ensure base category is aligned with the intent logic
-        const finalIntent = isActualOrder ? "ORDER" : promptCat === "주문취소" ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
+        const finalIntent = isActualOrder ? "ORDER" : classifications.includes("재고초과주문") ? "UNKNOWN" : promptCat === "주문취소" ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
         await supabase.from('chat_logs').update({ category: finalIntent }).eq('id', logId)
 
         // 6. Save to Orders DB
