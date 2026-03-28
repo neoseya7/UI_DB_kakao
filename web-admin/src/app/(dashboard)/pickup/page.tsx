@@ -484,7 +484,8 @@ export default function PickupCalendarPage() {
         : rawCustomers
 
     const filteredCustomers = customers.filter(c => {
-        const matchName = c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        const custName = c.name || ""
+        const matchName = custName.toLowerCase().includes((searchTerm || "").toLowerCase())
         const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
         return matchName && matchReceipt
     })
