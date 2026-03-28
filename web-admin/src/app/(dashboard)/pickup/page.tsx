@@ -194,6 +194,8 @@ export default function PickupCalendarPage() {
             let successCount = 0
             const localProducts = [...products]
 
+            let firstError = null;
+
             for (let i = 0; i < newOrders.length; i++) {
                 const order = newOrders[i]
                 const { data: oData, error: oErr } = await supabase.from('orders').insert({
@@ -237,11 +239,18 @@ export default function PickupCalendarPage() {
                         }
                     }
                     successCount++
+                } else {
+                    if (!firstError) firstError = oErr?.message || "Unknown Insert Error"
+                    console.error("Order Insert Error:", oErr, order)
                 }
                 setUploadProgress(prev => ({ ...prev, current: i + 1 }))
             }
 
-            alert(`완료! 총 ${successCount}건의 주문 내역이 성공적으로 업로드되었습니다.`)
+            if (successCount === 0 && firstError) {
+                alert(`0개의 데이터가 업로드되었습니다. 데이터베이스 에러 원인:\n${firstError}`)
+            } else {
+                alert(`완료! 총 ${successCount}건의 주문 내역이 성공적으로 업로드되었습니다.`)
+            }
             fetchMatrixData()
         } catch (err: any) {
             console.error("Excel import error:", err)
