@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Check, X, Save, Copy, Store, FileText, Settings2, Power, KeyRound } from "lucide-react"
+import { Check, X, Save, Copy, Store, FileText, Settings2, Power, KeyRound, ExternalLink } from "lucide-react"
 
 // A dedicated component for individual prompt textareas to manage local typing state safely
 function PromptEditorCard({ title, desc, model, initialValue, onSave }: { title: string, desc: string, model: string, initialValue: string, onSave: (val: string) => void }) {
@@ -214,6 +214,27 @@ export default function AdminPage() {
     }
 
     // Config Save Logic (Upsert emulation to fix missing row bug)
+    const handleImpersonate = async (email: string) => {
+        if (!confirm(`[${email}] 가맹점 계정으로 즉시 로그인하시겠습니까?\n\n- 이 기능은 비밀번호 없이 해당 매장의 대시보드에 다이렉트로 접속합니다.\n- 접속 후 기존 엑셀 데이터를 자유롭게 업로드(복원)할 수 있습니다.\n- 새 창으로 열립니다.`)) return;
+        
+        try {
+            const res = await fetch('/api/admin/generate-login-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ store_email: email })
+            })
+            const data = await res.json()
+            if (data.success && data.link) {
+                // Open magic link in new tab, automatically logging the admin into that session securely
+                window.open(data.link, '_blank')
+            } else {
+                alert(`접속 실패: ${data.error}`)
+            }
+        } catch (err: any) {
+            alert(`접속 중 네트워크 오류 발생: ${err.message}`)
+        }
+    }
+
     const handleSaveMultipleConfig = async (updates: any) => {
         // Try Update
         const { error, data } = await supabase.from('super_admin_config').update(updates).eq('id', 1).select()
@@ -452,9 +473,14 @@ export default function AdminPage() {
                                                 )}
                                             </td>
                                             <td className="px-5 py-3 text-right align-top pt-4">
-                                                <Button onClick={() => handleToggleStoreStatus(store.id, store.status)} variant="secondary" size="sm" className={`h-8 gap-1.5 font-medium ${store.status === 'active' ? 'text-rose-600 bg-rose-50 hover:bg-rose-100' : 'text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
-                                                    <Power className="w-3.5 h-3.5" /> {store.status === 'active' ? '정지' : '재개'}
-                                                </Button>
+                                                <div className="flex flex-col gap-1.5 items-end">
+                                                    <Button onClick={() => handleImpersonate(store.email)} variant="outline" size="sm" className="h-8 gap-1.5 font-bold text-indigo-700 bg-white hover:bg-indigo-50 border-indigo-200">
+                                                        <Power className="w-3.5 h-3.5 rotate-90" /> 대시보드 강제 접속
+                                                    </Button>
+                                                    <Button onClick={() => handleToggleStoreStatus(store.id, store.status)} variant="secondary" size="sm" className={`h-8 gap-1.5 font-medium w-full max-w-[130px] ${store.status === 'active' ? 'text-rose-600 bg-rose-50 hover:bg-rose-100' : 'text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
+                                                        <Power className="w-3.5 h-3.5" /> {store.status === 'active' ? '계정 정지' : '정지 해제'}
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     )})}
