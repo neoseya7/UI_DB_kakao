@@ -189,68 +189,83 @@ export default function PickupCalendarPage() {
                 return
             }
 
-            setUploadProgress({ current: 0, total: newOrders.length, isUploading: true })
+            setUploadProgress({ current: 10, total: 100, isUploading: true })
 
-            let successCount = 0
+            // 1. Bulk Insert Orders First
+            const orderPayloads = newOrders.map(order => ({
+                store_id: storeId,
+                pickup_date: order.pickupDate,
+                customer_nickname: order.customerName,
+                is_received: order.isReceived,
+                customer_memo_1: order.memos[0] || "",
+                customer_memo_2: order.memos[1] || ""
+            }))
+
+            const { data: insertedOrders, error: bulkOrderErr } = await supabase.from('orders').insert(orderPayloads).select()
+
+            if (bulkOrderErr || !insertedOrders || insertedOrders.length === 0) {
+                console.error("Bulk Order Insert Error:", bulkOrderErr)
+                alert(`오류 발생: 주문 데이터를 DB에 저장하지 못했습니다.\n네트워크 또는 제약 조건 오류: ${bulkOrderErr?.message || '알 수 없음'}`)
+                setIsLoading(false)
+                setUploadProgress({ current: 0, total: 0, isUploading: false })
+                return
+            }
+
+            setUploadProgress({ current: 50, total: 100, isUploading: true })
+
+            let successCount = insertedOrders.length
             const localProducts = [...products]
+            const orderItemsPayload: any[] = []
 
-            let firstError = null;
+            for (let i = 0; i < insertedOrders.length; i++) {
+                const dbOrder = insertedOrders[i]
+                const originalOrder = newOrders[i]
 
-            for (let i = 0; i < newOrders.length; i++) {
-                const order = newOrders[i]
-                const { data: oData, error: oErr } = await supabase.from('orders').insert({
-                    store_id: storeId,
-                    pickup_date: order.pickupDate,
-                    customer_nickname: order.customerName,
-                    is_received: order.isReceived,
-                    customer_memo_1: order.memos[0] || "",
-                    customer_memo_2: order.memos[1] || ""
-                }).select().single()
+                for (const item of originalOrder.items) {
+                    let matchedProduct = localProducts.find(p => p.name === item.productName || p.name.includes(item.productName))
 
-                if (oData && !oErr) {
-                    for (const item of order.items) {
-                        let matchedProduct = localProducts.find(p => p.name === item.productName || p.name.includes(item.productName))
+                    if (!matchedProduct) {
+                        const { data: newProd, error: pErr } = await supabase.from('products').insert({
+                            store_id: storeId,
+                            collect_name: item.productName,
+                            display_name: item.productName,
+                            target_date: originalOrder.pickupDate,
+                            is_regular_sale: false,
+                            price: item.price || 0,
+                            allocated_stock: 0
+                        }).select().single()
 
-                        if (!matchedProduct) {
-                            const { data: newProd, error: pErr } = await supabase.from('products').insert({
-                                store_id: storeId,
-                                collect_name: item.productName,
-                                display_name: item.productName,
-                                target_date: order.pickupDate,
-                                is_regular_sale: false,
-                                price: item.price || 0,
-                                allocated_stock: 0
-                            }).select().single()
-
-                            if (newProd && !pErr) {
-                                matchedProduct = { id: newProd.id, name: item.productName, price: item.price || 0, required: 0, stock: 0 }
-                                localProducts.push(matchedProduct)
-                            }
-                        } else if (item.price && item.price > 0) {
-                            await supabase.from('products').update({ price: item.price }).eq('id', matchedProduct.id)
+                        if (newProd && !pErr) {
+                            matchedProduct = { id: newProd.id, name: item.productName, price: item.price || 0, required: 0, stock: 0 }
+                            localProducts.push(matchedProduct)
                         }
-
-                        if (matchedProduct) {
-                            await supabase.from('order_items').insert({
-                                order_id: oData.id,
-                                product_id: matchedProduct.id,
-                                quantity: item.qty
-                            })
-                        }
+                    } else if (item.price && item.price > 0) {
+                        await supabase.from('products').update({ price: item.price }).eq('id', matchedProduct.id)
                     }
-                    successCount++
-                } else {
-                    if (!firstError) firstError = oErr?.message || "Unknown Insert Error"
-                    console.error("Order Insert Error:", oErr, order)
+
+                    if (matchedProduct) {
+                        orderItemsPayload.push({
+                            order_id: dbOrder.id,
+                            product_id: matchedProduct.id,
+                            quantity: item.qty
+                        })
+                    }
                 }
-                setUploadProgress(prev => ({ ...prev, current: i + 1 }))
             }
 
-            if (successCount === 0 && firstError) {
-                alert(`0개의 데이터가 업로드되었습니다. 데이터베이스 에러 원인:\n${firstError}`)
-            } else {
-                alert(`완료! 총 ${successCount}건의 주문 내역이 성공적으로 업로드되었습니다.`)
+            setUploadProgress({ current: 80, total: 100, isUploading: true })
+
+            // 2. Bulk Insert Order Items
+            if (orderItemsPayload.length > 0) {
+                const { error: itemBulkErr } = await supabase.from('order_items').insert(orderItemsPayload)
+                if (itemBulkErr) {
+                    console.error("Bulk Item Insert Error:", itemBulkErr)
+                    alert(`일부 주문 상품 매핑에 실패했습니다: ${itemBulkErr.message}`)
+                }
             }
+
+            setUploadProgress({ current: 100, total: 100, isUploading: true })
+            alert(`완료! 총 ${successCount}건의 개별 주문 내역이 묶임 없이 원본 그대로 성공적으로 일괄 업로드되었습니다.`)
             fetchMatrixData()
         } catch (err: any) {
             console.error("Excel import error:", err)
