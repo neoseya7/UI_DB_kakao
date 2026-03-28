@@ -214,16 +214,44 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                             );
                                         })()}
                                     </div>
-                                    <ul className="space-y-2 border-t border-slate-100 pt-3 pl-2">
-                                        {order.order_items?.map((item: any) => (
-                                            <li key={item.id} className="flex justify-between items-center text-[15px]">
-                                                <span className="font-bold text-slate-700">
-                                                    {item.product?.display_name || item.product?.collect_name || "알 수 없는 상품"}
-                                                </span>
-                                                <span className="font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{item.quantity}개</span>
-                                            </li>
-                                        ))}
+                                    <ul className="space-y-3 border-t border-slate-100 pt-3 pl-2">
+                                        {order.order_items?.map((item: any) => {
+                                            const itemPrice = item.product?.price || 0;
+                                            const totalItemPrice = itemPrice * item.quantity;
+                                            const showPrice = settings?.show_price ?? true;
+                                            
+                                            return (
+                                                <li key={item.id} className="flex justify-between items-start text-[15px]">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-700">
+                                                            {item.product?.display_name || item.product?.collect_name || "알 수 없는 상품"}
+                                                        </span>
+                                                        {showPrice && (
+                                                            <span className="text-[12px] font-semibold text-slate-400 mt-0.5 tracking-tight">
+                                                                개당 {itemPrice.toLocaleString()}원
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1.5 mt-0.5">
+                                                        <span className="font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{item.quantity}개</span>
+                                                        {showPrice && (
+                                                            <span className="text-[13px] font-bold text-slate-600">
+                                                                {totalItemPrice.toLocaleString()}원
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
+                                    {(settings?.show_price ?? true) && (
+                                        <div className="border-t border-slate-100 mt-3 pt-3 pl-2 flex justify-between items-center bg-slate-50/50 rounded-b-xl -mx-4 -mb-4 px-4 pb-4">
+                                            <span className="text-[14px] font-bold text-slate-500">총 결제 추정 금액</span>
+                                            <span className="text-[18px] font-black text-slate-800">
+                                                {order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity * (item.product?.price || 0)), 0).toLocaleString()}원
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
