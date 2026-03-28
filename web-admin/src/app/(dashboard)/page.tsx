@@ -125,17 +125,24 @@ export default function Dashboard() {
               const items = row.product_name.split(", ")
               items.forEach((itemText: string) => {
                 let rawName = itemText
-                const qtyMatch = itemText.match(/(.+?)(?:\(\d+\))$/)
+                let itemQty = 1;
+                const qtyMatch = itemText.match(/(.+?)(?:\((\d+)\))$/)
                 if (qtyMatch) {
                   rawName = qtyMatch[1].trim()
+                  itemQty = parseInt(qtyMatch[2], 10) || 1
                 }
 
                 const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
                 if (matchedProd) {
-                  const dateStr = matchedProd.target_date || "상시판매"
-                  matchBadges.push({ name: rawName, isMatched: true, dateText: dateStr })
+                  if (matchedProd.allocated_stock !== null && matchedProd.allocated_stock < itemQty) {
+                    // Out of stock overriding badge text
+                    matchBadges.push({ name: rawName, isMatched: false, dateText: "재고초과주문" })
+                  } else {
+                    const dateStr = matchedProd.target_date || "상시판매"
+                    matchBadges.push({ name: rawName, isMatched: true, dateText: dateStr })
+                  }
                 } else {
-                  matchBadges.push({ name: rawName, isMatched: false, dateText: "날짜미지정" })
+                  matchBadges.push({ name: rawName, isMatched: false, dateText: "상품미등록" })
                 }
               })
             }

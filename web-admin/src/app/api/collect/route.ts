@@ -202,18 +202,22 @@ export async function POST(request: Request) {
 
                 const matchedProduct = products.find(p => p.collect_name === fixedProductName);
                 if (matchedProduct) {
+                    // Check stock first
+                    const qty = parseInt(firstItem.quantity, 10) || 1
+                    const isOutOfStock = matchedProduct.allocated_stock !== null && matchedProduct.allocated_stock < qty;
+
                     // Inject pickup date (target_date) from matched product if not specified
                     if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") {
                         if (matchedProduct.target_date) {
                             firstItem.pickup_date = matchedProduct.target_date;
                         } else {
-                            classifications.push("날짜미지정");
+                            if (!isOutOfStock) {
+                                classifications.push("날짜미지정");
+                            }
                         }
                     }
 
-                    // Check stock
-                    const qty = parseInt(firstItem.quantity, 10) || 1
-                    if (matchedProduct.allocated_stock !== null && matchedProduct.allocated_stock < qty) {
+                    if (isOutOfStock) {
                         classifications.push("재고초과주문")
                     }
 
