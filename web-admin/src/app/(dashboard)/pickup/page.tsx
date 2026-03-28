@@ -153,7 +153,7 @@ export default function PickupCalendarPage() {
                 return
             }
 
-            const orderMap = new Map<string, any>()
+            const newOrders: any[] = []
 
             for (const row of data) {
                 const customerName = (row['고객명'] || "").toString().trim()
@@ -174,14 +174,16 @@ export default function PickupCalendarPage() {
                     formattedDate = dateObj.toISOString().split('T')[0]
                 }
 
-                const key = `${customerName}_${formattedDate}`
-                if (!orderMap.has(key)) {
-                    orderMap.set(key, { customerName, pickupDate: formattedDate, memos: [memo1, memo2], items: [], isReceived: isConfirmed })
-                }
-                orderMap.get(key).items.push({ productName, qty, price })
+                // 엑셀의 원본 내역 1줄을 1건의 주문으로 무조건 개별 등록
+                newOrders.push({
+                    customerName,
+                    pickupDate: formattedDate,
+                    memos: [memo1, memo2],
+                    items: [{ productName, qty, price }],
+                    isReceived: isConfirmed
+                })
             }
 
-            const newOrders = Array.from(orderMap.values())
             if (newOrders.length === 0) {
                 alert("유효한 데이터 포맷을 찾을 수 없습니다. (고객명, 픽업일, 상품명 필수)")
                 return
