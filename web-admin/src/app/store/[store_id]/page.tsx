@@ -205,11 +205,14 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                             </span>
                                             <strong className="text-lg font-black text-slate-800 tracking-tight">픽업 예약일: {order.pickup_date}</strong>
                                         </div>
-                                        {order.is_received ? (
-                                            <Badge className="bg-slate-100 text-slate-500 shadow-none border border-slate-200 font-bold px-2 py-0.5">수령 완료</Badge>
-                                        ) : (
-                                            <Badge className="bg-blue-50 text-blue-600 border border-blue-200 font-black px-2 py-0.5 shadow-none">승인/대기중</Badge>
-                                        )}
+                                        {(() => {
+                                            const isAllItemsStocked = order.order_items?.length > 0 && order.order_items.every((item: any) => item.product?.is_stocked);
+                                            return isAllItemsStocked ? (
+                                                <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-200 font-black px-2 py-0.5 shadow-none">입고</Badge>
+                                            ) : (
+                                                <Badge className="bg-slate-50 text-slate-500 border border-slate-200 font-bold px-2 py-0.5 shadow-none">미입고</Badge>
+                                            );
+                                        })()}
                                     </div>
                                     <ul className="space-y-2 border-t border-slate-100 pt-3 pl-2">
                                         {order.order_items?.map((item: any) => (

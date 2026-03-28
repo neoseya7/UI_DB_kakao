@@ -37,7 +37,8 @@ export async function POST(request: Request) {
                         display_name,
                         price,
                         image_url,
-                        image_urls
+                        image_urls,
+                        is_stocked
                     )
                 )
             `)
