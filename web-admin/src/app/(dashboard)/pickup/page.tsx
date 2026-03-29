@@ -63,7 +63,7 @@ export default function PickupCalendarPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
 
-    const getStickyClasses = (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo1' | 'memo2') => {
+    const getStickyClasses = (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo') => {
         const base = "sticky z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] bg-background group-hover:bg-muted/40"
         const headerBase = "sticky z-40 bg-muted/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
         
@@ -92,17 +92,11 @@ export default function PickupCalendarPage() {
                     td: `${base} ${priceLeft} w-[90px] sm:w-[110px] min-w-[90px] sm:min-w-[110px] max-w-[90px] sm:max-w-[110px] bg-blue-50/20 text-right`,
                     th: `${headerBase} ${priceLeft} w-[90px] sm:w-[110px] min-w-[90px] sm:min-w-[110px] max-w-[90px] sm:max-w-[110px] bg-blue-50/90`
                 }
-            case 'memo1':
-                const m1Left = isDeleteMode ? "left-[430px] sm:left-[640px]" : "left-[385px] sm:left-[580px]"
+            case 'memo':
+                const mLeft = isDeleteMode ? "left-[430px] sm:left-[640px]" : "left-[385px] sm:left-[580px]"
                 return {
-                    td: `${base} ${m1Left} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px] bg-indigo-50/10`,
-                    th: `${headerBase} ${m1Left} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px] bg-indigo-50/90`
-                }
-            case 'memo2':
-                const m2Left = isDeleteMode ? "left-[530px] sm:left-[770px]" : "left-[485px] sm:left-[710px]"
-                return {
-                    td: `${base} ${m2Left} w-[90px] sm:w-[100px] min-w-[90px] sm:min-w-[100px] max-w-[90px] sm:max-w-[100px] bg-indigo-50/10 border-r-2 border-r-indigo-200 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)]`,
-                    th: `${headerBase} ${m2Left} w-[90px] sm:w-[100px] min-w-[90px] sm:min-w-[100px] max-w-[90px] sm:max-w-[100px] bg-indigo-50/90 border-r-2 border-r-indigo-300 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)]`
+                    td: `sticky z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-r-indigo-200 ${mLeft} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px]`,
+                    th: `sticky z-40 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-r-indigo-300 ${mLeft} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px]`
                 }
         }
     }
@@ -967,8 +961,12 @@ export default function PickupCalendarPage() {
                                 {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
                                 <th rowSpan={6} className={`border-b border-r px-4 py-3 align-bottom pb-4 ${getStickyClasses('summary').th}`}>주문 상품 요약</th>
                                 <th rowSpan={6} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
-                                <th rowSpan={6} className={`border-b border-r p-3 align-bottom pb-4 ${getStickyClasses('memo1').th}`}>고객 비고 1</th>
-                                <th rowSpan={2} className={`border-b border-r p-3 align-bottom pb-4 ${getStickyClasses('memo2').th}`}>고객찜</th>
+                                <th rowSpan={2} className={`border-b border-r p-2 align-bottom pb-4 bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
+                                    <div className="flex flex-col items-center justify-end h-full gap-1 font-bold text-indigo-900 leading-none">
+                                        <span>고객 비고 1</span>
+                                        <span className="text-[11px] text-indigo-700/80">(고객찜)</span>
+                                    </div>
+                                </th>
                                 {products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}
                             </tr>
                             <tr>
@@ -983,7 +981,7 @@ export default function PickupCalendarPage() {
                                 ))}
                             </tr>
                             <tr>
-                                <th className="border-b border-r py-2 px-1 bg-blue-50/40 text-[12px] font-bold text-blue-800 tracking-tight">발주수량</th>
+                                <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-blue-900 tracking-tight bg-blue-100/95 ${getStickyClasses('memo').th}`}>발주수량</th>
                                 {products.map((p, i) => (
                                     <th key={p.id || i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
                                         <Input type="number" defaultValue={p.stock} onBlur={(e) => handleUpdateProductField(p.id, 'allocated_stock', e.target.value)} className="h-6 w-[50px] text-[13px] font-bold text-center px-1 py-0 mx-auto border-blue-200 bg-white text-blue-800 shadow-sm" title="수량을 수정하고 바깥을 클릭하면 저장됩니다" />
@@ -991,7 +989,7 @@ export default function PickupCalendarPage() {
                                 ))}
                             </tr>
                             <tr>
-                                <th className="border-b border-r py-2 px-1 bg-slate-50/80 text-[12px] font-bold text-slate-700 tracking-tight">합계수량</th>
+                                <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-slate-800 tracking-tight bg-slate-200/95 ${getStickyClasses('memo').th}`}>합계수량</th>
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
                                     return (
@@ -1002,7 +1000,7 @@ export default function PickupCalendarPage() {
                                 })}
                             </tr>
                             <tr>
-                                <th className="border-b border-r py-2 px-1 bg-amber-50/40 text-[12px] font-bold text-amber-700 tracking-tight">남은수량</th>
+                                <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-amber-900 tracking-tight bg-amber-100/95 ${getStickyClasses('memo').th}`}>남은수량</th>
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
                                     const remaining = p.stock - orderSum;
@@ -1014,7 +1012,7 @@ export default function PickupCalendarPage() {
                                 })}
                             </tr>
                             <tr>
-                                <th className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[11px] font-bold text-emerald-800 tracking-tighter leading-tight">남은+미체크</th>
+                                <th className={`border-b border-r py-2 px-1 text-[11px] font-bold text-emerald-900 tracking-tighter leading-tight bg-emerald-100/95 ${getStickyClasses('memo').th}`}>남은+미체크</th>
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
                                     const remaining = p.stock - orderSum;
@@ -1079,11 +1077,11 @@ export default function PickupCalendarPage() {
                                         <td className={`border-b border-r px-3 py-2 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
                                             {c.items.reduce((total: number, qty: number, idx: number) => total + (qty * (products[idx]?.price || 0)), 0).toLocaleString()}원
                                         </td>
-                                        <td className={`border-b border-r px-2 py-1 ${getStickyClasses('memo1').td}`}>
-                                            <Input defaultValue={c.memo1} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_1', e.target.value)} placeholder="메모" className="h-9 bg-transparent border-transparent" />
-                                        </td>
-                                        <td className={`border-b border-r px-2 py-1 ${getStickyClasses('memo2').td}`}>
-                                            <Input defaultValue={c.memo2} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_2', e.target.value)} placeholder="메모" className="h-9 bg-transparent border-transparent" />
+                                        <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
+                                            <div className="flex flex-col gap-1 w-full relative">
+                                                <Input defaultValue={c.memo1} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_1', e.target.value)} placeholder="비고 1" className="h-7 text-xs bg-white/70 border-slate-200 px-1 text-center" />
+                                                <Input defaultValue={c.memo2} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_2', e.target.value)} placeholder="고객찜" className="h-7 text-xs bg-white/70 border-slate-200 px-1 text-center" />
+                                            </div>
                                         </td>
                                         {c.items.map((qty, j) => {
                                             const isEditing = editingQty?.orderId === c.id && editingQty?.productIdx === j;
