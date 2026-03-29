@@ -4,12 +4,13 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Search, CalendarDays, ImageIcon, Eye, EyeOff } from "lucide-react"
+import { Search, CalendarDays, ImageIcon, Eye, EyeOff, Trash2 } from "lucide-react"
 
 export default function ProductsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -27,6 +28,10 @@ export default function ProductsPage() {
     const [isLoadingShared, setIsLoadingShared] = useState(false)
     const [sharedBrandName, setSharedBrandName] = useState<string>("")
     const [searchSharedQuery, setSearchSharedQuery] = useState("")
+
+    // Delete Mode states
+    const [isDeleteMode, setIsDeleteMode] = useState(false)
+    const [selectedDeleteProductIds, setSelectedDeleteProductIds] = useState<string[]>([])
 
     // Form states
     const [formData, setFormData] = useState({
@@ -340,6 +345,24 @@ export default function ProductsPage() {
         setIsLoading(false);
     }
 
+    const executeBulkDelete = async () => {
+        if (selectedDeleteProductIds.length === 0) return alert("삭제할 상품을 선택해주세요.");
+        if (!confirm(`선택된 ${selectedDeleteProductIds.length}개의 상품을 영구 삭제하시겠습니까? (DB에서 데이터가 지워집니다)`)) return;
+
+        setIsLoading(true);
+        const { error } = await supabase.from('products').delete().in('id', selectedDeleteProductIds);
+        if (error) {
+            console.error(error);
+            alert("일부 상품 삭제 중 오류가 발생했습니다: " + error.message);
+        } else {
+            alert(`총 ${selectedDeleteProductIds.length}개의 상품이 삭제되었습니다.`);
+            setIsDeleteMode(false);
+            setSelectedDeleteProductIds([]);
+            fetchProducts(storeId!);
+        }
+        setIsLoading(false);
+    }
+
     return (
         <div className="flex flex-col gap-6 w-full max-w-[1900px] mx-auto pb-10 px-2 md:px-4">
             <div className="flex flex-col gap-2">
@@ -382,8 +405,17 @@ export default function ProductsPage() {
 
                 <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
                     <div className="flex items-center gap-1.5 mr-auto md:mr-2 shrink-0">
-                        <Button onClick={() => handleBulkStockUpdate(true)} variant="outline" size="sm" className="h-9 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-bold px-2">전체 입고전환</Button>
-                        <Button onClick={() => handleBulkStockUpdate(false)} variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 font-bold px-2">미입고로 전환</Button>
+                        <Button onClick={() => handleBulkStockUpdate(true)} variant="outline" size="sm" className="h-9 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-bold px-2 shadow-sm">전체 입고전환</Button>
+                        <Button onClick={() => handleBulkStockUpdate(false)} variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 font-bold px-2 shadow-sm">미입고로 전환</Button>
+                        
+                        {isDeleteMode ? (
+                            <>
+                                <Button onClick={() => { setIsDeleteMode(false); setSelectedDeleteProductIds([]); }} variant="outline" size="sm" className="h-9 font-bold px-2 shadow-sm border-slate-300">취소</Button>
+                                <Button onClick={executeBulkDelete} variant="destructive" size="sm" className="h-9 font-bold px-2 shadow-sm gap-1.5"><Trash2 className="w-3.5 h-3.5" />선택 삭제 ({selectedDeleteProductIds.length})</Button>
+                            </>
+                        ) : (
+                            <Button onClick={() => setIsDeleteMode(true)} variant="outline" size="sm" className="h-9 border-rose-200 text-rose-600 hover:bg-rose-50 font-bold px-2 gap-1.5 transition-all shadow-sm"><Trash2 className="w-3.5 h-3.5" />삭제 모드</Button>
+                        )}
                     </div>
 
                     <div className="relative w-full sm:w-[200px]">
@@ -693,9 +725,23 @@ export default function ProductsPage() {
                             .map((product) => (
                                 <Card
                                     key={product.id}
-                                    className={`overflow-hidden flex flex-col shadow-sm border transition-all duration-200 cursor-pointer ${product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50 hover:shadow-md'}`}
-                                    onClick={() => openEditProductDialog(product)}
+                                    className={`relative overflow-hidden flex flex-col shadow-sm border transition-all duration-200 cursor-pointer ${isDeleteMode ? (selectedDeleteProductIds.includes(product.id) ? 'ring-2 ring-rose-500 bg-rose-50/20 shadow-md transform scale-[0.98]' : 'hover:border-rose-300 opacity-90') : (product.allocated_stock === 0 ? 'border-red-200/60 bg-red-50/10' : 'hover:border-primary/50 hover:shadow-md')}`}
+                                    onClick={() => {
+                                        if (isDeleteMode) {
+                                            setSelectedDeleteProductIds(prev => prev.includes(product.id) ? prev.filter(x => x !== product.id) : [...prev, product.id])
+                                        } else {
+                                            openEditProductDialog(product)
+                                        }
+                                    }}
                                 >
+                                    {isDeleteMode && (
+                                        <div className="absolute top-2.5 right-2.5 z-20 pointer-events-none">
+                                            <Checkbox
+                                                checked={selectedDeleteProductIds.includes(product.id)}
+                                                className="h-6 w-6 border-rose-300 data-[state=checked]:bg-rose-500 bg-white shadow-sm"
+                                            />
+                                        </div>
+                                    )}
                                     <CardHeader className="pb-1 pt-3 flex flex-row items-start justify-between gap-1.5 px-3">
                                         <div className="flex flex-col gap-1 w-full">
                                             <CardTitle className="text-[14px] leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>

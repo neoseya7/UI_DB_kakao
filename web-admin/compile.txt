@@ -1,0 +1,1 @@
+src/app/(dashboard)/products/page.tsx(784,1): error TS1005: '}' expected.
