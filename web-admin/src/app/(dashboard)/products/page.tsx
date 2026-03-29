@@ -492,7 +492,7 @@ export default function ProductsPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="stock">당일 할당 픽업(재고) 수량</Label>
+                                <Label htmlFor="stock">발주수량</Label>
                                 <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
                             </div>
 
@@ -589,7 +589,7 @@ export default function ProductsPage() {
                             <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                                 <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>취소</Button>
                                 <Button type="submit" className="font-semibold w-full sm:w-auto" disabled={isSaving}>
-                                    {isSaving ? "처리 중..." : "데이터베이스에 저장하기"}
+                                    {isSaving ? "처리 중..." : "저장하기"}
                                 </Button>
                             </div>
                         </DialogFooter>
