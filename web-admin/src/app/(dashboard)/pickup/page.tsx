@@ -911,7 +911,7 @@ export default function PickupCalendarPage() {
                                     </div>
                                 </th>
                                 <th rowSpan={6} className="border-b border-r px-1 sm:px-2 py-3 w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm sticky left-[100px] sm:left-[160px] z-40 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help" title="수령확인">수령</th>
-                                <th rowSpan={6} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">{isDeleteMode ? <span className="text-rose-600 font-bold">삭제</span> : "관리"}</th>
+                                {isDeleteMode && <th rowSpan={6} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm"><span className="text-rose-600 font-bold">삭제</span></th>}
                                 <th rowSpan={6} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
                                 <th rowSpan={6} className="border-b border-r px-3 py-3 w-[110px] min-w-[110px] bg-blue-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-center">결제 금액</th>
                                 <th rowSpan={6} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
@@ -977,12 +977,12 @@ export default function PickupCalendarPage() {
                         </thead>
 
                         <tbody>
-                            <tr><td colSpan={products.length + 6} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
+                            <tr><td colSpan={products.length + (isDeleteMode ? 7 : 6)} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
 
                             {isLoading ? (
-                                <tr><td colSpan={products.length + 7} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
+                                <tr><td colSpan={products.length + (isDeleteMode ? 7 : 6)} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
                             ) : filteredCustomers.length === 0 ? (
-                                <tr><td colSpan={products.length + 7} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
+                                <tr><td colSpan={products.length + (isDeleteMode ? 7 : 6)} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>
@@ -1009,24 +1009,18 @@ export default function PickupCalendarPage() {
                                                 />
                                             </div>
                                         </td>
-                                        <td className="border-b border-r px-1 py-1 bg-red-50/10">
-                                            <div className="flex justify-center items-center h-full">
-                                                {isDeleteMode ? (
+                                        {isDeleteMode && (
+                                            <td className="border-b border-r px-1 py-1 bg-red-50/10">
+                                                <div className="flex justify-center items-center h-full">
                                                     <Checkbox
                                                         checked={selectedDeleteIds.includes(c.id)}
                                                         onCheckedChange={() => toggleDeleteSelect(c.id)}
                                                         disabled={isMerged}
                                                         className="h-5 w-5 sm:h-6 sm:w-6 border-rose-300 data-[state=checked]:bg-rose-500 rounded-sm cursor-pointer disabled:opacity-50"
                                                     />
-                                                ) : (
-                                                    !isMerged && (
-                                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(c.id, c.name)} className="h-7 w-7 text-red-400 hover:text-red-700 hover:bg-red-100" title="이 주문 행 삭제">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )
-                                                )}
-                                            </div>
-                                        </td>
+                                                </div>
+                                            </td>
+                                        )}
                                         <td className="border-b border-r px-3 py-2 bg-slate-50/40 text-left">
                                             <span className="text-sm font-medium text-slate-800 break-words leading-tight block">{getSummary(c.items)}</span>
                                         </td>
