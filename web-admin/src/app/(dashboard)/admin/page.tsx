@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Check, X, Save, Copy, Store, FileText, Settings2, Power, KeyRound, ExternalLink } from "lucide-react"
+import { Check, X, Save, Copy, Store, FileText, Settings2, Power, KeyRound, ExternalLink, ShieldAlert } from "lucide-react"
 
 // A dedicated component for individual prompt textareas to manage local typing state safely
 function PromptEditorCard({ title, desc, model, initialValue, onSave }: { title: string, desc: string, model: string, initialValue: string, onSave: (val: string) => void }) {
@@ -73,6 +73,7 @@ export default function AdminPage() {
 
     // Security & Logic states
     const [storeMetadata, setStoreMetadata] = useState<Record<string, any>>({})
+    const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
 
     // Approval Dialog states
     const [approveModalOpen, setApproveModalOpen] = useState(false)
@@ -146,6 +147,14 @@ export default function AdminPage() {
 
     const pendingAccounts = stores.filter(s => s.status === 'pending')
     const activeStores = stores.filter(s => s.status !== 'pending')
+
+    // Brand filtering logic for active stores tab
+    const filteredActiveStores = activeStores.filter(store => {
+        if (selectedBrandFilter === 'all') return true;
+        const metaBrand = storeMetadata[store.id]?.brand_name;
+        if (selectedBrandFilter === 'unassigned') return !metaBrand;
+        return metaBrand === selectedBrandFilter;
+    });
 
     // Handlers
     const openApproveModal = (store: any) => {
@@ -439,8 +448,34 @@ export default function AdminPage() {
                     <section>
                         <h3 className="text-xl font-bold tracking-tight flex items-center gap-2.5 mb-5 pb-2 border-b border-emerald-500/20">
                             <span className="text-emerald-700">운영 중인 가맹점 목록</span>
-                            <Badge className="bg-emerald-600 rounded-full px-2 shadow-sm font-mono text-base">{activeStores.length}</Badge>
+                            <Badge className="bg-emerald-600 rounded-full px-2 shadow-sm font-mono text-base">{filteredActiveStores.length}</Badge>
                         </h3>
+
+                        {/* Brand Filter Row */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            <button
+                                onClick={() => setSelectedBrandFilter('all')}
+                                className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === 'all' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                            >
+                                전체 보기
+                            </button>
+                            {adminConfig?.allowed_brands?.map((brand: string) => (
+                                <button
+                                    key={brand}
+                                    onClick={() => setSelectedBrandFilter(brand)}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === brand ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    {brand}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setSelectedBrandFilter('unassigned')}
+                                className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === 'unassigned' ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                            >
+                                미분류 (기타)
+                            </button>
+                        </div>
+
                         <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
                             <table className="w-full text-left text-sm whitespace-nowrap">
                                 <thead className="bg-slate-50/80 border-b">
@@ -453,8 +488,8 @@ export default function AdminPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/60">
-                                    {activeStores.length === 0 && (<tr><td colSpan={5} className="p-6 text-center text-muted-foreground">현재 운영 중인 매장이 없습니다.</td></tr>)}
-                                    {activeStores.map((store: any) => {
+                                    {filteredActiveStores.length === 0 && (<tr><td colSpan={5} className="p-6 text-center text-muted-foreground">조건에 맞는 운영 중인 매장이 없습니다.</td></tr>)}
+                                    {filteredActiveStores.map((store: any) => {
                                         const meta = storeMetadata[store.id] || {}
                                         return (
                                         <tr key={store.id} className="hover:bg-slate-50/50 transition-colors">
