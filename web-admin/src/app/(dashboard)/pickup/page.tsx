@@ -272,7 +272,8 @@ export default function PickupCalendarPage() {
 
             if (cancelUploadRef.current) {
                 await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
-                throw new Error("업로드가 취소되어 업로드된 데이터를 롤백(전체 삭제)했습니다.")
+                alert("엑셀 일괄 업로드가 중지되어, 방금 파일에 있던 모든 데이터가 안전하게 삭제(롤백)되었습니다.")
+                return
             }
 
             setUploadProgress({ current: 50, total: 100, isUploading: true })
@@ -284,7 +285,8 @@ export default function PickupCalendarPage() {
             for (let i = 0; i < insertedOrders.length; i++) {
                 if (cancelUploadRef.current) {
                     await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
-                    throw new Error("업로드가 취소되어 업로드된 데이터를 롤백(전체 삭제)했습니다.")
+                    alert("엑셀 일괄 업로드가 중지되어, 방금 파일에 있던 모든 데이터가 안전하게 삭제(롤백)되었습니다.")
+                    return
                 }
                 const dbOrder = insertedOrders[i]
                 const originalOrder = newOrders[i]
@@ -325,7 +327,8 @@ export default function PickupCalendarPage() {
 
             if (cancelUploadRef.current) {
                 await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
-                throw new Error("업로드가 취소되어 업로드된 데이터를 롤백(전체 삭제)했습니다.")
+                alert("엑셀 일괄 업로드가 중지되어, 방금 파일에 있던 모든 데이터가 안전하게 삭제(롤백)되었습니다.")
+                return
             }
 
             // 2. Bulk Insert Order Items
@@ -342,11 +345,7 @@ export default function PickupCalendarPage() {
             fetchMatrixData()
         } catch (err: any) {
             console.error("Excel import error:", err)
-            if (err.message.includes("업로드가 취소")) {
-                alert("엑셀 일괄 업로드가 중지되어, 방금 파일에 있던 모든 데이터가 안전하게 삭제(롤백)되었습니다.")
-            } else {
-                alert(`처리 중 에러가 발생했습니다: ${err.message}`)
-            }
+            alert(`처리 중 에러가 발생했습니다: ${err.message}`)
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = ""
             setUploadProgress({ current: 0, total: 0, isUploading: false })
