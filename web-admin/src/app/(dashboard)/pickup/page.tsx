@@ -44,6 +44,9 @@ export default function PickupCalendarPage() {
     const [newProductId, setNewProductId] = useState<string>("")
     const [newQty, setNewQty] = useState("")
 
+    const [editingQty, setEditingQty] = useState<{ orderId: string, productIdx: number } | null>(null)
+    const [tempQty, setTempQty] = useState<string>("")
+
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
     const [transferSourceDate, setTransferSourceDate] = useState("")
     const [transferProductIdx, setTransferProductIdx] = useState<string>("")
@@ -300,6 +303,44 @@ export default function PickupCalendarPage() {
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = ""
             setUploadProgress({ current: 0, total: 0, isUploading: false })
+            setIsLoading(false)
+        }
+    }
+
+    const handleUpdateQuantity = async (orderId: string, productIdx: number, newQtyStr: string) => {
+        setEditingQty(null)
+        if (!storeId) return
+
+        const targetProduct = products[productIdx]
+        if (!targetProduct) return
+
+        let validQty = parseInt(newQtyStr)
+        if (isNaN(validQty) || validQty < 0) validQty = 0
+
+        const order = rawCustomers.find(c => c.id === orderId)
+        if (!order) return
+        
+        const oldQty = order.items[productIdx] || 0
+        if (oldQty === validQty) return
+        
+        setIsLoading(true)
+
+        try {
+            if (validQty === 0) {
+                await supabase.from('order_items').delete().eq('order_id', orderId).eq('product_id', targetProduct.id)
+            } else {
+                const { data: existing } = await supabase.from('order_items').select('id').eq('order_id', orderId).eq('product_id', targetProduct.id).single()
+                if (existing) {
+                    await supabase.from('order_items').update({ quantity: validQty }).eq('id', existing.id)
+                } else {
+                    await supabase.from('order_items').insert({ order_id: orderId, product_id: targetProduct.id, quantity: validQty })
+                }
+            }
+            await fetchMatrixData()
+        } catch (e) {
+            console.error("Update quantity error", e)
+            alert("수량 변경 중 오류가 발생했습니다.")
+        } finally {
             setIsLoading(false)
         }
     }
@@ -891,11 +932,39 @@ export default function PickupCalendarPage() {
                                         <td className="border-b border-r px-2 py-1 bg-indigo-50/10">
                                             <Input defaultValue={c.memo2} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_2', e.target.value)} placeholder="메모" className="h-9 bg-transparent border-transparent" />
                                         </td>
-                                        {c.items.map((qty, j) => (
-                                            <td key={j} className={`border-b border-r p-3 text-lg font-bold ${qty > 0 ? 'bg-primary/5' : ''}`}>
-                                                {qty > 0 ? <span className="text-primary">{qty}</span> : <span className="text-muted-foreground/20 font-normal">-</span>}
-                                            </td>
-                                        ))}
+                                        {c.items.map((qty, j) => {
+                                            const isEditing = editingQty?.orderId === c.id && editingQty?.productIdx === j;
+                                            return (
+                                                <td 
+                                                    key={j} 
+                                                    className={`border-b border-r p-2 sm:p-3 text-lg font-bold transition-colors cursor-pointer ${qty > 0 ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-slate-50'}`}
+                                                    onClick={() => {
+                                                        if (!isEditing && !isMerged) {
+                                                            setEditingQty({ orderId: c.id, productIdx: j });
+                                                            setTempQty(qty > 0 ? qty.toString() : "");
+                                                        }
+                                                    }}
+                                                    title={isMerged ? "이름 합치기 모드에서는 개별 수량을 수정할 수 없습니다." : "클릭하여 수량 수정 (0 입력 시 삭제)"}
+                                                >
+                                                    {isEditing ? (
+                                                        <Input
+                                                            type="number"
+                                                            autoFocus
+                                                            className="w-[50px] h-8 mx-auto text-center font-bold px-1 py-0 shadow-inner bg-white border-primary"
+                                                            value={tempQty}
+                                                            onChange={(e) => setTempQty(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') handleUpdateQuantity(c.id, j, tempQty)
+                                                                if (e.key === 'Escape') setEditingQty(null)
+                                                            }}
+                                                            onBlur={() => handleUpdateQuantity(c.id, j, tempQty)}
+                                                        />
+                                                    ) : (
+                                                        qty > 0 ? <span className="text-primary">{qty}</span> : <span className="text-muted-foreground/20 font-normal">-</span>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                 ))
                             )}
