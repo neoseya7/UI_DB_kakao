@@ -51,6 +51,30 @@ export async function GET(request: Request, context: { params: Promise<{ store_i
             .eq('is_visible', true)
             .order('created_at', { ascending: false })
 
+        // 4. Dynamically compute 'Remaining Stock' by aggregating historical order items
+        if (productsData && productsData.length > 0) {
+            const productIds = productsData.map(p => p.id)
+            const { data: orderItems } = await supabaseAdmin
+                .from('order_items')
+                .select('product_id, quantity')
+                .in('product_id', productIds)
+
+            const qtyMap: Record<string, number> = {}
+            if (orderItems) {
+                for (const item of orderItems) {
+                    if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0
+                    qtyMap[item.product_id] += (item.quantity || 1)
+                }
+            }
+
+            for (const p of productsData) {
+                if (p.allocated_stock !== null) {
+                    const orderedQty = qtyMap[p.id] || 0
+                    p.allocated_stock = Math.max(0, p.allocated_stock - orderedQty)
+                }
+            }
+        }
+
         return NextResponse.json({
             success: true,
             store: storeData,
