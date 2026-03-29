@@ -140,7 +140,13 @@ export default function ProductsPage() {
         let primaryImageUrl = strictFinalImageUrls.length > 0 ? strictFinalImageUrls[0] : ""
 
         // 2. 최종 Payload 구성
-        let finalStock = parseInt(formData.allocated_stock) || 0
+        let finalStock = 0;
+        if (formData.allocated_stock === "") {
+            finalStock = 500;
+        } else {
+            const parsed = parseInt(formData.allocated_stock);
+            finalStock = isNaN(parsed) ? 0 : parsed;
+        }
         const payload = {
             store_id: storeId,
             target_date: formData.target_date || null,
