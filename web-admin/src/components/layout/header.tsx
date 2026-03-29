@@ -8,7 +8,7 @@ import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
 
-export function Header() {
+export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boolean; toggleSidebar?: () => void }) {
     const [userEmail, setUserEmail] = useState<string | null>(null)
     const [userId, setUserId] = useState<string | null>(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -67,6 +67,19 @@ export function Header() {
                     <Sidebar className="w-full h-full bg-white border-r-0" />
                 </SheetContent>
             </Sheet>
+
+            {toggleSidebar && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSidebar}
+                    className="hidden md:flex shrink-0 w-8 h-8 rounded-md text-slate-500 hover:text-slate-900 border"
+                    title="사이드바 메뉴 보이기/숨기기"
+                >
+                    <Menu className="h-4 w-4" />
+                </Button>
+            )}
+
             <div className="w-full flex-1">
                 <h1 className="text-lg font-semibold tracking-tight my-0 py-0 hidden sm:block">Dashboard</h1>
             </div>
