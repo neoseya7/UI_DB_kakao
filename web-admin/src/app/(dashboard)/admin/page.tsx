@@ -192,6 +192,32 @@ export default function AdminPage() {
         if (!error) setStores(prev => prev.map(s => s.id === storeId ? { ...s, status: newStatus } : s))
     }
 
+    const handleUpdateRole = async (storeId: string, currentRole: string) => {
+        const newRole = currentRole === 'brand_admin' ? 'store_owner' : 'brand_admin'
+        if (!confirm(`이 계정을 [${newRole === 'brand_admin' ? '브랜드 관리자(본사)' : '일반 점장'}] 등급으로 변경하시겠습니까?`)) return
+
+        try {
+            const res = await fetch('/api/admin/update-role', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ store_id: storeId, new_role: newRole })
+            })
+            const data = await res.json()
+            if (data.success) {
+                // Update local metadata map
+                setStoreMetadata(prev => ({
+                    ...prev,
+                    [storeId]: { ...prev[storeId], role: newRole }
+                }))
+                alert("권한이 성공적으로 변경되었습니다!")
+            } else {
+                alert(`오류: ${data.error}`)
+            }
+        } catch (e) {
+            alert("네트워크 통신 오류가 발생했습니다.")
+        }
+    }
+
     const handleSaveKakaoRoomName = async (storeId: string) => {
         const roomName = kakaoRoomNames[storeId] || ''
 
@@ -446,6 +472,8 @@ export default function AdminPage() {
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-bold text-lg text-slate-800">{store.name}</span>
                                                         {meta.brand_name && <Badge className="bg-indigo-600 text-white border-none shrink-0 font-bold px-2">{meta.brand_name}</Badge>}
+                                                        {meta.role === 'brand_admin' && <Badge className="bg-emerald-600 text-white border-none shrink-0 font-bold px-2">본사 관리권한</Badge>}
+                                                        {(meta.role === 'store_owner' || !meta.role) && <Badge variant="outline" className="text-slate-500 border-slate-300 shrink-0 font-semibold px-2">일반점장</Badge>}
                                                     </div>
                                                     <div className="text-[12px] text-slate-600 mt-0.5 grid gap-0.5">
                                                         {meta.owner_name && <span><strong className="text-slate-700">대표:</strong> {meta.owner_name} / {meta.phone}</span>}
@@ -475,7 +503,10 @@ export default function AdminPage() {
                                             <td className="px-5 py-3 text-right align-top pt-4">
                                                 <div className="flex flex-col gap-1.5 items-end">
                                                     <Button onClick={() => handleImpersonate(store.email)} variant="outline" size="sm" className="h-8 gap-1.5 font-bold text-indigo-700 bg-white hover:bg-indigo-50 border-indigo-200">
-                                                        <Power className="w-3.5 h-3.5 rotate-90" /> 대시보드 강제 접속
+                                                        <Power className="w-3.5 h-3.5 rotate-90" /> 대시보드 접속
+                                                    </Button>
+                                                    <Button onClick={() => handleUpdateRole(store.id, meta.role)} variant="outline" size="sm" className={`h-8 gap-1.5 font-bold border w-full max-w-[130px] ${meta.role === 'brand_admin' ? 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200' : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200'}`}>
+                                                        <ShieldAlert className="w-3.5 h-3.5" /> {meta.role === 'brand_admin' ? '→ 점장 강등' : '→ 본사 승격'}
                                                     </Button>
                                                     <Button onClick={() => handleToggleStoreStatus(store.id, store.status)} variant="secondary" size="sm" className={`h-8 gap-1.5 font-medium w-full max-w-[130px] ${store.status === 'active' ? 'text-rose-600 bg-rose-50 hover:bg-rose-100' : 'text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
                                                         <Power className="w-3.5 h-3.5" /> {store.status === 'active' ? '계정 정지' : '정지 해제'}

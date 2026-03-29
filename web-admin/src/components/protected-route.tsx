@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const router = useRouter()
+    const pathname = usePathname()
     const [isAuthorized, setIsAuthorized] = useState(false)
 
     useEffect(() => {
@@ -16,6 +17,22 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
                 router.replace('/login')
                 return
             }
+
+            const role = session.user.user_metadata?.role
+            const fallbackAdmin = session.user.email?.toLowerCase().includes('admin')
+            const isSuperAdmin = role === 'super_admin' || fallbackAdmin
+            const isBrandAdmin = role === 'brand_admin' || isSuperAdmin
+
+            if (pathname?.startsWith('/admin') && !isSuperAdmin) {
+                router.replace('/')
+                return
+            }
+
+            if (pathname?.startsWith('/brand-admin') && !isBrandAdmin) {
+                router.replace('/')
+                return
+            }
+
             setIsAuthorized(true)
         }
         checkAuth()

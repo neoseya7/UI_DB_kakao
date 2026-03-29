@@ -8,13 +8,21 @@ import { useRouter } from "next/navigation"
 
 export function Sidebar({ className }: { className?: string }) {
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isBrandAdmin, setIsBrandAdmin] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user && user.email?.toLowerCase().includes('admin')) {
-        setIsAdmin(true)
+      if (user) {
+        const role = user.user_metadata?.role
+        const fallbackAdmin = user.email?.toLowerCase().includes('admin')
+        if (role === 'super_admin' || fallbackAdmin) {
+          setIsAdmin(true)
+        }
+        if (role === 'brand_admin') {
+          setIsBrandAdmin(true)
+        }
       }
       setIsLoaded(true)
     })
@@ -87,6 +95,15 @@ export function Sidebar({ className }: { className?: string }) {
             )}
 
             <div className={`mt-4 pt-2 ${!isAdmin ? 'border-t border-border/50' : ''}`}>
+              {isBrandAdmin && !isAdmin && (
+                <Link
+                  href="/brand-admin"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-emerald-700 bg-emerald-50/50 transition-all hover:bg-emerald-100/50 font-semibold mb-1"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  본사 (브랜드 지점 관리)
+                </Link>
+              )}
               {isAdmin && (
                 <Link
                   href="/admin"
