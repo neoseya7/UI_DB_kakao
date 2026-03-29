@@ -58,6 +58,7 @@ export default function PickupCalendarPage() {
     const [transferNewDate, setTransferNewDate] = useState("")
     const [isTransferToRegular, setIsTransferToRegular] = useState(false)
     const [transferAvailableProducts, setTransferAvailableProducts] = useState<Product[]>([])
+    const [sortOrder, setSortOrder] = useState<"entered" | "name">("entered")
 
     const [availableDates, setAvailableDates] = useState<string[]>([])
     const [products, setProducts] = useState<Product[]>([])
@@ -201,9 +202,15 @@ export default function PickupCalendarPage() {
             if (chunkData) orderItems = orderItems.concat(chunkData)
         }
 
-        // 4. Transform into matrix rows
-        const mappedCustomers = orders.map(o => {
-            const myItems = orderItems.filter(oi => oi.order_id === o.id)
+        // 4. Transform into matrix rows utilizing O(N) Hash Map bypass
+        const itemsByOrderId: { [key: string]: any[] } = {}
+        for(const item of orderItems) {
+            if(!itemsByOrderId[item.order_id]) itemsByOrderId[item.order_id] = []
+            itemsByOrderId[item.order_id].push(item)
+        }
+
+        const mappedCustomers = orders.map((o, index) => {
+            const myItems = itemsByOrderId[o.id] || []
             const itemsArray = mappedProducts.map(p => {
                 const match = myItems.find(oi => oi.product_id === p.id)
                 return match ? match.quantity : 0
@@ -215,7 +222,8 @@ export default function PickupCalendarPage() {
                 items: itemsArray,
                 memo1: o.customer_memo_1 || "",
                 memo2: o.customer_memo_2 || "",
-                checked: o.is_received || false
+                checked: o.is_received || false,
+                originalIndex: index
             }
         })
 
@@ -659,6 +667,9 @@ export default function PickupCalendarPage() {
         const matchName = custName.toLowerCase().includes((searchTerm || "").toLowerCase())
         const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
         return matchName && matchReceipt
+    }).sort((a, b) => {
+        if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
+        return (a.originalIndex || 0) - (b.originalIndex || 0)
     })
 
     const getSummary = (items: number[]) => {
@@ -814,9 +825,19 @@ export default function PickupCalendarPage() {
                                     <SelectItem value="received" className="text-emerald-600 font-semibold">수령만</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
+                                <SelectTrigger className="w-full sm:w-[130px] h-10 bg-indigo-50 border-indigo-200 shadow-sm font-bold text-indigo-700 shrink-0">
+                                    <SelectValue placeholder="정렬 방식" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="entered" className="font-semibold">⏳ 입력된 순서</SelectItem>
+                                    <SelectItem value="name" className="font-semibold">가 가나다 순서</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        <div className="relative w-full sm:w-[220px]">
+                        <div className="relative w-full sm:w-[200px] xl:ml-2">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="닉네임 검색... (예: 김철)"
