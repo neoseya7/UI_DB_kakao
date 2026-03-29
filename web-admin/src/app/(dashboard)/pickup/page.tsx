@@ -57,6 +57,7 @@ export default function PickupCalendarPage() {
     const [transferProductIdx, setTransferProductIdx] = useState<string>("")
     const [transferNewDate, setTransferNewDate] = useState("")
     const [isTransferToRegular, setIsTransferToRegular] = useState(false)
+    const [transferAvailableProducts, setTransferAvailableProducts] = useState<Product[]>([])
 
     const [products, setProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
@@ -82,6 +83,26 @@ export default function PickupCalendarPage() {
             setSelectedPosOrders([])
         }
     }, [storeId, currentDate, searchScope, customSearchDate, customEndDate])
+
+    useEffect(() => {
+        if (!storeId || !isTransferModalOpen) return;
+        const fetchModalProducts = async () => {
+            const date = transferSourceDate || currentDate;
+            const { data } = await supabase.from('products').select('*').eq('store_id', storeId).or(`target_date.eq.${date},is_regular_sale.eq.true`)
+            if (data) {
+                setTransferAvailableProducts(data.map(p => ({
+                    id: p.id,
+                    name: p.display_name || p.collect_name,
+                    price: p.price || 0,
+                    required: p.allocated_stock || 0,
+                    stock: p.allocated_stock || 0,
+                    target_date: p.target_date,
+                    is_regular_sale: p.is_regular_sale
+                })))
+            }
+        }
+        fetchModalProducts()
+    }, [storeId, isTransferModalOpen, transferSourceDate, currentDate])
 
     const fetchMatrixData = async () => {
         if (!storeId) return
@@ -412,7 +433,7 @@ export default function PickupCalendarPage() {
         if (!isTransferToRegular && !transferNewDate) return alert("이동할 새로운 픽업 날짜나 '상시판매' 전환을 선택해주세요.")
 
         const idx = parseInt(transferProductIdx)
-        const targetProduct = products[idx]
+        const targetProduct = transferAvailableProducts[idx]
         const sourceDate = transferSourceDate || currentDate
 
         if (!confirm(`[${targetProduct.name}] 상품 속성과 대상 주문들을 일괄 반영하시겠습니까?`)) return
@@ -793,7 +814,7 @@ export default function PickupCalendarPage() {
                                             <SelectValue placeholder="상품 선택" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {products.map((p, i) => (
+                                            {transferAvailableProducts.map((p, i) => (
                                                 <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
                                             ))}
                                         </SelectContent>
