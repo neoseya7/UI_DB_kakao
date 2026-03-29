@@ -220,7 +220,7 @@ export default function ProductsPage() {
                 setSelectedImageFiles([])
                 fetchProducts(storeId)
             } else {
-                alert("상품 등록 중 오류가 발생했습니다: " + error.message)
+                alert("상품 등록 중 오류가 발생했습니다: " + (error?.message || "알 수 없는 에러"))
             }
         }
         setIsSaving(false)
@@ -782,7 +782,7 @@ export default function ProductsPage() {
                                     </CardHeader>
                                     <CardContent className="mt-auto px-3 pb-3 pt-0">
                                         <div className={`flex items-center justify-between gap-2 p-1.5 rounded-md border ${product.allocated_stock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-muted/30 border-border/50'}`} onClick={(e) => e.stopPropagation()}>
-                                            <span className={`text-[10px] font-bold tracking-tight whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>수동재고 제한</span>
+                                            <span className={`text-[10px] font-bold tracking-tight whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>발주수량</span>
                                             <Input
                                                 type="number"
                                                 defaultValue={product.allocated_stock}

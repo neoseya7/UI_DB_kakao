@@ -916,7 +916,7 @@ export default function PickupCalendarPage() {
                                 ))}
                             </tr>
                             <tr>
-                                <th className="border-b border-r py-2 px-1 bg-blue-50/40 text-[12px] font-bold text-blue-800 tracking-tight">재고수량</th>
+                                <th className="border-b border-r py-2 px-1 bg-blue-50/40 text-[12px] font-bold text-blue-800 tracking-tight">발주수량</th>
                                 {products.map((p, i) => (
                                     <th key={p.id || i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
                                         <Input type="number" defaultValue={p.stock} onBlur={(e) => handleUpdateProductField(p.id, 'allocated_stock', e.target.value)} className="h-6 w-[50px] text-[13px] font-bold text-center px-1 py-0 mx-auto border-blue-200 bg-white text-blue-800 shadow-sm" title="수량을 수정하고 바깥을 클릭하면 저장됩니다" />
