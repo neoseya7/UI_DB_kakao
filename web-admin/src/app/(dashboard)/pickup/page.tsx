@@ -63,6 +63,50 @@ export default function PickupCalendarPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
 
+    const getStickyClasses = (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo1' | 'memo2') => {
+        const base = "sticky z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] bg-background group-hover:bg-muted/40"
+        const headerBase = "sticky z-40 bg-muted/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
+        
+        switch (colName) {
+            case 'name': return {
+                td: `${base} left-0 w-[100px] sm:w-[160px] min-w-[100px] sm:min-w-[160px] max-w-[100px] sm:max-w-[160px]`,
+                th: `${headerBase} left-0 w-[100px] sm:w-[160px] min-w-[100px] sm:min-w-[160px] max-w-[100px] sm:max-w-[160px]`
+            }
+            case 'receive': return {
+                td: `${base} left-[100px] sm:left-[160px] w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] bg-emerald-50/10 group-hover:bg-emerald-50/20`,
+                th: `${headerBase} left-[100px] sm:left-[160px] w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] bg-emerald-50/90`
+            }
+            case 'delete': return {
+                td: `${base} left-[145px] sm:left-[230px] w-[45px] sm:w-[60px] min-w-[45px] sm:min-w-[60px] max-w-[45px] sm:max-w-[60px] bg-red-50/10 group-hover:bg-red-50/20`,
+                th: `${headerBase} left-[145px] sm:left-[230px] w-[45px] sm:w-[60px] min-w-[45px] sm:min-w-[60px] max-w-[45px] sm:max-w-[60px] bg-red-50/90`
+            }
+            case 'summary':
+                const sumLeft = isDeleteMode ? "left-[190px] sm:left-[290px]" : "left-[145px] sm:left-[230px]"
+                return {
+                    td: `${base} ${sumLeft} w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[150px] sm:max-w-[240px] bg-slate-50/40 text-left whitespace-normal break-words leading-tight`,
+                    th: `${headerBase} ${sumLeft} w-[150px] sm:w-[240px] min-w-[150px] sm:min-w-[240px] max-w-[150px] sm:max-w-[240px] bg-slate-100/90`
+                }
+            case 'price':
+                const priceLeft = isDeleteMode ? "left-[340px] sm:left-[530px]" : "left-[295px] sm:left-[470px]"
+                return {
+                    td: `${base} ${priceLeft} w-[90px] sm:w-[110px] min-w-[90px] sm:min-w-[110px] max-w-[90px] sm:max-w-[110px] bg-blue-50/20 text-right`,
+                    th: `${headerBase} ${priceLeft} w-[90px] sm:w-[110px] min-w-[90px] sm:min-w-[110px] max-w-[90px] sm:max-w-[110px] bg-blue-50/90`
+                }
+            case 'memo1':
+                const m1Left = isDeleteMode ? "left-[430px] sm:left-[640px]" : "left-[385px] sm:left-[580px]"
+                return {
+                    td: `${base} ${m1Left} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px] bg-indigo-50/10`,
+                    th: `${headerBase} ${m1Left} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px] bg-indigo-50/90`
+                }
+            case 'memo2':
+                const m2Left = isDeleteMode ? "left-[530px] sm:left-[770px]" : "left-[485px] sm:left-[710px]"
+                return {
+                    td: `${base} ${m2Left} w-[90px] sm:w-[100px] min-w-[90px] sm:min-w-[100px] max-w-[90px] sm:max-w-[100px] bg-indigo-50/10 border-r-2 border-r-indigo-200 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)]`,
+                    th: `${headerBase} ${m2Left} w-[90px] sm:w-[100px] min-w-[90px] sm:min-w-[100px] max-w-[90px] sm:max-w-[100px] bg-indigo-50/90 border-r-2 border-r-indigo-300 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)]`
+                }
+        }
+    }
+
     useEffect(() => {
         const initUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -905,7 +949,7 @@ export default function PickupCalendarPage() {
                     <table className="w-full text-sm text-center border-collapse min-w-max relative">
                         <thead className="bg-muted/90 sticky top-0 z-30 shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
-                                <th rowSpan={6} className="border-b border-r p-3 w-[100px] sm:w-[160px] min-w-[100px] sm:min-w-[160px] max-w-[100px] sm:max-w-[160px] bg-muted/90 sticky left-0 z-40 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap text-xs sm:text-sm">
+                                <th rowSpan={6} className={`border-b border-r p-3 whitespace-nowrap text-xs sm:text-sm ${getStickyClasses('name').th}`}>
                                     <div className="flex items-center gap-2 font-semibold">
                                         {posSyncEnabled && (
                                             <Checkbox 
@@ -919,12 +963,12 @@ export default function PickupCalendarPage() {
                                         <span>고객 닉네임</span>
                                     </div>
                                 </th>
-                                <th rowSpan={6} className="border-b border-r px-1 sm:px-2 py-3 w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm sticky left-[100px] sm:left-[160px] z-40 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help" title="수령확인">수령</th>
-                                {isDeleteMode && <th rowSpan={6} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm"><span className="text-rose-600 font-bold">삭제</span></th>}
-                                <th rowSpan={6} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
-                                <th rowSpan={6} className="border-b border-r px-3 py-3 w-[110px] min-w-[110px] bg-blue-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-center">결제 금액</th>
-                                <th rowSpan={6} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
-                                <th rowSpan={2} className="border-b border-r p-3 min-w-[100px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객찜</th>
+                                <th rowSpan={6} className={`border-b border-r px-1 sm:px-2 py-3 whitespace-nowrap align-bottom pb-4 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
+                                {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
+                                <th rowSpan={6} className={`border-b border-r px-4 py-3 align-bottom pb-4 ${getStickyClasses('summary').th}`}>주문 상품 요약</th>
+                                <th rowSpan={6} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
+                                <th rowSpan={6} className={`border-b border-r p-3 align-bottom pb-4 ${getStickyClasses('memo1').th}`}>고객 비고 1</th>
+                                <th rowSpan={2} className={`border-b border-r p-3 align-bottom pb-4 ${getStickyClasses('memo2').th}`}>고객찜</th>
                                 {products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}
                             </tr>
                             <tr>
@@ -995,7 +1039,7 @@ export default function PickupCalendarPage() {
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>
-                                        <td className="border-b border-r p-2 sm:p-3 text-xs sm:text-sm font-semibold bg-background group-hover:bg-muted/40 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] whitespace-nowrap truncate w-[100px] sm:w-[160px] min-w-[100px] sm:min-w-[160px] max-w-[100px] sm:max-w-[160px]">
+                                        <td className={`border-b border-r p-2 sm:p-3 text-xs sm:text-sm font-semibold whitespace-nowrap truncate ${getStickyClasses('name').td}`}>
                                             <div className="flex items-center gap-2">
                                                 {posSyncEnabled && (
                                                     <Checkbox 
@@ -1008,7 +1052,7 @@ export default function PickupCalendarPage() {
                                                 {c.checked ? <span className="line-through text-muted-foreground truncate">{c.name}</span> : <span className="truncate">{c.name}</span>}
                                             </div>
                                         </td>
-                                        <td className="border-b border-r px-1 sm:px-2 py-1 bg-emerald-50/10 sticky left-[100px] sm:left-[160px] z-10 w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] group-hover:bg-emerald-50/20">
+                                        <td className={`border-b border-r px-1 sm:px-2 py-1 ${getStickyClasses('receive').td}`}>
                                             <div className="flex justify-center items-center h-full pt-1">
                                                 <Checkbox
                                                     checked={c.checked}
@@ -1018,7 +1062,7 @@ export default function PickupCalendarPage() {
                                             </div>
                                         </td>
                                         {isDeleteMode && (
-                                            <td className="border-b border-r px-1 py-1 bg-red-50/10">
+                                            <td className={`border-b border-r px-1 py-1 ${getStickyClasses('delete').td}`}>
                                                 <div className="flex justify-center items-center h-full">
                                                     <Checkbox
                                                         checked={selectedDeleteIds.includes(c.id)}
@@ -1029,16 +1073,16 @@ export default function PickupCalendarPage() {
                                                 </div>
                                             </td>
                                         )}
-                                        <td className="border-b border-r px-3 py-2 bg-slate-50/40 text-left">
-                                            <span className="text-sm font-medium text-slate-800 break-words leading-tight block">{getSummary(c.items)}</span>
+                                        <td className={`border-b border-r px-3 py-2 ${getStickyClasses('summary').td}`}>
+                                            <span className="text-sm font-medium text-slate-800">{getSummary(c.items)}</span>
                                         </td>
-                                        <td className="border-b border-r px-3 py-2 bg-blue-50/20 text-right font-bold text-blue-900 border-x-blue-100 shadow-inner">
+                                        <td className={`border-b border-r px-3 py-2 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
                                             {c.items.reduce((total: number, qty: number, idx: number) => total + (qty * (products[idx]?.price || 0)), 0).toLocaleString()}원
                                         </td>
-                                        <td className="border-b border-r px-2 py-1 bg-indigo-50/10">
+                                        <td className={`border-b border-r px-2 py-1 ${getStickyClasses('memo1').td}`}>
                                             <Input defaultValue={c.memo1} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_1', e.target.value)} placeholder="메모" className="h-9 bg-transparent border-transparent" />
                                         </td>
-                                        <td className="border-b border-r px-2 py-1 bg-indigo-50/10">
+                                        <td className={`border-b border-r px-2 py-1 ${getStickyClasses('memo2').td}`}>
                                             <Input defaultValue={c.memo2} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_2', e.target.value)} placeholder="메모" className="h-9 bg-transparent border-transparent" />
                                         </td>
                                         {c.items.map((qty, j) => {
