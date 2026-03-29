@@ -13,7 +13,7 @@ import { useRef } from "react"
 import * as XLSX from 'xlsx'
 
 type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean }
-type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean }
+type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, originalIndex?: number }
 
 export default function PickupCalendarPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
