@@ -1016,7 +1016,7 @@ export default function PickupCalendarPage() {
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
                                     const remaining = p.stock - orderSum;
-                                    const unreceivedSum = rawCustomers.filter(c => !c.checked).reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                    const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[i] || 0), 0);
                                     const physicalTarget = remaining + unreceivedSum;
                                     return (
                                         <th key={i} className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[14px] font-extrabold text-emerald-800 shadow-inner">
