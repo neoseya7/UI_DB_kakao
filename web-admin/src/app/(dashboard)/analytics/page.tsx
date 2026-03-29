@@ -73,6 +73,7 @@ export default function AnalyticsPage() {
         const filteredOrders = rawOrders.filter((order: any) => {
             const rawDate = order.pickup_date
             if (!rawDate) return false
+            if (!order.is_received) return false // Only count fully delivered orders
             if (startDate && rawDate < startDate) return false
             if (endDate && rawDate > endDate) return false
             return true
@@ -123,6 +124,7 @@ export default function AnalyticsPage() {
         const filteredOrders = rawOrders.filter((order: any) => {
             const rawDate = order.pickup_date
             if (!rawDate) return false
+            if (!order.is_received) return false // Only count fully delivered orders
             if (startDate && rawDate < startDate) return false
             if (endDate && rawDate > endDate) return false
             return true
