@@ -430,7 +430,7 @@ export default function Dashboard() {
 
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
           {/* Change Settings Tools */}
-          <span className="text-sm font-semibold text-indigo-800 shrink-0">일괄 변경 옵션:</span>
+          <span className="text-sm font-semibold text-indigo-800 shrink-0">상품명지정:</span>
 
           <Select value={bulkDate} onValueChange={setBulkDate}>
             <SelectTrigger className="w-full sm:w-[150px] h-9 bg-white shadow-sm">
@@ -462,7 +462,7 @@ export default function Dashboard() {
           </Select>
 
           <Button onClick={handleChangeSelected} variant="default" size="sm" className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto shadow-sm text-sm" disabled={selectedIds.length === 0}>
-            <Edit3 className="w-4 h-4" /> 속성 일괄 변경
+            <Edit3 className="w-4 h-4" /> 변경
           </Button>
         </div>
       </div>
