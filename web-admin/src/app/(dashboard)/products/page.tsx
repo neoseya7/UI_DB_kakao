@@ -91,7 +91,31 @@ export default function ProductsPage() {
             .select('*')
             .eq('store_id', sid)
             .order('created_at', { ascending: false })
-        if (data) setProducts(data)
+            
+        if (data) {
+            const productIds = data.map(p => p.id)
+            const { data: orderItems } = await supabase
+                .from('order_items')
+                .select('product_id, quantity, orders!inner(store_id)')
+                .in('product_id', productIds)
+                .eq('orders.store_id', sid)
+
+            const qtyMap: Record<string, number> = {}
+            if (orderItems) {
+                for (const item of orderItems) {
+                    if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0
+                    qtyMap[item.product_id] += (item.quantity || 1)
+                }
+            }
+
+            const enhancedProducts = data.map(p => ({
+                ...p,
+                orderSum: qtyMap[p.id] || 0,
+                remainingStock: p.allocated_stock !== null ? Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0)) : null
+            }))
+
+            setProducts(enhancedProducts)
+        }
     }
 
     const handleSaveProduct = async (e: React.FormEvent) => {
@@ -545,7 +569,21 @@ export default function ProductsPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="stock">발주수량</Label>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="stock">발주수량</Label>
+                                    {editingProductId && (() => {
+                                        const p = products.find(prod => prod.id === editingProductId)
+                                        if (p && p.allocated_stock !== null) {
+                                            return (
+                                                <div className="flex gap-3 text-[11px] bg-slate-50 px-2 py-0.5 rounded-sm border text-slate-500 shadow-sm mt-1">
+                                                    <span className="font-medium tracking-tight">주문합계: <b className="text-slate-800">{p.orderSum || 0}</b></span>
+                                                    <span className="font-medium tracking-tight">남은수량: <b className={p.remainingStock === 0 ? 'text-red-600' : 'text-emerald-600'}>{p.remainingStock}</b></span>
+                                                </div>
+                                            )
+                                        }
+                                        return null
+                                    })()}
+                                </div>
                                 <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
                             </div>
 
@@ -781,20 +819,35 @@ export default function ProductsPage() {
                                         {product.allocated_stock === 0 && <Badge variant="destructive" className="shadow-sm shrink-0 whitespace-nowrap text-[10px] px-1.5 py-0">품절</Badge>}
                                     </CardHeader>
                                     <CardContent className="mt-auto px-3 pb-3 pt-0">
-                                        <div className={`flex items-center justify-between gap-2 p-1.5 rounded-md border ${product.allocated_stock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-muted/30 border-border/50'}`} onClick={(e) => e.stopPropagation()}>
-                                            <span className={`text-[10px] font-bold tracking-tight whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>발주수량</span>
-                                            <Input
-                                                type="number"
-                                                defaultValue={product.allocated_stock}
-                                                onBlur={(e) => {
-                                                    if (e.target.value !== String(product.allocated_stock)) {
-                                                        handleUpdateStock(product.id, parseInt(e.target.value) || 0)
-                                                    }
-                                                }}
-                                                className={`w-14 h-6 text-xs text-center font-bold px-1 py-0 shadow-inner ${product.allocated_stock === 0 ? 'text-red-700 border-red-300' : ''}`}
-                                            />
+                                        <div className={`flex w-full items-center justify-between p-1 px-1.5 rounded-md border ${product.remainingStock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-slate-50 border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex flex-col items-center">
+                                                <span className={`text-[9px] font-bold whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>발주</span>
+                                                <Input
+                                                    type="number"
+                                                    defaultValue={product.allocated_stock}
+                                                    onBlur={(e) => {
+                                                        if (e.target.value !== String(product.allocated_stock)) {
+                                                            handleUpdateStock(product.id, parseInt(e.target.value) || 0)
+                                                        }
+                                                    }}
+                                                    className={`w-[42px] h-5 text-[10px] text-center font-bold px-0 py-0 shadow-none border-b border-transparent hover:border-slate-300 bg-transparent focus:bg-white transition-colors ${product.allocated_stock === 0 ? 'text-red-700' : ''}`}
+                                                    title="수정하려면 클릭하세요"
+                                                />
+                                            </div>
+                                            <div className="w-[1px] h-6 bg-slate-200"></div>
+                                            <div className="flex flex-col items-center pt-0.5">
+                                                <span className="text-[9px] text-slate-500 font-bold whitespace-nowrap">주문</span>
+                                                <span className="text-[11px] font-bold text-slate-800 h-5 leading-5">{product.orderSum || 0}</span>
+                                            </div>
+                                            <div className="w-[1px] h-6 bg-slate-200"></div>
+                                            <div className="flex flex-col items-center pt-0.5 pr-1">
+                                                <span className="text-[9px] text-slate-500 font-bold whitespace-nowrap items-center gap-0.5">잔여</span>
+                                                <span className={`text-[11px] font-bold h-5 leading-5 tracking-tight ${product.remainingStock === 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                    {product.remainingStock ?? '-'}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <p className="text-[9px] text-center text-muted-foreground mt-1.5 mb-0">상세정보 열기 및 수정하기</p>
+                                        <p className="text-[8px] text-center text-muted-foreground mt-1.5 mb-0 tracking-tight font-medium">영역 클릭시 상품 상세 모달창 오픈</p>
                                     </CardContent>
                                 </Card>
                             ))}
