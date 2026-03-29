@@ -20,6 +20,7 @@ export default function PickupCalendarPage() {
     const [isMerged, setIsMerged] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, isUploading: false })
+    const cancelUploadRef = useRef(false)
 
     const [posSyncEnabled, setPosSyncEnabled] = useState(false)
     const [selectedPosOrders, setSelectedPosOrders] = useState<string[]>([])
@@ -153,6 +154,7 @@ export default function PickupCalendarPage() {
         if (!file || !storeId) return
 
         try {
+            cancelUploadRef.current = false
             setIsLoading(true)
             const buffer = await file.arrayBuffer()
             const wb = XLSX.read(buffer, { type: 'array' })
@@ -241,6 +243,11 @@ export default function PickupCalendarPage() {
                 return
             }
 
+            if (cancelUploadRef.current) {
+                await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
+                throw new Error("업로드가 취소되어 업로드된 데이터를 롤백(전체 삭제)했습니다.")
+            }
+
             setUploadProgress({ current: 50, total: 100, isUploading: true })
 
             let successCount = insertedOrders.length
@@ -248,6 +255,10 @@ export default function PickupCalendarPage() {
             const orderItemsPayload: any[] = []
 
             for (let i = 0; i < insertedOrders.length; i++) {
+                if (cancelUploadRef.current) {
+                    await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
+                    throw new Error("업로드가 취소되어 업로드된 데이터를 롤백(전체 삭제)했습니다.")
+                }
                 const dbOrder = insertedOrders[i]
                 const originalOrder = newOrders[i]
 
@@ -285,6 +296,11 @@ export default function PickupCalendarPage() {
 
             setUploadProgress({ current: 80, total: 100, isUploading: true })
 
+            if (cancelUploadRef.current) {
+                await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
+                throw new Error("업로드가 취소되어 업로드된 데이터를 롤백(전체 삭제)했습니다.")
+            }
+
             // 2. Bulk Insert Order Items
             if (orderItemsPayload.length > 0) {
                 const { error: itemBulkErr } = await supabase.from('order_items').insert(orderItemsPayload)
@@ -299,7 +315,11 @@ export default function PickupCalendarPage() {
             fetchMatrixData()
         } catch (err: any) {
             console.error("Excel import error:", err)
-            alert(`처리 중 에러가 발생했습니다: ${err.message}`)
+            if (err.message.includes("업로드가 취소")) {
+                alert("엑셀 일괄 업로드가 중지되어, 방금 파일에 있던 모든 데이터가 안전하게 삭제(롤백)되었습니다.")
+            } else {
+                alert(`처리 중 에러가 발생했습니다: ${err.message}`)
+            }
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = ""
             setUploadProgress({ current: 0, total: 0, isUploading: false })
@@ -605,6 +625,9 @@ export default function PickupCalendarPage() {
                                 style={{ width: `${Math.max(5, (uploadProgress.current / uploadProgress.total) * 100)}%` }} />
                         </div>
                         <p className="text-base font-bold text-emerald-600 font-mono tracking-wider">{uploadProgress.current} / {uploadProgress.total}</p>
+                        <div className="mt-2 text-center">
+                            <Button variant="destructive" onClick={() => { cancelUploadRef.current = true }} className="w-full font-bold h-10 shadow-sm text-sm">업로드 중지 및 취소</Button>
+                        </div>
                     </div>
                 </div>
             )}
