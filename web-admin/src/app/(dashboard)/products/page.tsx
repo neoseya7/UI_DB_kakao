@@ -348,7 +348,7 @@ export default function ProductsPage() {
             image_urls: prod.image_urls || (prod.image_url ? [prod.image_url] : []),
             is_visible: true,
             is_regular_sale: prod.is_regular_sale,
-            target_date: new Date().toISOString().split('T')[0] // Default to today
+            target_date: prod.target_date || new Date().toISOString().split('T')[0]
         }
 
         const { error } = await supabase.from('products').insert(newPayload)
