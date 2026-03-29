@@ -59,6 +59,7 @@ export default function PickupCalendarPage() {
     const [isTransferToRegular, setIsTransferToRegular] = useState(false)
     const [transferAvailableProducts, setTransferAvailableProducts] = useState<Product[]>([])
 
+    const [availableDates, setAvailableDates] = useState<string[]>([])
     const [products, setProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
 
@@ -107,6 +108,13 @@ export default function PickupCalendarPage() {
     const fetchMatrixData = async () => {
         if (!storeId) return
         setIsLoading(true)
+
+        // 0. Fetch available dates for Pill Navigation
+        const { data: dateData } = await supabase.from('products').select('target_date').eq('store_id', storeId).not('target_date', 'is', null)
+        if (dateData) {
+            const uniqueDates = Array.from(new Set(dateData.map(p => p.target_date))).sort() as string[]
+            setAvailableDates(uniqueDates)
+        }
 
         // 1. Fetch active products
         let pQuery = supabase.from('products').select('*').eq('store_id', storeId)
@@ -686,22 +694,28 @@ export default function PickupCalendarPage() {
 
             <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
                 {/* 1번째 줄: 날짜 선택과 검색 영역 */}
-                <div className="flex flex-col xl:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 sm:gap-4 w-full xl:w-auto">
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-4 w-full">
+                    <div className="flex items-center gap-2 sm:gap-4 w-full xl:w-auto overflow-x-auto pb-2 sm:pb-0 [&::-webkit-scrollbar]:hidden">
                         <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block shrink-0" />
-                        <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center w-full xl:w-auto">
-                            <Button onClick={() => changeDate(-1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-2.5 sm:px-4 shrink-0">
-                                ◀<span className="hidden min-[380px]:inline ml-1">이전</span>
-                            </Button>
+                        <div className="flex flex-nowrap gap-2 items-center w-max">
+                            {availableDates.map(date => (
+                                <Button
+                                    key={date}
+                                    variant={currentDate === date ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setCurrentDate(date)}
+                                    className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${currentDate === date ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
+                                >
+                                    {date}
+                                </Button>
+                            ))}
                             <Input
                                 type="date"
-                                className="flex-1 xl:flex-none items-center justify-center px-2 sm:px-4 h-10 font-bold text-[15px] sm:text-lg bg-background border rounded-md min-w-[130px] shadow-sm text-center"
+                                className="w-[140px] h-10 font-bold bg-white border-slate-200 rounded-full shadow-sm text-center text-slate-600 focus-visible:ring-indigo-500 transition-colors cursor-pointer shrink-0"
                                 value={currentDate}
                                 onChange={(e) => setCurrentDate(e.target.value)}
+                                title="달력에서 날짜 직접 지정"
                             />
-                            <Button onClick={() => changeDate(1)} variant="outline" size="sm" className="font-semibold bg-background h-10 px-2.5 sm:px-4 shrink-0">
-                                <span className="hidden min-[380px]:inline mr-1">다음</span>▶
-                            </Button>
                         </div>
                     </div>
 
