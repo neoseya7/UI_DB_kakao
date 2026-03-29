@@ -26,6 +26,10 @@ export default function PickupCalendarPage() {
     const [selectedPosOrders, setSelectedPosOrders] = useState<string[]>([])
     const [isPosPaying, setIsPosPaying] = useState(false)
 
+    // Delete Mode states
+    const [isDeleteMode, setIsDeleteMode] = useState(false)
+    const [selectedDeleteIds, setSelectedDeleteIds] = useState<string[]>([])
+
     const [currentDate, setCurrentDate] = useState(() => {
         const today = new Date();
         const yyyy = today.getFullYear();
@@ -145,6 +149,29 @@ export default function PickupCalendarPage() {
 
         setRawCustomers(mappedCustomers)
         setIsLoading(false)
+    }
+
+    const toggleDeleteSelect = (id: string) => {
+        setSelectedDeleteIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+    }
+
+    const executeBulkDelete = async () => {
+        if (selectedDeleteIds.length === 0) return alert("삭제할 대상을 체크해주세요.");
+        if (!confirm(`선택된 ${selectedDeleteIds.length}개의 주문을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
+
+        setIsLoading(true);
+        // Delete items from order_items first
+        const { error: itemsErr } = await supabase.from('order_items').delete().in('order_id', selectedDeleteIds);
+        if (itemsErr) console.error("Failed deleting items:", itemsErr);
+        
+        // Delete orders
+        const { error: ordersErr } = await supabase.from('orders').delete().in('id', selectedDeleteIds);
+        if (ordersErr) console.error("Failed deleting orders:", ordersErr);
+        
+        alert(`총 ${selectedDeleteIds.length}개의 주문이 일괄 삭제되었습니다.`);
+        setIsDeleteMode(false);
+        setSelectedDeleteIds([]);
+        fetchMatrixData();
     }
 
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -806,13 +833,27 @@ export default function PickupCalendarPage() {
                         </Button>
                     </div>
 
-                    <Button
-                        variant={isMerged ? "default" : "outline"}
-                        className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 ${isMerged ? 'bg-primary' : 'bg-white'}`}
-                        onClick={() => setIsMerged(!isMerged)}
-                    >
-                        <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
-                    </Button>
+                    <div className="flex w-full sm:w-auto gap-2">
+                        {isDeleteMode ? (
+                            <>
+                                <Button variant="outline" onClick={() => { setIsDeleteMode(false); setSelectedDeleteIds([]); }} className="h-10 px-3 w-full sm:w-auto shadow-sm">취소</Button>
+                                <Button variant="destructive" onClick={executeBulkDelete} className="h-10 px-3 w-full sm:w-auto shadow-sm gap-1.5 font-bold">
+                                    <Trash2 className="h-4 w-4" /> 선택 삭제 ({selectedDeleteIds.length})
+                                </Button>
+                            </>
+                        ) : (
+                            <Button variant="outline" onClick={() => setIsDeleteMode(true)} className="gap-2 shadow-sm border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all h-10 w-full sm:w-auto px-3">
+                                <Trash2 className="h-4 w-4" /> 삭제
+                            </Button>
+                        )}
+                        <Button
+                            variant={isMerged ? "default" : "outline"}
+                            className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 ${isMerged ? 'bg-primary' : 'bg-white'}`}
+                            onClick={() => setIsMerged(!isMerged)}
+                        >
+                            <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -836,7 +877,7 @@ export default function PickupCalendarPage() {
                                     </div>
                                 </th>
                                 <th rowSpan={6} className="border-b border-r px-1 sm:px-2 py-3 w-[45px] sm:w-[70px] min-w-[45px] sm:min-w-[70px] max-w-[45px] sm:max-w-[70px] bg-emerald-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm sticky left-[100px] sm:left-[160px] z-40 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help" title="수령확인">수령</th>
-                                <th rowSpan={6} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">관리</th>
+                                <th rowSpan={6} className="border-b border-r px-2 py-3 min-w-[50px] bg-red-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm">{isDeleteMode ? <span className="text-rose-600 font-bold">삭제</span> : "관리"}</th>
                                 <th rowSpan={6} className="border-b border-r px-4 py-3 min-w-[240px] bg-slate-100/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-left resize-x overflow-x-auto overflow-y-hidden">주문 상품 요약</th>
                                 <th rowSpan={6} className="border-b border-r px-3 py-3 w-[110px] min-w-[110px] bg-blue-50/90 whitespace-nowrap align-bottom pb-4 shadow-sm text-center">결제 금액</th>
                                 <th rowSpan={6} className="border-b border-r p-3 min-w-[120px] bg-indigo-50/90 align-bottom pb-4 shadow-sm resize-x overflow-x-auto overflow-y-hidden">고객 비고 1</th>
@@ -936,10 +977,19 @@ export default function PickupCalendarPage() {
                                         </td>
                                         <td className="border-b border-r px-1 py-1 bg-red-50/10">
                                             <div className="flex justify-center items-center h-full">
-                                                {!isMerged && (
-                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(c.id, c.name)} className="h-7 w-7 text-red-400 hover:text-red-700 hover:bg-red-100" title="이 주문 행 삭제">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                {isDeleteMode ? (
+                                                    <Checkbox
+                                                        checked={selectedDeleteIds.includes(c.id)}
+                                                        onCheckedChange={() => toggleDeleteSelect(c.id)}
+                                                        disabled={isMerged}
+                                                        className="h-5 w-5 sm:h-6 sm:w-6 border-rose-300 data-[state=checked]:bg-rose-500 rounded-sm cursor-pointer disabled:opacity-50"
+                                                    />
+                                                ) : (
+                                                    !isMerged && (
+                                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(c.id, c.name)} className="h-7 w-7 text-red-400 hover:text-red-700 hover:bg-red-100" title="이 주문 행 삭제">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )
                                                 )}
                                             </div>
                                         </td>
