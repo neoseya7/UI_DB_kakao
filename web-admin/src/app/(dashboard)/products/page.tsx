@@ -187,10 +187,31 @@ export default function ProductsPage() {
                 await supabase.from('products').update({ allocated_stock: 0 }).eq('id', duplicateProduct.id)
             }
 
-            const { error } = await supabase.from('products').insert(payload)
+            const { data: newProd, error } = await supabase.from('products').insert(payload).select().single()
 
-            if (!error) {
-                alert("상품이 데이터베이스에 성공적으로 등록되었습니다!")
+            if (!error && newProd) {
+                try {
+                    const res = await fetch('/api/products/sync-retroactive', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            store_id: storeId, 
+                            product_id: newProd.id, 
+                            product_name: newProd.collect_name,
+                            target_date: newProd.target_date
+                        })
+                    })
+                    const result = await res.json()
+                    if (result.success && result.synced > 0) {
+                        alert(`상품 등록 완료! (최근 2일 내 누락되었던 주문 ${result.synced}건이 자동 연동 복구되었습니다 🎉)`)
+                    } else {
+                        alert("상품이 데이터베이스에 성공적으로 등록되었습니다!")
+                    }
+                } catch (e) {
+                    console.error("Sync Error", e)
+                    alert("상품이 데이터베이스에 성공적으로 등록되었습니다!")
+                }
+
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
