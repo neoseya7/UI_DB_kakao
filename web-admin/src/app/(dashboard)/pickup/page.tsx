@@ -603,7 +603,12 @@ export default function PickupCalendarPage() {
     }
 
     const handleUpdateMemo = async (id: string, field: 'customer_memo_1' | 'customer_memo_2', val: string) => {
-        await supabase.from('orders').update({ [field]: val }).eq('id', id)
+        const { error } = await supabase.from('orders').update({ [field]: val }).eq('id', id)
+        if (!error) {
+            setRawCustomers(prev => prev.map(c => 
+                c.id === id ? { ...c, [field === 'customer_memo_1' ? 'memo1' : 'memo2']: val } : c
+            ))
+        }
     }
 
     const handleUpdateProductField = async (productId: string, field: 'price' | 'allocated_stock', value: string) => {
