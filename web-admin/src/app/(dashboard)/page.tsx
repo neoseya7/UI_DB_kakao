@@ -255,8 +255,33 @@ export default function Dashboard() {
         const targetDate = bulkDate && bulkDate !== "-" ? bulkDate : log.date
         const targetProduct = bulkProduct && bulkProduct !== "-" ? bulkProduct : log.product
 
+        let newProductName = targetProduct
+        let finalQty = log.quantity > 0 ? log.quantity : 1
+
+        const unmatchedBadges = log.matchBadges?.filter((b: any) => !b.isMatched) || []
+        
+        // Multi-Item Quantity Injection Fix
+        if (log.product && log.product.includes(", ") && targetProduct !== log.product) {
+            if (unmatchedBadges.length > 0) {
+                const targetUnmatchedName = unmatchedBadges[0].name
+                newProductName = log.product.replace(targetUnmatchedName, targetProduct)
+                
+                const items = log.product.split(", ")
+                for (const itemText of items) {
+                    const qtyMatch = itemText.match(/(.+?)(?:\((\d+)\))$/)
+                    const rawName = qtyMatch ? qtyMatch[1].trim() : itemText.trim()
+                    if (rawName === targetUnmatchedName) {
+                        if (qtyMatch) finalQty = parseInt(qtyMatch[2], 10)
+                        break
+                    }
+                }
+            } else {
+                newProductName = log.product // Safety fallback
+            }
+        }
+
         await supabase.from('chat_logs').update({
-          product_name: targetProduct,
+          product_name: newProductName,
           is_processed: true,
           category: 'ORDER',
           classification: '분류:수정'
@@ -295,13 +320,12 @@ export default function Dashboard() {
                 .eq('product_id', prod.id)
 
               if (existingItems && existingItems.length > 0) {
-                const newQty = log.quantity > 0 ? log.quantity : (existingItems[0].quantity || 1)
-                await supabase.from('order_items').update({ quantity: newQty }).eq('id', existingItems[0].id)
+                await supabase.from('order_items').update({ quantity: finalQty }).eq('id', existingItems[0].id)
               } else {
                 await supabase.from('order_items').insert({
                   order_id: orderId,
                   product_id: prod.id,
-                  quantity: log.quantity > 0 ? log.quantity : 1
+                  quantity: finalQty
                 })
               }
             }
