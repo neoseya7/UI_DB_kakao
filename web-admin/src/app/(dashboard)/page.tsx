@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [dateFilter, setDateFilter] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }))
   const [categoryFilter, setCategoryFilter] = useState("all_category")
   const [orderFilter, setOrderFilter] = useState("all_order")
+  const [sortOption, setSortOption] = useState("time_desc")
 
   useEffect(() => {
     fetchLogs()
@@ -154,6 +155,7 @@ export default function Dashboard() {
 
           return {
             id: row.id,
+            created_at: row.created_at,
             date: row.collect_date || "-",
             message: row.chat_content || "-",
             time: row.chat_time ? row.chat_time.substring(0, 5) : "-", // HH:mm
@@ -390,6 +392,16 @@ export default function Dashboard() {
               <SelectItem value="n">주문 X (N)</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={sortOption} onValueChange={setSortOption}>
+            <SelectTrigger className="w-[150px] bg-white">
+              <SelectValue placeholder="정렬 방식" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="time_desc">입력된 순 (최신)</SelectItem>
+              <SelectItem value="time_asc">입력된 순 (과거)</SelectItem>
+              <SelectItem value="nick_asc">닉네임 (가나다순)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="relative w-full md:w-[320px]">
@@ -486,6 +498,16 @@ export default function Dashboard() {
           }
 
           return match;
+        });
+
+        filteredLogs.sort((a, b) => {
+          if (sortOption === "nick_asc") {
+            return a.nickname.localeCompare(b.nickname);
+          } else if (sortOption === "time_asc") {
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          } else {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
         });
 
         return (

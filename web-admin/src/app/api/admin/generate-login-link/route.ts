@@ -28,10 +28,25 @@ export async function POST(req: Request) {
 
         // Ensure dynamic host replacement if Supabase is still defaulting to localhost
         let actionLink = data.properties.action_link;
-        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://ui-db-kakao.vercel.app';
         
-        if (actionLink.includes('localhost:3000')) {
-            actionLink = actionLink.replace(/http:\/\/localhost:3000/g, origin);
+        // Reconstruct the actual current domain (Vercel or local)
+        const protocol = req.headers.get('x-forwarded-proto') || 'https';
+        const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+        const origin = host ? `${protocol}://${host}` : req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://ui-db-kakao.vercel.app';
+        
+        try {
+            const urlObj = new URL(actionLink);
+            if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+                const originUrl = new URL(origin);
+                urlObj.protocol = originUrl.protocol;
+                urlObj.hostname = originUrl.hostname;
+                urlObj.port = originUrl.port;
+                actionLink = urlObj.toString();
+            }
+        } catch (err) {
+            // Fallback regex replacement for any localhost port
+            actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/g, origin);
+            actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/g, origin);
         }
 
         return NextResponse.json({ success: true, link: actionLink })
