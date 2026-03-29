@@ -80,7 +80,7 @@ export function Header() {
                         className="gap-1.5 h-8 text-[11px] sm:text-xs font-bold text-indigo-700 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 shadow-sm mr-2" 
                         title="고객 주문 검색 페이지 주소 복사"
                     >
-                        <Copy className="h-3.5 w-3.5" /> <span className="hidden min-[400px]:inline">퍼블릭 주소 복사</span>
+                        <Copy className="h-3.5 w-3.5" /> <span className="hidden min-[400px]:inline">주문검색페이지 주소 복사하기</span>
                     </Button>
                 </div>
             )}
