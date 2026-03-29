@@ -76,6 +76,7 @@ export default function Dashboard() {
         .select('*')
         .eq('store_id', user.id)
         .order('created_at', { ascending: false })
+        .limit(2000)
 
       if (dateFilter && dateFilter !== "all") {
         query = query.eq('collect_date', dateFilter)

@@ -181,7 +181,7 @@ export default function PickupCalendarPage() {
         } else if (searchScope === "date_range" && customSearchDate && !customEndDate) {
             oQuery = oQuery.eq('pickup_date', customSearchDate)
         }
-        const { data: oData } = await oQuery
+        const { data: oData } = await oQuery.limit(2000).order('pickup_date', { ascending: false })
         const orders = oData || []
 
         if (orders.length === 0) {
@@ -193,8 +193,13 @@ export default function PickupCalendarPage() {
         const orderIds = orders.map(o => o.id)
 
         // 3. Fetch order items
-        const { data: oiData } = await supabase.from('order_items').select('*').in('order_id', orderIds)
-        const orderItems = oiData || []
+        let orderItems: any[] = []
+        const CHUNK_SIZE = 250
+        for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
+            const chunk = orderIds.slice(i, i + CHUNK_SIZE)
+            const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk)
+            if (chunkData) orderItems = orderItems.concat(chunkData)
+        }
 
         // 4. Transform into matrix rows
         const mappedCustomers = orders.map(o => {
