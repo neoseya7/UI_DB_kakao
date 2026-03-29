@@ -476,8 +476,8 @@ export default function AdminPage() {
                             </button>
                         </div>
 
-                        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                            <table className="w-full text-left text-sm whitespace-nowrap">
+                        <div className="bg-white border rounded-xl overflow-x-auto shadow-sm">
+                            <table className="min-w-[1000px] w-full text-left text-sm whitespace-nowrap">
                                 <thead className="bg-slate-50/80 border-b">
                                     <tr>
                                         <th className="px-5 py-3.5 font-semibold text-slate-600">ID / 로그인</th>
