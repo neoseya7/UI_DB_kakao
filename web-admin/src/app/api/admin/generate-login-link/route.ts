@@ -26,7 +26,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, error: error?.message || "Failed to generate link" })
         }
 
-        return NextResponse.json({ success: true, link: data.properties.action_link })
+        // Ensure dynamic host replacement if Supabase is still defaulting to localhost
+        let actionLink = data.properties.action_link;
+        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://ui-db-kakao.vercel.app';
+        
+        if (actionLink.includes('localhost:3000')) {
+            actionLink = actionLink.replace(/http:\/\/localhost:3000/g, origin);
+        }
+
+        return NextResponse.json({ success: true, link: actionLink })
 
     } catch (e: any) {
         return NextResponse.json({ success: false, error: e.message }, { status: 500 })
