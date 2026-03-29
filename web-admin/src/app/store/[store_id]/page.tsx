@@ -295,7 +295,6 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                 
                                 const renderImage = settings?.show_product_image ?? true;
                                 const renderConfigPrice = true; // Always show price in catalog
-                                const renderStockValue = settings?.show_stock ?? true;
                                 const renderStockBadge = settings?.show_stock_badge ?? true;
 
                                 const displayImage = (product.image_urls && product.image_urls.length > 0) ? product.image_urls[0] : product.image_url;
@@ -342,14 +341,6 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                                         </span>
                                                     </div>
                                                     
-                                                    {renderStockValue && (
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-sm">📦</span>
-                                                            <span className={`font-semibold truncate ${outOfStock ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
-                                                                {outOfStock ? '품절' : `잔여 ${product.allocated_stock !== null ? product.allocated_stock : '∞'}개`}
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
 
                                                 {/* Price & Badges Row */}
@@ -393,7 +384,6 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                         const renderImage = settings?.show_product_image ?? true;
                         const renderConfigPrice = true; // Always show price in detail modal
                         const renderDesc = settings?.show_product_desc ?? true;
-                        const renderStockValue = settings?.show_stock ?? true;
                         const renderStockBadge = settings?.show_stock_badge ?? true;
                         
                         const images = (selectedProduct.image_urls && selectedProduct.image_urls.length > 0) 
@@ -409,7 +399,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                         )}
                                         {renderStockBadge && outOfStock && <Badge variant="destructive" className="shadow-none px-2">품절</Badge>}
                                         {renderStockBadge && !outOfStock && lowStock && <Badge className="bg-orange-500 hover:bg-orange-600 shadow-none px-2">마감 임박</Badge>}
-                                        {renderStockValue && selectedProduct.is_stocked && !outOfStock && <Badge className="bg-blue-500 hover:bg-blue-600 shadow-none px-2">입고 완료</Badge>}
+                                        {renderStockBadge && selectedProduct.is_stocked && !outOfStock && <Badge className="bg-blue-500 hover:bg-blue-600 shadow-none px-2">입고 완료</Badge>}
                                     </div>
                                     <h2 className="text-xl sm:text-2xl font-black text-slate-800 leading-snug tracking-tight">
                                         {selectedProduct.display_name || selectedProduct.collect_name}
@@ -465,25 +455,6 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                                 <span className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tighter">
                                                     {selectedProduct.price > 0 ? `${selectedProduct.price.toLocaleString()}원` : '가격 미정'}
                                                 </span>
-                                            </div>
-                                        )}
-
-                                        {renderStockValue && (
-                                            <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm mt-1">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-[15px] font-bold text-slate-700 flex items-center gap-1.5">
-                                                        📦 현장 예약 현황
-                                                    </span>
-                                                    <span className={`text-[15px] font-black ${selectedProduct.is_stocked ? 'text-blue-600' : 'text-slate-400'}`}>
-                                                        {selectedProduct.is_stocked ? '입고 완료 🟢' : '준비 중 (미입고)'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-200">
-                                                    <span className="text-[14px] font-bold text-slate-500">배정 수량</span>
-                                                    <span className={`text-[14px] font-bold text-slate-700`}>
-                                                        {selectedProduct.allocated_stock !== null ? `현재 준비된 수량 ${selectedProduct.allocated_stock}개` : '수량 제한 없음'}
-                                                    </span>
-                                                </div>
                                             </div>
                                         )}
 
