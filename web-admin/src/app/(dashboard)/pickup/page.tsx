@@ -182,18 +182,21 @@ export default function PickupCalendarPage() {
                     const dateObj = new Date(Math.round((pickupDateObj - 25569) * 86400 * 1000))
                     formattedDate = dateObj.toISOString().split('T')[0]
                 } else {
-                    // manual text parse fallback (e.g. "3월 31일", "03.31", "2026. 03. 31.")
+                    // manual text parse fallback (e.g. "3월 31일", "03.31", "04-01(수)", "2026. 03. 31.")
+                    let cleanedDate = formattedDate.replace(/\(.*?\)/g, '').trim();
                     const currentYear = new Date().getFullYear();
                     
                     // Match full year format first: YYYY년 M월 D일 or YYYY.MM.DD
-                    const fullParts = formattedDate.match(/(\d{4})[\-\.\/년\s]+(\d{1,2})[\-\.\/월\s]+(\d{1,2})[일\.]?/);
+                    const fullParts = cleanedDate.match(/(\d{4})[\-\.\/년\s]+(\d{1,2})[\-\.\/월\s]+(\d{1,2})[일\.]?/);
                     if (fullParts) {
                         formattedDate = `${fullParts[1]}-${fullParts[2].padStart(2, '0')}-${fullParts[3].padStart(2, '0')}`;
                     } else {
-                        // Match partial format: M월 D일 or MM.DD
-                        const partialParts = formattedDate.match(/(\d{1,2})[\/\.월\s]+(\d{1,2})[일\.]?/);
+                        // Match partial format: M월 D일 or MM.DD or MM-DD
+                        const partialParts = cleanedDate.match(/(\d{1,2})[\-\.\/월\s]+(\d{1,2})[일\.]?/);
                         if (partialParts) {
                             formattedDate = `${currentYear}-${partialParts[1].padStart(2, '0')}-${partialParts[2].padStart(2, '0')}`;
+                        } else {
+                            formattedDate = cleanedDate;
                         }
                     }
                 }
