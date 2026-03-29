@@ -358,7 +358,8 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
 
                                                     <div className="flex items-center gap-1 pr-1">
                                                         {renderStockBadge && outOfStock && <span className="text-rose-500 font-black text-xs px-1.5 py-0.5 bg-rose-50 rounded-md border border-rose-100">SOLD OUT</span>}
-                                                        {renderStockBadge && !outOfStock && lowStock && <span className="text-orange-500 font-bold text-xs">마감임박</span>}
+                                                        {renderStockBadge && !outOfStock && lowStock && <span className="text-orange-500 font-bold text-xs bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-100">마감임박</span>}
+                                                        {renderStockBadge && !outOfStock && !lowStock && <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100">구매가능</span>}
                                                         {product.collect_name?.includes('한정') && !outOfStock && <span className="text-orange-600 font-bold text-xs bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-100">한정판매</span>}
                                                     </div>
                                                 </div>
@@ -393,12 +394,13 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                         return (
                             <div className="flex flex-col max-h-[85vh]">
                                 <div className="p-5 bg-white border-b border-slate-100 z-10 shrink-0">
-                                    <div className="flex gap-1.5 mb-2">
+                                    <div className="flex flex-wrap gap-1.5 mb-2">
                                         {!selectedProduct.is_regular_sale && (
                                             <Badge variant="secondary" className="bg-slate-100 font-bold border-slate-200 text-slate-600 shadow-none px-2">{selectedProduct.target_date} 예약</Badge>
                                         )}
                                         {renderStockBadge && outOfStock && <Badge variant="destructive" className="shadow-none px-2">품절</Badge>}
                                         {renderStockBadge && !outOfStock && lowStock && <Badge className="bg-orange-500 hover:bg-orange-600 shadow-none px-2">마감 임박</Badge>}
+                                        {renderStockBadge && !outOfStock && !lowStock && <Badge className="bg-emerald-500 hover:bg-emerald-600 shadow-none px-2">구매 가능</Badge>}
                                         {renderStockBadge && selectedProduct.is_stocked && !outOfStock && <Badge className="bg-blue-500 hover:bg-blue-600 shadow-none px-2">입고 완료</Badge>}
                                     </div>
                                     <h2 className="text-xl sm:text-2xl font-black text-slate-800 leading-snug tracking-tight">

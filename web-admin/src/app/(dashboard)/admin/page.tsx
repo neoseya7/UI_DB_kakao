@@ -523,7 +523,7 @@ export default function AdminPage() {
                                                         value={kakaoRoomNames[store.id] || ''}
                                                         onChange={e => setKakaoRoomNames(prev => ({ ...prev, [store.id]: e.target.value }))}
                                                         placeholder="예: 서울강남점"
-                                                        className="h-8 w-[140px] text-sm"
+                                                        className="h-8 w-[280px] text-sm"
                                                     />
                                                     <Button onClick={() => handleSaveKakaoRoomName(store.id)} size="sm" variant="outline" className="h-8">저장</Button>
                                                 </div>
