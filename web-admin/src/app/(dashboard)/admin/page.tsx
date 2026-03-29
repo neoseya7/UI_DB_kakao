@@ -375,7 +375,7 @@ export default function AdminPage() {
     )
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-10 px-2 lg:px-4">
+        <div className="flex flex-col gap-6 w-full max-w-screen-2xl mx-auto pb-10 px-2 lg:px-4">
             <div className="flex flex-col gap-2">
                 <h2 className="text-2xl font-bold tracking-tight text-slate-900 border-b border-border/80 pb-4">
                     <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mr-2">최고 관리자</span>
