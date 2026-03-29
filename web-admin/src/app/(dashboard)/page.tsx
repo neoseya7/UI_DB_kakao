@@ -288,27 +288,22 @@ export default function Dashboard() {
         }).eq('id', log.id)
 
         if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-") {
-          const { data: existingOrders } = await supabase.from('orders')
-            .select('id')
-            .eq('store_id', user.id)
-            .eq('pickup_date', targetDate)
-            .eq('customer_nickname', log.nickname)
-
           let orderId = null
 
-          if (existingOrders && existingOrders.length > 0) {
-            orderId = existingOrders[0].id
-            await supabase.from('orders').update({ customer_memo_1: '관리자 수동 복구' }).eq('id', orderId)
-          } else {
-            const { data: newOrder } = await supabase.from('orders').insert({
-              store_id: user.id,
-              pickup_date: targetDate,
-              customer_nickname: log.nickname,
-              is_received: false,
-              customer_memo_1: '관리자 수동 복구'
-            }).select().single()
+          // Unconditionally create a brand new separate row per user request, preventing product merges into existing nicknames
+          const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
+            store_id: user.id,
+            pickup_date: targetDate,
+            customer_nickname: log.nickname,
+            is_received: false,
+            customer_memo_1: '관리자 수동 복구'
+          }).select().single()
 
-            if (newOrder) orderId = newOrder.id
+          if (newOrder) orderId = newOrder.id
+
+          if (orderErr) {
+            console.error("New order generation failed:", orderErr)
+            continue
           }
 
           if (orderId && activeProducts) {
