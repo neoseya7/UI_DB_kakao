@@ -513,9 +513,18 @@ export default function PickupCalendarPage() {
         }
     }
 
-    const toggleCheck = async (id: string, current: boolean) => {
-        await supabase.from('orders').update({ is_received: !current }).eq('id', id)
-        setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
+    const toggleCheck = async (id: string, current: boolean, name?: string) => {
+        if (isMerged && name) {
+            const targetIds = rawCustomers.filter(rc => rc.name === name).map(rc => rc.id).filter(Boolean) as string[]
+            if (targetIds.length > 0) {
+                await supabase.from('orders').update({ is_received: !current }).in('id', targetIds)
+                setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
+            }
+        } else {
+            if (!id) return
+            await supabase.from('orders').update({ is_received: !current }).eq('id', id)
+            setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
+        }
     }
 
     const handleDeleteOrder = async (id: string, name: string) => {
@@ -1003,9 +1012,8 @@ export default function PickupCalendarPage() {
                                             <div className="flex justify-center items-center h-full pt-1">
                                                 <Checkbox
                                                     checked={c.checked}
-                                                    onCheckedChange={() => !isMerged && toggleCheck(c.id, c.checked)}
-                                                    disabled={isMerged}
-                                                    className="h-5 w-5 sm:h-6 sm:w-6 border-slate-300 data-[state=checked]:bg-emerald-500 rounded-sm cursor-pointer disabled:opacity-50"
+                                                    onCheckedChange={() => toggleCheck(c.id, c.checked, c.name)}
+                                                    className="h-5 w-5 sm:h-6 sm:w-6 border-slate-300 data-[state=checked]:bg-emerald-500 rounded-sm cursor-pointer"
                                                 />
                                             </div>
                                         </td>
