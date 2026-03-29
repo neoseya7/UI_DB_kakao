@@ -292,7 +292,11 @@ export default function ProductsPage() {
     const handleUpdateStock = async (id: string, newStock: number) => {
         const { error } = await supabase.from('products').update({ allocated_stock: newStock }).eq('id', id)
         if (!error) {
-            setProducts(products.map(p => p.id === id ? { ...p, allocated_stock: newStock } : p))
+            setProducts(products.map(p => p.id === id ? { 
+                ...p, 
+                allocated_stock: newStock,
+                remainingStock: Math.max(0, newStock - (p.orderSum || 0))
+            } : p))
         }
     }
 
