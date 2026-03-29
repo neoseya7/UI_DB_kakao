@@ -290,7 +290,7 @@ export default function PickupCalendarPage() {
                 const originalOrder = newOrders[i]
 
                 for (const item of originalOrder.items) {
-                    let matchedProduct = localProducts.find(p => p.name === item.productName || p.name.includes(item.productName))
+                    let matchedProduct = localProducts.find(p => p.name === item.productName)
 
                     if (!matchedProduct) {
                         const { data: newProd, error: pErr } = await supabase.from('products').insert({
