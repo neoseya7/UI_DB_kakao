@@ -30,23 +30,19 @@ export async function POST(req: Request) {
         let actionLink = data.properties.action_link;
         
         // Reconstruct the actual current domain (Vercel or local)
-        const protocol = req.headers.get('x-forwarded-proto') || 'https';
-        const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
-        const origin = host ? `${protocol}://${host}` : req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://ui-db-kakao.vercel.app';
+        const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host');
         
-        try {
-            const urlObj = new URL(actionLink);
-            if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
-                const originUrl = new URL(origin);
-                urlObj.protocol = originUrl.protocol;
-                urlObj.hostname = originUrl.hostname;
-                urlObj.port = originUrl.port;
-                actionLink = urlObj.toString();
+        if (actionLink.includes('localhost') || actionLink.includes('127.0.0.1')) {
+            if (hostHeader && !hostHeader.includes('localhost') && !hostHeader.includes('127.0.0.1')) {
+                const protocol = req.headers.get('x-forwarded-proto') || 'https';
+                const realOrigin = `${protocol}://${hostHeader}`;
+                actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/gi, realOrigin);
+                actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/gi, realOrigin);
+            } else {
+                // Hard Regex Fallback if all else fails
+                actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/gi, 'https://ui-db-kakao.vercel.app');
+                actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/gi, 'https://ui-db-kakao.vercel.app');
             }
-        } catch (err) {
-            // Fallback regex replacement for any localhost port
-            actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/g, origin);
-            actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/g, origin);
         }
 
         return NextResponse.json({ success: true, link: actionLink })
