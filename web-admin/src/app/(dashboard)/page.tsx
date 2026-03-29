@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
+import { TableVirtuoso } from "react-virtuoso"
 import { supabase } from "@/lib/supabaseClient"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -513,41 +514,47 @@ export default function Dashboard() {
         return (
           <>
             <Card className="overflow-hidden border-border/80 shadow-md bg-card">
-              <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full">
-                <table className="w-full text-sm text-left border-collapse min-w-max table-fixed">
-                  <thead className="bg-slate-100/90 sticky top-0 z-10 shadow-sm border-b border-border">
+              <div className="w-full max-h-[600px] h-[600px] overflow-x-auto">
+                <TableVirtuoso
+                  style={{ height: "600px", minWidth: "1350px" }}
+                  data={filteredLogs}
+                  components={{
+                    Table: (props) => <table {...props} className="w-full text-sm text-left border-collapse table-fixed" style={{...props.style, minWidth: "1350px"}} />,
+                    TableHead: React.forwardRef((props, ref) => <thead {...props} ref={ref as any} className="bg-slate-100/90 sticky top-0 z-20 shadow-sm border-b border-border m-0" />),
+                    TableRow: ({ item, ...props }) => {
+                        const log = item as any;
+                        const isSelected = log && selectedIds.includes(log.id)
+                        return <tr {...props} onClick={() => log && toggleRow(log.id)} className={`transition-colors cursor-pointer group ${isSelected ? 'bg-indigo-50/50 hover:bg-indigo-50/80' : 'bg-white hover:bg-muted/40'} border-b border-border/50`} />
+                    },
+                    TableBody: React.forwardRef((props, ref) => <tbody {...props} ref={ref as any} className="divide-y divide-border/50" />),
+                  }}
+                  fixedHeaderContent={() => (
                     <tr>
-                      <th className="px-4 py-3.5 w-12 text-center">
+                      <th className="px-4 py-3.5 w-[50px] text-center bg-slate-100/90 m-0 border-b border-border">
                         <Checkbox className="mx-auto border-slate-400 bg-white" checked={selectedIds.length === filteredLogs.length && filteredLogs.length > 0} onCheckedChange={() => toggleAll(filteredLogs)} />
                       </th>
-                      <th className="px-3 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[75px] max-w-[75px]">수집일</th>
-                      <th className="px-3 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[60px] max-w-[60px]">대화시간</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 w-[260px]">대화</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[100px]">카테고리</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[120px]">닉네임</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 w-[200px]">상품명</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[60px]">수량</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[100px]">분류</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[80px]">주문여부</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap bg-indigo-50/50 w-[80px]">관리</th>
+                      <th className="px-3 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[80px] bg-slate-100/90 m-0 border-b border-border">수집일</th>
+                      <th className="px-3 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[70px] bg-slate-100/90 m-0 border-b border-border">대화시간</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 w-[280px] bg-slate-100/90 m-0 border-b border-border">대화</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[100px] bg-slate-100/90 m-0 border-b border-border">카테고리</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap w-[120px] bg-slate-100/90 m-0 border-b border-border">닉네임</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 w-[220px] bg-slate-100/90 m-0 border-b border-border">상품명</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[60px] bg-slate-100/90 m-0 border-b border-border">수량</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[150px] bg-slate-100/90 m-0 border-b border-border">분류</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[100px] bg-slate-100/90 m-0 border-b border-border">주문여부</th>
+                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap bg-indigo-50/50 w-[80px] m-0 border-b border-border">관리</th>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/50">
-                    {filteredLogs.length === 0 && (
-                      <tr>
-                        <td colSpan={10} className="text-center py-10 text-muted-foreground font-medium">검색된 대화 내역이 없습니다.</td>
-                      </tr>
-                    )}
-                    {filteredLogs.map((log) => {
+                  )}
+                  itemContent={(index, log) => {
                       const isSelected = selectedIds.includes(log.id)
                       return (
-                        <tr key={log.id} onClick={() => toggleRow(log.id)} className={`transition-colors cursor-pointer group ${isSelected ? 'bg-indigo-50/50 hover:bg-indigo-50/80' : 'bg-white hover:bg-muted/40'}`}>
-                          <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <>
+                          <td className="px-4 py-3 text-center flex items-center justify-center h-full" onClick={(e) => e.stopPropagation()}>
                             <Checkbox className={`mx-auto border-slate-300 ${isSelected ? 'border-primary' : ''}`} checked={isSelected} onCheckedChange={() => toggleRow(log.id)} />
                           </td>
-                          <td className="px-2 py-3 text-slate-600 font-medium w-[75px] max-w-[75px] tracking-tighter truncate text-xs" title={log.date}>{log.date}</td>
-                          <td className="px-2 py-3 font-medium w-[60px] max-w-[60px] tracking-tighter truncate text-xs" title={log.time}>{log.time}</td>
-                          <td className="px-4 py-3 text-slate-900 break-words whitespace-normal w-[260px] max-w-[260px]">
+                          <td className="px-2 py-3 text-slate-600 font-medium tracking-tighter truncate text-xs" title={log.date}>{log.date}</td>
+                          <td className="px-2 py-3 font-medium tracking-tighter truncate text-xs" title={log.time}>{log.time}</td>
+                          <td className="px-4 py-3 text-slate-900 break-words whitespace-normal">
                             <span className="line-clamp-2" title={log.message}>{log.message}</span>
                           </td>
                           <td className="px-4 py-3">
@@ -556,7 +563,7 @@ export default function Dashboard() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 font-semibold text-slate-800 group-hover:text-primary truncate" title={log.nickname}>{log.nickname}</td>
-                          <td className="px-4 py-3 text-primary/90 font-semibold break-words whitespace-normal w-[200px] max-w-[200px] leading-tight" title={log.product}>{log.product}</td>
+                          <td className="px-4 py-3 text-primary/90 font-semibold break-words whitespace-normal leading-tight" title={log.product}>{log.product}</td>
                           <td className="px-4 py-3 text-center font-bold">{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex flex-col gap-1 items-center justify-center">
@@ -596,11 +603,10 @@ export default function Dashboard() {
                               📋 복제
                             </Button>
                           </td>
-                        </tr>
+                        </>
                       )
-                    })}
-                  </tbody>
-                </table>
+                  }}
+                />
               </div>
             </Card>
 

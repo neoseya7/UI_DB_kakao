@@ -51,6 +51,7 @@ export default function PickupCalendarPage() {
 
     const [editingQty, setEditingQty] = useState<{ orderId: string, productIdx: number } | null>(null)
     const [tempQty, setTempQty] = useState<string>("")
+    const [editingMemo, setEditingMemo] = useState<{ orderId: string, type: 'memo1' | 'memo2' } | null>(null)
 
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
     const [transferSourceDate, setTransferSourceDate] = useState("")
@@ -1105,8 +1106,21 @@ export default function PickupCalendarPage() {
                                         </td>
                                         <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
                                             <div className="flex flex-col gap-1 w-full relative">
-                                                <Input defaultValue={c.memo1} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_1', e.target.value)} placeholder="비고 1" className="h-7 text-xs bg-white/70 border-slate-200 px-1 text-center" />
-                                                <Input defaultValue={c.memo2} onBlur={(e) => handleUpdateMemo(c.id, 'customer_memo_2', e.target.value)} placeholder="고객찜" className="h-7 text-xs bg-white/70 border-slate-200 px-1 text-center" />
+                                                {editingMemo?.orderId === c.id && editingMemo?.type === 'memo1' ? (
+                                                    <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고 1" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
+                                                ) : (
+                                                    <div onClick={() => !isMerged && setEditingMemo({ orderId: c.id, type: 'memo1' })} className="h-7 text-xs bg-white/70 border border-slate-200 rounded-sm px-1 flex items-center justify-center cursor-pointer hover:bg-white truncate" title={isMerged ? "이름 합치기 모드에서는 수정 불가" : "클릭하여 편집"}>
+                                                        {c.memo1 || <span className="text-muted-foreground/50">비고 1</span>}
+                                                    </div>
+                                                )}
+                                                
+                                                {editingMemo?.orderId === c.id && editingMemo?.type === 'memo2' ? (
+                                                    <Input autoFocus defaultValue={c.memo2} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_2', e.target.value); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="고객찜" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
+                                                ) : (
+                                                    <div onClick={() => !isMerged && setEditingMemo({ orderId: c.id, type: 'memo2' })} className="h-7 text-xs bg-white/70 border border-slate-200 rounded-sm px-1 flex items-center justify-center cursor-pointer hover:bg-white truncate" title={isMerged ? "이름 합치기 모드에서는 수정 불가" : "클릭하여 편집"}>
+                                                        {c.memo2 || <span className="text-muted-foreground/50">고객찜</span>}
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
                                         {c.items.map((qty, j) => {
