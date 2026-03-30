@@ -264,16 +264,20 @@ export async function POST(request: Request) {
 
                 if (isDuplicate) classifications.push("중복주의")
 
+                const isCancellation = promptCat.includes("취소") || promptCat === "주문취소";
+
                 const isActualOrder = (promptCat === "픽업고지" || promptCat.includes("주문") || promptCat.includes("예약"))
-                    && !promptCat.includes("취소") && !promptCat.includes("문의")
+                    && !isCancellation && !promptCat.includes("문의")
                     && !classifications.includes("재고초과주문")
                     && !classifications.includes("상품미등록");
 
-                const finalIntent = isActualOrder ? "ORDER" : (classifications.includes("재고초과주문") || classifications.includes("상품미등록")) ? "UNKNOWN" : promptCat === "주문취소" ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
+                const shouldSaveToOrders = isActualOrder || (isCancellation && !classifications.includes("상품미등록"));
+
+                const finalIntent = isActualOrder ? "ORDER" : (classifications.includes("재고초과주문") || classifications.includes("상품미등록")) ? "UNKNOWN" : isCancellation ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
                 await supabase.from('chat_logs').update({ category: finalIntent }).eq('id', logId)
 
                 // Save to Orders DB
-                if (extractedItems.length > 0 && isActualOrder) {
+                if (extractedItems.length > 0 && shouldSaveToOrders) {
                     let finalDateStr = collect_date
                     if (firstItem.pickup_date && firstItem.pickup_date !== "날짜미지정") {
                         if (firstItem.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -294,17 +298,20 @@ export async function POST(request: Request) {
                         pickup_date: targetDate.toISOString().split('T')[0],
                         customer_nickname: nickname,
                         is_received: false,
-                        customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
+                        customer_memo_1: isCancellation ? "자동 취소반영" : (isDuplicate ? "중복 접수됨" : "AI 수집")
                     }).select().single()
 
                     if (orderData) {
                         for (const item of extractedItems) {
                             const matchedProduct = products?.find(p => p.collect_name === item.product)
                             if (matchedProduct) {
+                                let itemQty = parseInt(item.quantity, 10) || 1
+                                if (isCancellation) itemQty = -Math.abs(itemQty)
+
                                 await supabase.from('order_items').insert({
                                     order_id: orderData.id,
                                     product_id: matchedProduct.id,
-                                    quantity: item.quantity || 1
+                                    quantity: itemQty
                                 })
                             }
                         }
@@ -315,8 +322,9 @@ export async function POST(request: Request) {
                 let allProductsStr = "-";
                 if (extractedItems.length > 0) {
                     const productStrings = extractedItems.map(item => {
-                        const q = parseInt(item.quantity, 10);
+                        let q = parseInt(item.quantity, 10);
                         if (!isNaN(q) && q > 0) {
+                            if (isCancellation) q = -Math.abs(q);
                             totalQuantity += q;
                             return extractedItems.length > 1 ? `${item.product}(${q})` : item.product;
                         }
@@ -326,9 +334,9 @@ export async function POST(request: Request) {
                 }
 
                 await supabase.from('chat_logs').update({
-                    is_processed: isActualOrder,
+                    is_processed: shouldSaveToOrders,
                     product_name: allProductsStr,
-                    quantity: totalQuantity > 0 ? totalQuantity : null,
+                    quantity: totalQuantity !== 0 ? totalQuantity : null,
                     classification: classifications.join(", ") || null
                 }).eq('id', logId)
 
