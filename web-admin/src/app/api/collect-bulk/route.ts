@@ -193,9 +193,16 @@ export async function POST(request: Request) {
                     const newItems: any[] = [];
                     for (const item of extractedItems) {
                         let combinedName = item.product || "";
-                        if (combinedName.includes(",")) {
-                            const productsStr = combinedName.split(",").map((s: string) => s.trim()).filter(Boolean);
-                            const quantitiesStr = item.quantity ? item.quantity.toString().split(",").map((s: string) => s.trim()) : ["1"];
+                        // Catch commas, plus signs, slashes, or ANDs. But be careful not to split standard spacing like "대저 토마토".
+                        // Wait, if it has "항정살(1) 가브리살(1)", the delimiter is literally a space between closing parenthesis and text!
+                        // Let's normalize it first: replace ") " with "), "
+                        combinedName = combinedName.replace(/\)\s+([^\s])/g, '), $1');
+                        
+                        // Now any "가브리살(1) 항정살(1)" becomes "가브리살(1), 항정살(1)"
+                        if (combinedName.includes(",") || combinedName.includes("+") || combinedName.includes("&") || combinedName.includes("/")) {
+                            // Split by all common delimiters
+                            const productsStr = combinedName.split(/[,+&/]/).map((s: string) => s.trim()).filter(Boolean);
+                            const quantitiesStr = item.quantity ? item.quantity.toString().split(/[,+&/]/).map((s: string) => s.trim()) : ["1"];
                             
                             for (let i = 0; i < productsStr.length; i++) {
                                 let rawName = productsStr[i];
@@ -210,7 +217,7 @@ export async function POST(request: Request) {
                             }
                         } else {
                             let rawName = combinedName;
-                            let itemQtyStr = item.quantity || "1";
+                            let itemQtyStr = item.quantity ? item.quantity.toString() : "1";
                             const qtyMatch = rawName.match(/(.+?)(?:\((\d+)\))$/);
                             if (qtyMatch) {
                                 rawName = qtyMatch[1].trim();
