@@ -51,26 +51,28 @@ export async function GET(request: Request, context: { params: Promise<{ store_i
             .eq('is_visible', true)
             .order('created_at', { ascending: false })
 
-        // 4. Dynamically compute 'Remaining Stock' by aggregating historical order items
+        // 4. Dynamically compute 'Remaining Stock' by aggregating historical order items using native RPC
         if (productsData && productsData.length > 0) {
-            const productIds = productsData.map(p => p.id)
-            const { data: orderItems } = await supabaseAdmin
-                .from('order_items')
-                .select('product_id, quantity')
-                .in('product_id', productIds)
+            const productIds = productsData.map(p => p.id);
+            
+            const { data: rpcData, error: rpcErr } = await supabaseAdmin.rpc('get_product_sales_sum', {
+                p_store_id: storeId,
+                p_product_ids: productIds
+            });
 
-            const qtyMap: Record<string, number> = {}
-            if (orderItems) {
-                for (const item of orderItems) {
-                    if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0
-                    qtyMap[item.product_id] += (item.quantity || 1)
+            const qtyMap: Record<string, number> = {};
+            if (rpcData && !rpcErr) {
+                for (const item of rpcData) {
+                    qtyMap[item.product_id] = parseInt(item.total_quantity, 10) || 0;
                 }
+            } else if (rpcErr) {
+                console.error("RPC Error in public route:", rpcErr);
             }
 
             for (const p of productsData) {
                 if (p.allocated_stock !== null) {
-                    const orderedQty = qtyMap[p.id] || 0
-                    p.allocated_stock = Math.max(0, p.allocated_stock - orderedQty)
+                    const orderedQty = qtyMap[p.id] || 0;
+                    p.allocated_stock = Math.max(0, p.allocated_stock - orderedQty);
                 }
             }
         }
