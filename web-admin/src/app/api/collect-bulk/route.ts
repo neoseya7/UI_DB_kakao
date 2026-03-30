@@ -37,17 +37,26 @@ export async function POST(request: Request) {
         const productIds = productsRaw?.map(p => p.id) || [];
         let qtyMap: Record<string, number> = {};
         if (productIds.length > 0) {
-            const { data: orderItems } = await supabase
-                .from('order_items')
-                .select('product_id, quantity, orders!inner(store_id)')
-                .in('product_id', productIds)
-                .eq('orders.store_id', store_id);
+            let startIdx = 0;
+            const PAGE_SIZE = 1000;
+            
+            while (true) {
+                const { data: orderItems } = await supabase
+                    .from('order_items')
+                    .select('product_id, quantity, orders!inner(store_id)')
+                    .in('product_id', productIds)
+                    .eq('orders.store_id', store_id)
+                    .range(startIdx, startIdx + PAGE_SIZE - 1);
 
-            if (orderItems) {
-                for (const item of orderItems) {
-                    if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0;
-                    qtyMap[item.product_id] += (item.quantity || 1);
+                if (orderItems && orderItems.length > 0) {
+                    for (const item of orderItems) {
+                        if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0;
+                        qtyMap[item.product_id] += (item.quantity || 1);
+                    }
                 }
+                
+                if (!orderItems || orderItems.length < PAGE_SIZE) break;
+                startIdx += PAGE_SIZE;
             }
         }
 
