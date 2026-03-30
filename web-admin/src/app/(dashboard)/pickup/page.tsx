@@ -780,7 +780,7 @@ export default function PickupCalendarPage() {
                                     onClick={() => setCurrentDate(date)}
                                     className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${currentDate === date ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
                                 >
-                                    {date}
+                                    {date} ({new Date(date).toLocaleDateString('ko-KR', { weekday: 'short' })})
                                 </Button>
                             ))}
                             <Input

@@ -447,7 +447,7 @@ export default function ProductsPage() {
                             onClick={() => setFilterDate(date)}
                             className="rounded-full shadow-sm transition-all"
                         >
-                            {date}
+                            {date} ({new Date(date).toLocaleDateString('ko-KR', { weekday: 'short' })})
                         </Button>
                     ))}
                 </div>
