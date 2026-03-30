@@ -47,7 +47,8 @@ export default function ProductsPage() {
         image_url: "",
         image_urls: [] as string[],
         is_visible: true,
-        is_stocked: false
+        is_stocked: false,
+        box_quantity: ""
     })
     const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([])
     const [isSaving, setIsSaving] = useState(false)
@@ -176,6 +177,12 @@ export default function ProductsPage() {
             const parsed = parseInt(formData.allocated_stock);
             finalStock = isNaN(parsed) ? 0 : parsed;
         }
+        let finalBoxQty = null;
+        if (formData.box_quantity !== "") {
+            const parsedBox = Number(formData.box_quantity);
+            if (!isNaN(parsedBox) && parsedBox > 0) finalBoxQty = parsedBox;
+        }
+
         const payload = {
             store_id: storeId,
             target_date: formData.target_date || null,
@@ -185,6 +192,7 @@ export default function ProductsPage() {
             price: parseInt(formData.price) || 0,
             incoming_price: parseInt(formData.incoming_price) || 0,
             allocated_stock: finalStock,
+            box_quantity: finalBoxQty,
             deadline_date: formData.deadline_date || null,
             deadline_time: formData.deadline_time || null,
             description: formData.description,
@@ -239,7 +247,7 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
+                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
                 })
                 setSelectedImageFiles([])
                 fetchProducts(storeId)
@@ -254,7 +262,7 @@ export default function ProductsPage() {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
+            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
         })
         setSelectedImageFiles([])
         setIsDialogOpen(true)
@@ -283,7 +291,8 @@ export default function ProductsPage() {
             image_url: product.image_url || "",
             image_urls: loadedUrls,
             is_visible: product.is_visible !== false,
-            is_stocked: product.is_stocked === true
+            is_stocked: product.is_stocked === true,
+            box_quantity: product.box_quantity?.toString() || ""
         })
         setSelectedImageFiles([])
         setIsDialogOpen(true)
@@ -348,6 +357,7 @@ export default function ProductsPage() {
             image_urls: prod.image_urls || (prod.image_url ? [prod.image_url] : []),
             is_visible: true,
             is_regular_sale: prod.is_regular_sale,
+            box_quantity: prod.box_quantity || null,
             target_date: prod.target_date || new Date().toISOString().split('T')[0]
         }
 
@@ -572,23 +582,30 @@ export default function ProductsPage() {
                                     <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="stock">발주수량</Label>
-                                    {editingProductId && (() => {
-                                        const p = products.find(prod => prod.id === editingProductId)
-                                        if (p && p.allocated_stock !== null) {
-                                            return (
-                                                <div className="flex gap-3 text-[11px] bg-slate-50 px-2 py-0.5 rounded-sm border text-slate-500 shadow-sm mt-1">
-                                                    <span className="font-medium tracking-tight">주문합계: <b className="text-slate-800">{p.orderSum || 0}</b></span>
-                                                    <span className="font-medium tracking-tight">남은수량: <b className={p.remainingStock === 0 ? 'text-red-600' : 'text-emerald-600'}>{p.remainingStock}</b></span>
-                                                </div>
-                                            )
-                                        }
-                                        return null
-                                    })()}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="stock">발주수량</Label>
+                                        {editingProductId && (() => {
+                                            const p = products.find(prod => prod.id === editingProductId)
+                                            if (p && p.allocated_stock !== null) {
+                                                return (
+                                                    <div className="flex gap-3 text-[11px] bg-slate-50 px-2 py-0.5 rounded-sm border text-slate-500 shadow-sm mt-1">
+                                                        <span className="font-medium tracking-tight">주문: <b className="text-slate-800">{p.orderSum || 0}</b></span>
+                                                    </div>
+                                                )
+                                            }
+                                            return null
+                                        })()}
+                                    </div>
+                                    <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
                                 </div>
-                                <Input id="stock" type="number" value={formData.allocated_stock} onChange={e => setFormData({ ...formData, allocated_stock: e.target.value })} placeholder="예: 20" />
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="box_qty" className="text-emerald-700">1박스당 수량 <span className="text-[10px] text-emerald-600 font-normal">(카드뉴스 표시용)</span></Label>
+                                    </div>
+                                    <Input id="box_qty" type="number" value={formData.box_quantity} onChange={e => setFormData({ ...formData, box_quantity: e.target.value })} placeholder="예: 10" className="border-emerald-200 focus-visible:ring-emerald-500" />
+                                </div>
                             </div>
 
                             <div className="space-y-3 border-t pt-4">

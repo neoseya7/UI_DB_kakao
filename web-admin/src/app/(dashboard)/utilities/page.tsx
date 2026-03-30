@@ -110,6 +110,7 @@ export default function UtilitiesPage() {
             
             // Inject calculated remaining stock into the product object temporarily for mapping
             p._calculated_remaining = remaining;
+            p._order_sum = orderSum;
 
             // Stock logic
             if (filterType === "all") return true;
@@ -121,10 +122,18 @@ export default function UtilitiesPage() {
         const result = filtered.map(p => {
             const prodName = p.display_name || p.collect_name;
             const stockStr = (p._calculated_remaining || 0).toString();
+            let orderSumStr = (p._order_sum || 0).toString();
+            
+            if (p.box_quantity && p.box_quantity > 0 && p._order_sum > 0) {
+                const boxes = (p._order_sum / p.box_quantity).toFixed(1).replace('.0', '');
+                orderSumStr = `${p._order_sum}(${boxes}box)`;
+            }
+
             return template
                 .replace(/\[상품명\]/g, prodName)
                 .replace(/\[수량\]/g, stockStr)
                 .replace(/\[재고\]/g, stockStr)
+                .replace(/\[주문수량\]/g, orderSumStr)
         }).join("\n");
 
         setEditableText(result);
@@ -227,7 +236,7 @@ export default function UtilitiesPage() {
                                     2. 메시지 템플릿 저장소 (최대 5개)
                                 </CardTitle>
                                 <CardDescription className="text-xs mt-1">
-                                    자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>
+                                    자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[주문수량]</strong>
                                 </CardDescription>
                             </div>
                             <Button onClick={saveTemplatesToDB} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm h-8 px-3 text-xs gap-1.5 flex-shrink-0">
