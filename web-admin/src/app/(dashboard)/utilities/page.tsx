@@ -14,12 +14,26 @@ export default function UtilitiesPage() {
     const [products, setProducts] = useState<any[]>([])
     const [orders, setOrders] = useState<any[]>([])
     const [orderItems, setOrderItems] = useState<any[]>([])
+    const [crmTags, setCrmTags] = useState<any[]>([])
+    const [isSaving, setIsSaving] = useState(false)
     
     // Fetch real products and orders from DB
     useEffect(() => {
         const fetchData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
+
+            const { data: storeSet } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
+            if (storeSet?.crm_tags) {
+                setCrmTags(storeSet.crm_tags)
+                const utilT = storeSet.crm_tags.find((t: any) => t.type === 'util_template')
+                if (utilT && Array.isArray(utilT.templates)) {
+                    // Ensure it always has 5 slots
+                    const loaded = [...utilT.templates]
+                    while(loaded.length < 5) loaded.push("")
+                    setTemplates(loaded.slice(0, 5))
+                }
+            }
 
             const { data: pData } = await supabase
                 .from('products')
@@ -123,6 +137,28 @@ export default function UtilitiesPage() {
         setTemplates(newT)
     }
 
+    const saveTemplatesToDB = async () => {
+        setIsSaving(true)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const filteredTags = crmTags.filter((t: any) => t.type !== 'util_template')
+        const newTags = [...filteredTags, { type: 'util_template', templates }]
+        
+        const { error } = await supabase.from('store_settings').upsert({
+            store_id: user.id,
+            crm_tags: newTags
+        })
+        
+        if (error) {
+            alert("저장 중 오류가 발생했습니다: " + error.message)
+        } else {
+            setCrmTags(newTags)
+            alert("템플릿이 영구 저장되었습니다. 나중에 다시 로그인해도 그대로 불러옵니다!")
+        }
+        setIsSaving(false)
+    }
+
     const copyToClipboard = () => {
         if (!editableText) return alert("생성된 문구가 없습니다.")
         navigator.clipboard.writeText(editableText)
@@ -184,14 +220,20 @@ export default function UtilitiesPage() {
                     </Card>
 
                     <Card className="shadow-sm border-indigo-100 bg-white">
-                        <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100">
-                            <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
-                                <MessageCircle className="w-5 h-5 text-indigo-500" />
-                                2. 메시지 템플릿 저장소 (최대 5개)
-                            </CardTitle>
-                            <CardDescription className="text-xs">
-                                자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>
-                            </CardDescription>
+                        <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100 flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
+                                    <MessageCircle className="w-5 h-5 text-indigo-500" />
+                                    2. 메시지 템플릿 저장소 (최대 5개)
+                                </CardTitle>
+                                <CardDescription className="text-xs mt-1">
+                                    자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>
+                                </CardDescription>
+                            </div>
+                            <Button onClick={saveTemplatesToDB} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm h-8 px-3 text-xs gap-1.5 flex-shrink-0">
+                                {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Blocks className="w-3.5 h-3.5" />}
+                                설정 영구 저장
+                            </Button>
                         </CardHeader>
                         <CardContent className="pt-4 grid gap-3">
                             {templates.map((t, i) => (
