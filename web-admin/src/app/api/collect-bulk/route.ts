@@ -81,8 +81,7 @@ export async function POST(request: Request) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     systemInstruction: { parts: [{ text: sysPrompt }] },
-                    contents: [{ parts: [{ text: userText }] }],
-                    generationConfig: { temperature: 0.1 }
+                    contents: [{ parts: [{ text: userText }] }]
                 })
             })
             if (!res.ok) {
@@ -117,24 +116,8 @@ export async function POST(request: Request) {
             if (result.includes("Input:")) result = result.split("Input:")[1].trim();
             const cleanResult = result.replace(/['"\n]/g, "").trim();
 
-            const set1 = new Set(userProductName.replace(/\s/g, "").split(''));
-
-            // 1단계: AI가 뱉은 정답안 검수 (기존 로직)
             if (productCandidates.find(p => p.collect_name === cleanResult)) {
-                const set2 = new Set(cleanResult.replace(/\s/g, "").split(''));
-                const intersection = new Set([...set1].filter(x => set2.has(x)));
-                if (intersection.size >= 2) return cleanResult;
-            }
-
-            // 2단계: 최후의 보루 (서버 자체 스캔) - 점장님 제안 로직
-            for (const p of productCandidates) {
-                // 완전히 단어가 포함되는 경우 무조건 매칭 (예: 백김치 -> 시원한백김치2kg)
-                if (p.collect_name.includes(userProductName)) return p.collect_name;
-                
-                // 그 외 2글자 이상 일치하는 경우도 강제 매칭
-                const set2 = new Set(p.collect_name.replace(/\s/g, "").split(''));
-                const intersection = new Set([...set1].filter(x => set2.has(x)));
-                if (intersection.size >= 2) return p.collect_name;
+                return cleanResult;
             }
 
             return userProductName;
