@@ -1023,7 +1023,7 @@ export default function PickupCalendarPage() {
                                 <th rowSpan={6} className={`border-b border-r px-1 sm:px-2 py-3 whitespace-nowrap align-bottom pb-4 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
                                 {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
                                 <th rowSpan={6} className={`border-b border-r px-4 py-3 align-bottom pb-4 ${getStickyClasses('summary').th}`}>주문 상품 요약</th>
-                                <th rowSpan={6} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
+                                <th rowSpan={2} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
                                 <th rowSpan={2} className={`border-b border-r p-2 align-bottom pb-4 bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
                                     <div className="flex flex-col items-center justify-end h-full gap-1 font-bold text-indigo-900 leading-none">
                                         <span>고객 비고 1</span>
@@ -1044,6 +1044,9 @@ export default function PickupCalendarPage() {
                                 ))}
                             </tr>
                             <tr>
+                                <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-blue-900 bg-white ${getStickyClasses('price').th}`}>
+                                    {products.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}
+                                </th>
                                 <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-blue-900 tracking-tight bg-blue-100/95 ${getStickyClasses('memo').th}`}>발주수량</th>
                                 {products.map((p, i) => (
                                     <th key={p.id || i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
@@ -1052,6 +1055,9 @@ export default function PickupCalendarPage() {
                                 ))}
                             </tr>
                             <tr>
+                                <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-slate-800 bg-white ${getStickyClasses('price').th}`}>
+                                    {products.reduce((acc, _, i) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0), 0).toLocaleString()}
+                                </th>
                                 <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-slate-800 tracking-tight bg-slate-200/95 ${getStickyClasses('memo').th}`}>합계수량</th>
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
@@ -1063,6 +1069,9 @@ export default function PickupCalendarPage() {
                                 })}
                             </tr>
                             <tr>
+                                <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-amber-900 bg-white ${getStickyClasses('price').th}`}>
+                                    {products.reduce((acc, p, i) => acc + (p.stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0)), 0).toLocaleString()}
+                                </th>
                                 <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-amber-900 tracking-tight bg-amber-100/95 ${getStickyClasses('memo').th}`}>남은수량</th>
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
@@ -1075,6 +1084,14 @@ export default function PickupCalendarPage() {
                                 })}
                             </tr>
                             <tr>
+                                <th className={`border-b border-r py-2 px-1 text-[14px] font-extrabold text-emerald-900 bg-white ${getStickyClasses('price').th}`}>
+                                    {products.reduce((acc, p, i) => {
+                                        const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0);
+                                        const remaining = p.stock - orderSum;
+                                        const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0);
+                                        return acc + (remaining + unreceivedSum);
+                                    }, 0).toLocaleString()}
+                                </th>
                                 <th className={`border-b border-r py-2 px-1 text-[11px] font-bold text-emerald-900 tracking-tighter leading-tight bg-emerald-100/95 ${getStickyClasses('memo').th}`}>남은+미체크</th>
                                 {products.map((p, i) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
