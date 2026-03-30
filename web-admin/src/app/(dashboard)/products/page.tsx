@@ -94,61 +94,21 @@ export default function ProductsPage() {
             .order('created_at', { ascending: false })
             
         if (data) {
-            const productIds = data.map(p => p.id)
-
-            // 1. Fetch recent orders to map pickup_dates and bypass 1000 items limit
-            let orders: any[] = [];
-            let startIdx = 0;
-            const PAGE_SIZE = 1000;
+            const productIds = data.map(p => p.id);
+            const qtyMap: Record<string, number> = {};
             
-            while (true) {
-                const { data: oPage } = await supabase
-                    .from('orders')
-                    .select('id, pickup_date')
-                    .eq('store_id', sid)
-                    .order('pickup_date', { ascending: false })
-                    .range(startIdx, startIdx + PAGE_SIZE - 1);
-                
-                if (oPage && oPage.length > 0) {
-                    orders = orders.concat(oPage);
-                }
-                
-                if (!oPage || oPage.length < PAGE_SIZE) break;
-                startIdx += PAGE_SIZE;
-            }
-            
-            const orderIds = orders.map(o => o.id)
+            if (productIds.length > 0) {
+                const { data: rpcData, error: rpcErr } = await supabase.rpc('get_product_sales_sum', {
+                    p_store_id: sid,
+                    p_product_ids: productIds
+                });
 
-            // 2. Fetch order items in chunks
-            let allItems: any[] = []
-            const CHUNK_SIZE = 250
-            for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
-                const chunk = orderIds.slice(i, i + CHUNK_SIZE)
-                const { data: chunkData } = await supabase
-                    .from('order_items')
-                    .select('product_id, quantity, order_id')
-                    .in('order_id', chunk)
-                    .in('product_id', productIds)
-                if (chunkData) allItems = allItems.concat(chunkData)
-            }
-
-            // 3. Map orders for fast lookup
-            const orderMap: Record<string, any> = {}
-            for (const o of orders) orderMap[o.id] = o
-
-            // 4. Calculate accurate sum enforcing `pickup_date == target_date`
-            const qtyMap: Record<string, number> = {}
-            for (const item of allItems) {
-                const order = orderMap[item.order_id]
-                if (!order) continue
-                
-                const prod = data.find(p => p.id === item.product_id)
-                if (!prod) continue
-
-                // Check rules: Regular sale counts all time, targeted sale MUST match exact pickup_date
-                if (prod.is_regular_sale || prod.target_date === order.pickup_date) {
-                    if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0
-                    qtyMap[item.product_id] += (item.quantity || 1)
+                if (rpcData && !rpcErr) {
+                    for (const item of rpcData) {
+                        qtyMap[item.product_id] = parseInt(item.total_quantity, 10) || 0;
+                    }
+                } else {
+                    console.error("RPC Error:", rpcErr);
                 }
             }
 

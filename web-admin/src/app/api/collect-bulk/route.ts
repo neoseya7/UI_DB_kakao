@@ -37,26 +37,17 @@ export async function POST(request: Request) {
         const productIds = productsRaw?.map(p => p.id) || [];
         let qtyMap: Record<string, number> = {};
         if (productIds.length > 0) {
-            let startIdx = 0;
-            const PAGE_SIZE = 1000;
-            
-            while (true) {
-                const { data: orderItems } = await supabase
-                    .from('order_items')
-                    .select('product_id, quantity, orders!inner(store_id)')
-                    .in('product_id', productIds)
-                    .eq('orders.store_id', store_id)
-                    .range(startIdx, startIdx + PAGE_SIZE - 1);
+            const { data: rpcData, error: rpcErr } = await supabase.rpc('get_product_sales_sum', {
+                p_store_id: store_id,
+                p_product_ids: productIds
+            });
 
-                if (orderItems && orderItems.length > 0) {
-                    for (const item of orderItems) {
-                        if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0;
-                        qtyMap[item.product_id] += (item.quantity || 1);
-                    }
+            if (rpcData && !rpcErr) {
+                for (const item of rpcData) {
+                    qtyMap[item.product_id] = parseInt(item.total_quantity, 10) || 0;
                 }
-                
-                if (!orderItems || orderItems.length < PAGE_SIZE) break;
-                startIdx += PAGE_SIZE;
+            } else {
+                console.error("RPC Error:", rpcErr);
             }
         }
 
