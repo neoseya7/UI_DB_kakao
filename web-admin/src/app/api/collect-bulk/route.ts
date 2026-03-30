@@ -34,9 +34,27 @@ export async function POST(request: Request) {
             supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id)
         ])
 
+        const productIds = productsRaw?.map(p => p.id) || [];
+        let qtyMap: Record<string, number> = {};
+        if (productIds.length > 0) {
+            const { data: orderItems } = await supabase
+                .from('order_items')
+                .select('product_id, quantity, orders!inner(store_id)')
+                .in('product_id', productIds)
+                .eq('orders.store_id', store_id);
+
+            if (orderItems) {
+                for (const item of orderItems) {
+                    if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0;
+                    qtyMap[item.product_id] += (item.quantity || 1);
+                }
+            }
+        }
+
         const products = productsRaw?.map(p => ({
             ...p,
-            collect_name: p.collect_name ? p.collect_name.trim() : ""
+            collect_name: p.collect_name ? p.collect_name.trim() : "",
+            remaining_stock: p.allocated_stock !== null ? Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0)) : null
         })) || []
 
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
@@ -199,7 +217,11 @@ export async function POST(request: Request) {
 
                         if (matchedProduct) {
                             const qty = parseInt(firstItem.quantity, 10) || 1
-                            const isOutOfStock = matchedProduct.allocated_stock !== null && matchedProduct.allocated_stock < qty;
+                            const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
+
+                            if (!isOutOfStock && matchedProduct.remaining_stock !== null) {
+                                matchedProduct.remaining_stock -= qty;
+                            }
 
                             if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") {
                                 if (matchedProduct.target_date) firstItem.pickup_date = matchedProduct.target_date;
