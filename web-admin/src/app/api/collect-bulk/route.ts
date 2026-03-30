@@ -244,10 +244,19 @@ export async function POST(request: Request) {
                                 }
                             }
                         } else {
-                            classifications.push("날짜미지정");
+                            classifications.push("상품미등록");
                         }
                     } else {
                         if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") classifications.push("날짜미지정");
+                    }
+                }
+
+                // Verify ALL items exist in products database before allowing insertion
+                if (extractedItems.length > 0 && products) {
+                    for (const item of extractedItems) {
+                        if (!products.find(p => p.collect_name === item.product)) {
+                            if (!classifications.includes("상품미등록")) classifications.push("상품미등록");
+                        }
                     }
                 }
 
@@ -255,9 +264,10 @@ export async function POST(request: Request) {
 
                 const isActualOrder = (promptCat === "픽업고지" || promptCat.includes("주문") || promptCat.includes("예약"))
                     && !promptCat.includes("취소") && !promptCat.includes("문의")
-                    && !classifications.includes("재고초과주문");
+                    && !classifications.includes("재고초과주문")
+                    && !classifications.includes("상품미등록");
 
-                const finalIntent = isActualOrder ? "ORDER" : classifications.includes("재고초과주문") ? "UNKNOWN" : promptCat === "주문취소" ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
+                const finalIntent = isActualOrder ? "ORDER" : (classifications.includes("재고초과주문") || classifications.includes("상품미등록")) ? "UNKNOWN" : promptCat === "주문취소" ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
                 await supabase.from('chat_logs').update({ category: finalIntent }).eq('id', logId)
 
                 // Save to Orders DB
