@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         const [{ data: config }, { data: settings }, { data: productsRaw }] = await Promise.all([
             supabase.from('super_admin_config').select('*').eq('id', 1).single(),
             supabase.from('store_settings').select('crm_tags').eq('store_id', store_id).single(),
-            supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id)
+            supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id).eq('is_hidden', false)
         ])
 
         const productIds = productsRaw?.map(p => p.id) || [];
@@ -186,6 +186,40 @@ export async function POST(request: Request) {
 
                 if (extractedItems.length === 0) {
                     extractedItems = [{ category: "AI분석오류", product: "프롬프트 파싱 실패", quantity: "0" }]
+                }
+                
+                // NEW: Gemini Flash Safety Net - Force split bundled items mimicking GPT's proper behavior
+                if (extractedItems.length > 0) {
+                    const newItems: any[] = [];
+                    for (const item of extractedItems) {
+                        let combinedName = item.product || "";
+                        if (combinedName.includes(",")) {
+                            const productsStr = combinedName.split(",").map((s: string) => s.trim()).filter(Boolean);
+                            const quantitiesStr = item.quantity ? item.quantity.toString().split(",").map((s: string) => s.trim()) : ["1"];
+                            
+                            for (let i = 0; i < productsStr.length; i++) {
+                                let rawName = productsStr[i];
+                                let itemQtyStr = quantitiesStr[i] || quantitiesStr[0] || "1";
+                                
+                                const qtyMatch = rawName.match(/(.+?)(?:\((\d+)\))$/);
+                                if (qtyMatch) {
+                                    rawName = qtyMatch[1].trim();
+                                    itemQtyStr = qtyMatch[2];
+                                }
+                                newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
+                            }
+                        } else {
+                            let rawName = combinedName;
+                            let itemQtyStr = item.quantity || "1";
+                            const qtyMatch = rawName.match(/(.+?)(?:\((\d+)\))$/);
+                            if (qtyMatch) {
+                                rawName = qtyMatch[1].trim();
+                                itemQtyStr = qtyMatch[2];
+                            }
+                            newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
+                        }
+                    }
+                    extractedItems = newItems;
                 }
 
                 const firstItem = extractedItems[0]

@@ -91,6 +91,7 @@ export default function ProductsPage() {
             .from('products')
             .select('*')
             .eq('store_id', sid)
+            .eq('is_hidden', false)
             .order('created_at', { ascending: false })
             
         if (data) {
@@ -313,8 +314,8 @@ export default function ProductsPage() {
     }
 
     const handleDeleteProduct = async (id: string) => {
-        if (!confirm("정말 이 상품을 영구 삭제하시겠습니까? (DB에서 제거됩니다)")) return
-        const { error } = await supabase.from('products').delete().eq('id', id)
+        if (!confirm("이 상품을 삭제하시겠습니까? (기존 주문 기록은 보존됩니다)")) return
+        const { error } = await supabase.from('products').update({ is_hidden: true }).eq('id', id)
         if (!error) {
             setProducts(products.filter(p => p.id !== id))
             setIsDialogOpen(false)
@@ -409,10 +410,10 @@ export default function ProductsPage() {
 
     const executeBulkDelete = async () => {
         if (selectedDeleteProductIds.length === 0) return alert("삭제할 상품을 선택해주세요.");
-        if (!confirm(`선택된 ${selectedDeleteProductIds.length}개의 상품을 영구 삭제하시겠습니까? (DB에서 데이터가 지워집니다)`)) return;
+        if (!confirm(`선택된 ${selectedDeleteProductIds.length}개의 상품을 삭제하시겠습니까? (기존 주문 기록은 보존됩니다)`)) return;
 
         setIsLoading(true);
-        const { error } = await supabase.from('products').delete().in('id', selectedDeleteProductIds);
+        const { error } = await supabase.from('products').update({ is_hidden: true }).in('id', selectedDeleteProductIds);
         if (error) {
             console.error(error);
             alert("일부 상품 삭제 중 오류가 발생했습니다: " + error.message);

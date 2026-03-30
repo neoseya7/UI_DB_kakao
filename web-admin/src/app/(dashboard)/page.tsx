@@ -35,14 +35,6 @@ export default function Dashboard() {
   useEffect(() => {
     fetchLogs()
 
-    const fetchProducts = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase.from('products').select('*').eq('store_id', user.id)
-      if (data) setActiveProducts(data)
-    }
-    fetchProducts()
-
     // Subscribe to realtime changes
     const channel = supabase
       .channel('chat_logs_changes')
@@ -63,7 +55,8 @@ export default function Dashboard() {
   const fetchLogs = async () => {
     try {
       setIsLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) return
 
       // Fetch settings first to get manager filter
@@ -129,33 +122,25 @@ export default function Dashboard() {
 
           const isOrderType = displayCat === "픽업고지" || row.category === "ORDER" || displayCat.includes("주문");
 
-          if (isOrderType) {
-            if (row.product_name && row.product_name !== "-") {
-              const items = row.product_name.split(", ")
-              items.forEach((itemText: string) => {
-                let rawName = itemText
-                let itemQty = 1;
-                const qtyMatch = itemText.match(/(.+?)(?:\((\d+)\))$/)
-                if (qtyMatch) {
-                  rawName = qtyMatch[1].trim()
-                  itemQty = parseInt(qtyMatch[2], 10) || 1
-                }
+          if (isOrderType && row.product_name && row.product_name !== "-") {
+            const rawName = row.product_name;
+            const itemQty = row.quantity && row.quantity > 0 ? row.quantity : 1;
 
-                const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
-                if (matchedProd) {
-                  if (matchedProd.allocated_stock !== null && matchedProd.allocated_stock < itemQty) {
-                    // Out of stock overriding badge text
-                    matchBadges.push({ name: rawName, isMatched: false, dateText: "재고초과주문" })
-                  } else {
-                    const dateStr = matchedProd.target_date || "상시판매"
-                    matchBadges.push({ name: rawName, isMatched: true, dateText: dateStr })
-                  }
-                } else {
-                  matchBadges.push({ name: rawName, isMatched: false, dateText: "상품미등록" })
-                }
-              })
+            const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
+            if (matchedProd) {
+              if (!row.is_processed) {
+                // Product exists NOW, but the order was never synced into the DB when originally created.
+                matchBadges.push({ name: rawName, isMatched: false, dateText: "연동 대기" })
+              } else if (matchedProd.allocated_stock !== null && matchedProd.allocated_stock < itemQty) {
+                matchBadges.push({ name: rawName, isMatched: false, dateText: "재고초과주문" })
+              } else {
+                const dateStr = matchedProd.target_date || "상시판매"
+                matchBadges.push({ name: rawName, isMatched: true, dateText: dateStr })
+              }
+            } else {
+              matchBadges.push({ name: rawName, isMatched: false, dateText: "상품미등록" })
             }
-          } else {
+          } else if (!isOrderType) {
             // Hide completely if it's not an order classification
             finalClassification = ""
           }
@@ -176,7 +161,35 @@ export default function Dashboard() {
             raw_category: displayCat
           }
         })
-        setLogs(mappedLogs)
+
+        // Second pass: Cross-reference to detect suspected duplicates 
+        // 1. Same date, same time, same product, DIFFERENT nickname
+        // 2. Same date, same nickname, same product, DIFFERENT quantity
+        const finalMappedLogs = mappedLogs.map((row, index, self) => {
+          let isSuspectedDuplicate = false
+
+          for (let i = 0; i < self.length; i++) {
+            if (i === index) continue
+            const other = self[i]
+
+            // Condition 1
+            if (row.date === other.date && row.time === other.time && row.product === other.product && row.nickname !== other.nickname) {
+              isSuspectedDuplicate = true; break;
+            }
+            // Condition 2
+            if (row.date === other.date && row.nickname === other.nickname && row.product === other.product && row.quantity !== other.quantity) {
+              isSuspectedDuplicate = true; break;
+            }
+          }
+
+          if (isSuspectedDuplicate) {
+            const newClassification = row.classification ? row.classification + ", [중복의심]" : "[중복의심]"
+            return { ...row, isSuspectedDuplicate: true, classification: newClassification }
+          }
+          return row
+        })
+
+        setLogs(finalMappedLogs)
       }
     } catch (err) {
       console.error('Error fetching chat logs:', err)
@@ -270,25 +283,7 @@ export default function Dashboard() {
 
         const unmatchedBadges = log.matchBadges?.filter((b: any) => !b.isMatched) || []
         
-        // Multi-Item Quantity Injection Fix
-        if (log.product && log.product.includes(", ") && targetProduct !== log.product) {
-            if (unmatchedBadges.length > 0) {
-                const targetUnmatchedName = unmatchedBadges[0].name
-                newProductName = log.product.replace(targetUnmatchedName, targetProduct)
-                
-                const items = log.product.split(", ")
-                for (const itemText of items) {
-                    const qtyMatch = itemText.match(/(.+?)(?:\((\d+)\))$/)
-                    const rawName = qtyMatch ? qtyMatch[1].trim() : itemText.trim()
-                    if (rawName === targetUnmatchedName) {
-                        if (qtyMatch) finalQty = parseInt(qtyMatch[2], 10)
-                        break
-                    }
-                }
-            } else {
-                newProductName = log.product // Safety fallback
-            }
-        }
+
 
         await supabase.from('chat_logs').update({
           product_name: newProductName,
@@ -601,8 +596,8 @@ export default function Dashboard() {
                             <Checkbox className={`mx-auto border-slate-300 ${isSelected ? 'border-primary' : ''}`} checked={isSelected} onCheckedChange={() => toggleRow(log.id)} />
                           </td>
                           <td className="px-2 py-3 text-slate-600 font-medium tracking-tighter truncate text-xs" title={log.date}>{log.date}</td>
-                          <td className="px-2 py-3 font-medium tracking-tighter truncate text-xs" title={log.time}>{log.time}</td>
-                          <td className="px-4 py-3 text-slate-900 break-words whitespace-normal">
+                          <td className={`px-2 py-3 font-medium tracking-tighter truncate text-xs ${log.isSuspectedDuplicate ? 'text-rose-600 font-bold' : ''}`} title={log.time}>{log.time}</td>
+                          <td className={`px-4 py-3 break-words whitespace-normal ${log.isSuspectedDuplicate ? 'text-rose-600 font-medium' : 'text-slate-900'}`}>
                             <span className="line-clamp-2" title={log.message}>{log.message}</span>
                           </td>
                           <td className="px-4 py-3">
@@ -610,9 +605,9 @@ export default function Dashboard() {
                               {log.raw_category || "기타"}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 font-semibold text-slate-800 group-hover:text-primary truncate" title={log.nickname}>{log.nickname}</td>
-                          <td className="px-4 py-3 text-primary/90 font-semibold break-words whitespace-normal leading-tight" title={log.product}>{log.product}</td>
-                          <td className="px-4 py-3 text-center font-bold">{log.quantity > 0 ? log.quantity : "-"}</td>
+                          <td className={`px-4 py-3 font-semibold truncate ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-slate-800 group-hover:text-primary'}`} title={log.nickname}>{log.nickname}</td>
+                          <td className={`px-4 py-3 font-semibold break-words whitespace-normal leading-tight ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-primary/90'}`} title={log.product}>{log.product}</td>
+                          <td className={`px-4 py-3 text-center font-bold ${log.isSuspectedDuplicate ? 'text-rose-600' : ''}`}>{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex flex-col gap-1 items-center justify-center">
                               {log.matchBadges && log.matchBadges.length > 0 && (
