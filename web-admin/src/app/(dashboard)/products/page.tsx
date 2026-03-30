@@ -95,15 +95,46 @@ export default function ProductsPage() {
             
         if (data) {
             const productIds = data.map(p => p.id)
-            const { data: orderItems } = await supabase
-                .from('order_items')
-                .select('product_id, quantity, orders!inner(store_id)')
-                .in('product_id', productIds)
-                .eq('orders.store_id', sid)
 
+            // 1. Fetch recent orders to map pickup_dates and bypass 1000 order_items limit
+            const { data: oData } = await supabase
+                .from('orders')
+                .select('id, pickup_date')
+                .eq('store_id', sid)
+                .limit(3000)
+                .order('pickup_date', { ascending: false })
+            
+            const orders = oData || []
+            const orderIds = orders.map(o => o.id)
+
+            // 2. Fetch order items in chunks
+            let allItems: any[] = []
+            const CHUNK_SIZE = 250
+            for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
+                const chunk = orderIds.slice(i, i + CHUNK_SIZE)
+                const { data: chunkData } = await supabase
+                    .from('order_items')
+                    .select('product_id, quantity, order_id')
+                    .in('order_id', chunk)
+                    .in('product_id', productIds)
+                if (chunkData) allItems = allItems.concat(chunkData)
+            }
+
+            // 3. Map orders for fast lookup
+            const orderMap: Record<string, any> = {}
+            for (const o of orders) orderMap[o.id] = o
+
+            // 4. Calculate accurate sum enforcing `pickup_date == target_date`
             const qtyMap: Record<string, number> = {}
-            if (orderItems) {
-                for (const item of orderItems) {
+            for (const item of allItems) {
+                const order = orderMap[item.order_id]
+                if (!order) continue
+                
+                const prod = data.find(p => p.id === item.product_id)
+                if (!prod) continue
+
+                // Check rules: Regular sale counts all time, targeted sale MUST match exact pickup_date
+                if (prod.is_regular_sale || prod.target_date === order.pickup_date) {
                     if (!qtyMap[item.product_id]) qtyMap[item.product_id] = 0
                     qtyMap[item.product_id] += (item.quantity || 1)
                 }
