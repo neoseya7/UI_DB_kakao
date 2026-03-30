@@ -96,15 +96,27 @@ export default function ProductsPage() {
         if (data) {
             const productIds = data.map(p => p.id)
 
-            // 1. Fetch recent orders to map pickup_dates and bypass 1000 order_items limit
-            const { data: oData } = await supabase
-                .from('orders')
-                .select('id, pickup_date')
-                .eq('store_id', sid)
-                .limit(3000)
-                .order('pickup_date', { ascending: false })
+            // 1. Fetch recent orders to map pickup_dates and bypass 1000 items limit
+            let orders: any[] = [];
+            let startIdx = 0;
+            const PAGE_SIZE = 1000;
             
-            const orders = oData || []
+            while (true) {
+                const { data: oPage } = await supabase
+                    .from('orders')
+                    .select('id, pickup_date')
+                    .eq('store_id', sid)
+                    .order('pickup_date', { ascending: false })
+                    .range(startIdx, startIdx + PAGE_SIZE - 1);
+                
+                if (oPage && oPage.length > 0) {
+                    orders = orders.concat(oPage);
+                }
+                
+                if (!oPage || oPage.length < PAGE_SIZE) break;
+                startIdx += PAGE_SIZE;
+            }
+            
             const orderIds = orders.map(o => o.id)
 
             // 2. Fetch order items in chunks
