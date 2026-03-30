@@ -12,22 +12,38 @@ import { Copy, Blocks, RefreshCw, MessageCircle } from "lucide-react"
 
 export default function UtilitiesPage() {
     const [products, setProducts] = useState<any[]>([])
+    const [orders, setOrders] = useState<any[]>([])
+    const [orderItems, setOrderItems] = useState<any[]>([])
     
-    // Fetch real products from DB
+    // Fetch real products and orders from DB
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const { data, error } = await supabase
+            const { data: pData } = await supabase
                 .from('products')
                 .select('*')
                 .eq('store_id', user.id)
                 .order('created_at', { ascending: false })
             
-            if (data) setProducts(data)
+            if (pData) setProducts(pData)
+
+            const { data: oData } = await supabase.from('orders').select('id, pickup_date').eq('store_id', user.id).limit(3000)
+            if (oData && oData.length > 0) {
+                const orderIds = oData.map(o => o.id)
+                const chunkSize = 250
+                let allItems: any[] = []
+                for (let i = 0; i < orderIds.length; i += chunkSize) {
+                    const chunk = orderIds.slice(i, i + chunkSize)
+                    const { data: itemsData } = await supabase.from('order_items').select('*').in('order_id', chunk)
+                    if (itemsData) allItems = allItems.concat(itemsData)
+                }
+                setOrders(oData)
+                setOrderItems(allItems)
+            }
         }
-        fetchProducts()
+        fetchData()
     }, [])
 
     const [filterType, setFilterType] = useState<string>("soldout") // "all" | "soldout" | "instock"
@@ -66,16 +82,31 @@ export default function UtilitiesPage() {
                 if (selectedDate !== "regular" && p.target_date !== selectedDate) return false;
             }
             
+            // Calculate remaining stock
+            let relevantOrderIds: string[] = []
+            if (selectedDate !== "all" && selectedDate !== "regular") {
+                relevantOrderIds = orders.filter(o => o.pickup_date === selectedDate).map(o => o.id)
+            } else {
+                relevantOrderIds = orders.map(o => o.id)
+            }
+            
+            const relevantItems = orderItems.filter(oi => oi.product_id === p.id && relevantOrderIds.includes(oi.order_id))
+            const orderSum = relevantItems.reduce((acc, curr) => acc + (curr.quantity || 0), 0)
+            const remaining = Math.max(0, (p.allocated_stock || 0) - orderSum)
+            
+            // Inject calculated remaining stock into the product object temporarily for mapping
+            p._calculated_remaining = remaining;
+
             // Stock logic
             if (filterType === "all") return true;
-            if (filterType === "soldout") return p.allocated_stock === 0;
-            if (filterType === "instock") return p.allocated_stock > 0;
+            if (filterType === "soldout") return (p.allocated_stock !== null && remaining <= 0);
+            if (filterType === "instock") return remaining > 0;
             return true;
         });
 
         const result = filtered.map(p => {
             const prodName = p.display_name || p.collect_name;
-            const stockStr = (p.allocated_stock || 0).toString();
+            const stockStr = (p._calculated_remaining || 0).toString();
             return template
                 .replace(/\[상품명\]/g, prodName)
                 .replace(/\[수량\]/g, stockStr)
