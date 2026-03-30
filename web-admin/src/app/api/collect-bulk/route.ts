@@ -316,27 +316,45 @@ export async function POST(request: Request) {
                     }
                 }
 
-                let totalQuantity = 0;
-                let allProductsStr = "-";
-                if (extractedItems.length > 0) {
-                    const productStrings = extractedItems.map(item => {
-                        let q = parseInt(item.quantity, 10);
-                        if (!isNaN(q) && q > 0) {
-                            if (isCancellation) q = -Math.abs(q);
-                            totalQuantity += q;
-                            return extractedItems.length > 1 ? `${item.product}(${q})` : item.product;
-                        }
-                        return item.product;
-                    });
-                    allProductsStr = productStrings.join(", ");
-                }
+                const classificationStr = classifications.join(", ") || null;
 
-                await supabase.from('chat_logs').update({
-                    is_processed: shouldSaveToOrders,
-                    product_name: allProductsStr,
-                    quantity: totalQuantity !== 0 ? totalQuantity : null,
-                    classification: classifications.join(", ") || null
-                }).eq('id', logId)
+                if (extractedItems.length === 0) {
+                    await supabase.from('chat_logs').update({
+                        is_processed: shouldSaveToOrders,
+                        product_name: "-",
+                        classification: classificationStr
+                    }).eq('id', logId);
+                } else {
+                    for (let i = 0; i < extractedItems.length; i++) {
+                        const item = extractedItems[i];
+                        let q = parseInt(item.quantity, 10);
+                        if (!isNaN(q) && q > 0 && isCancellation) q = -Math.abs(q);
+                        
+                        const pName = item.product;
+
+                        if (i === 0) {
+                            await supabase.from('chat_logs').update({
+                                is_processed: shouldSaveToOrders,
+                                product_name: pName,
+                                quantity: isNaN(q) ? null : q,
+                                classification: classificationStr
+                            }).eq('id', logId);
+                        } else {
+                            await supabase.from('chat_logs').insert({
+                                store_id,
+                                nickname,
+                                chat_content,
+                                chat_time: parsedTime,
+                                collect_date,
+                                category: finalIntent,
+                                is_processed: shouldSaveToOrders,
+                                product_name: pName,
+                                quantity: isNaN(q) ? null : q,
+                                classification: classificationStr
+                            });
+                        }
+                    }
+                }
 
                 // ONLY IF EVERYTHING SUCCEEDS safely push to success hashes
                 success_hashes.push(hash)
