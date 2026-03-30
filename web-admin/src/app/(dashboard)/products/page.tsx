@@ -858,7 +858,12 @@ export default function ProductsPage() {
                                             <div className="w-[1px] h-6 bg-slate-200"></div>
                                             <div className="flex flex-col items-center pt-0.5">
                                                 <span className="text-[9px] text-slate-500 font-bold whitespace-nowrap">주문</span>
-                                                <span className="text-[11px] font-bold text-slate-800 h-5 leading-5">{product.orderSum || 0}</span>
+                                                <div className="flex items-baseline gap-0.5 h-5">
+                                                    <span className="text-[11px] font-bold text-slate-800">{product.orderSum || 0}</span>
+                                                    {product.box_quantity && product.box_quantity > 0 && (product.orderSum || 0) > 0 && (
+                                                        <span className="text-[10px] text-indigo-600 font-bold tracking-tighter">({((product.orderSum || 0) / product.box_quantity).toFixed(1).replace('.0', '')}bx)</span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="w-[1px] h-6 bg-slate-200"></div>
                                             <div className="flex flex-col items-center pt-0.5 pr-1">
