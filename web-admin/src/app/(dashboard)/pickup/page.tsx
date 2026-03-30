@@ -65,6 +65,32 @@ export default function PickupCalendarPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
 
+    const [isSettingsLoaded, setIsSettingsLoaded] = useState(false)
+
+    useEffect(() => {
+        if (storeId) {
+            try {
+                const saved = localStorage.getItem(`pickupSettings_${storeId}`)
+                if (saved) {
+                    const parsed = JSON.parse(saved)
+                    if (parsed.searchScope) setSearchScope(parsed.searchScope)
+                    if (parsed.customSearchDate) setCustomSearchDate(parsed.customSearchDate)
+                    if (parsed.customEndDate) setCustomEndDate(parsed.customEndDate)
+                    if (parsed.receiptFilter) setReceiptFilter(parsed.receiptFilter)
+                    if (parsed.sortOrder) setSortOrder(parsed.sortOrder)
+                }
+            } catch (e) { console.error("Filter persistence load failed", e) }
+            setIsSettingsLoaded(true)
+        }
+    }, [storeId])
+
+    useEffect(() => {
+        if (storeId && isSettingsLoaded) {
+            const settingsToSave = { searchScope, customSearchDate, customEndDate, receiptFilter, sortOrder }
+            localStorage.setItem(`pickupSettings_${storeId}`, JSON.stringify(settingsToSave))
+        }
+    }, [storeId, isSettingsLoaded, searchScope, customSearchDate, customEndDate, receiptFilter, sortOrder])
+
     const getStickyClasses = (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo') => {
         const base = "sticky z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] bg-background group-hover:bg-muted/40"
         const headerBase = "sticky z-40 bg-muted/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
