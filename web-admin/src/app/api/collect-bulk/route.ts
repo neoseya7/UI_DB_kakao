@@ -199,24 +199,24 @@ export async function POST(request: Request) {
 
                 let isDuplicate = false
 
-                if (firstItem) {
-                    let fixedProductName = firstItem.product;
-                    if (products) {
+                if (extractedItems.length > 0 && products) {
+                    for (const item of extractedItems) {
+                        let fixedProductName = item.product;
                         const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
-                        fixedProductName = await matchProductWithAI(firstItem.product, availableCandidates);
+                        fixedProductName = await matchProductWithAI(item.product, availableCandidates);
 
-                        if (fixedProductName === firstItem.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
+                        if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
                             const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
                             if (soldoutCandidates.length > 0) {
-                                fixedProductName = await matchProductWithAI(firstItem.product, soldoutCandidates);
+                                fixedProductName = await matchProductWithAI(item.product, soldoutCandidates);
                             }
                         }
 
-                        firstItem.product = fixedProductName;
+                        item.product = fixedProductName;
                         const matchedProduct = products.find(p => p.collect_name === fixedProductName);
 
                         if (matchedProduct) {
-                            const qty = parseInt(firstItem.quantity, 10) || 1
+                            const qty = parseInt(item.quantity, 10) || 1
                             const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
 
                             if (!isOutOfStock && matchedProduct.remaining_stock !== null) {
@@ -225,30 +225,32 @@ export async function POST(request: Request) {
 
                             if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") {
                                 if (matchedProduct.target_date) firstItem.pickup_date = matchedProduct.target_date;
-                                else if (!isOutOfStock) classifications.push("날짜미지정");
+                                else if (!isOutOfStock && !classifications.includes("날짜미지정")) classifications.push("날짜미지정");
                             }
 
-                            if (isOutOfStock) classifications.push("재고초과주문")
+                            if (isOutOfStock && !classifications.includes("재고초과주문")) classifications.push("재고초과주문")
 
-                            const { data: existingOrders } = await supabase.from('orders')
-                                .select('id, order_items(product_id)')
-                                .eq('store_id', store_id)
-                                .eq('pickup_date', collect_date)
-                                .eq('customer_nickname', nickname)
-                            
-                            if (existingOrders && existingOrders.length > 0) {
-                                for (const eo of existingOrders) {
-                                    if (eo.order_items.some((oi: any) => oi.product_id === matchedProduct.id)) {
-                                        isDuplicate = true; break;
+                            if (!isDuplicate) {
+                                const { data: existingOrders } = await supabase.from('orders')
+                                    .select('id, order_items(product_id)')
+                                    .eq('store_id', store_id)
+                                    .eq('pickup_date', collect_date)
+                                    .eq('customer_nickname', nickname)
+                                
+                                if (existingOrders && existingOrders.length > 0) {
+                                    for (const eo of existingOrders) {
+                                        if (eo.order_items.some((oi: any) => oi.product_id === matchedProduct.id)) {
+                                            isDuplicate = true; break;
+                                        }
                                     }
                                 }
                             }
                         } else {
-                            classifications.push("상품미등록");
+                            if (!classifications.includes("상품미등록")) classifications.push("상품미등록");
                         }
-                    } else {
-                        if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") classifications.push("날짜미지정");
                     }
+                } else if (extractedItems.length > 0 && !products) {
+                    if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") classifications.push("날짜미지정");
                 }
 
                 // Verify ALL items exist in products database before allowing insertion
