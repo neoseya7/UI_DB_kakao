@@ -652,6 +652,10 @@ export default function PickupCalendarPage() {
         setIsPosPaying(false)
     }
 
+    const getSummary = (items: number[]) => {
+        return items.map((qty, index) => qty > 0 ? `${products[index]?.name} ${qty}개` : null).filter(Boolean).join(" / ")
+    }
+
     const customers = isMerged
         ? rawCustomers.reduce((acc, current) => {
             const existing = acc.find(item => item.name === current.name)
@@ -669,18 +673,19 @@ export default function PickupCalendarPage() {
         : rawCustomers
 
     const filteredCustomers = customers.filter(c => {
-        const custName = c.name || ""
-        const matchName = custName.toLowerCase().includes((searchTerm || "").toLowerCase())
+        const lowerTerm = (searchTerm || "").toLowerCase()
+        const custName = (c.name || "").toLowerCase()
+        const summaryText = getSummary(c.items).toLowerCase()
+        const memo1 = (c.memo1 || "").toLowerCase()
+        const memo2 = (c.memo2 || "").toLowerCase()
+
+        const matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
         const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
-        return matchName && matchReceipt
+        return matchSearch && matchReceipt
     }).sort((a, b) => {
         if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
         return (a.originalIndex || 0) - (b.originalIndex || 0)
     })
-
-    const getSummary = (items: number[]) => {
-        return items.map((qty, index) => qty > 0 ? `${products[index]?.name} ${qty}개` : null).filter(Boolean).join(" / ")
-    }
 
     const calculatePosTotal = () => {
         return filteredCustomers.filter(c => selectedPosOrders.includes(c.id)).reduce((total, c) => {
@@ -846,7 +851,7 @@ export default function PickupCalendarPage() {
                         <div className="relative w-full sm:w-[200px] xl:ml-2">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="닉네임 검색... (예: 김철)"
+                                placeholder="닉네임, 상품명, 비고 등 통합 검색..."
                                 className="pl-9 bg-white h-10 w-full shadow-sm"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
