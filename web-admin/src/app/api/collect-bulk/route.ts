@@ -28,11 +28,16 @@ export async function POST(request: Request) {
         const supabase = createClient(supabaseUrl, serviceKey)
 
         // 1. Fetch Configs & CRM Tags & Products ONCE for the entire batch
-        const [{ data: config }, { data: settings }, { data: products }] = await Promise.all([
+        const [{ data: config }, { data: settings }, { data: productsRaw }] = await Promise.all([
             supabase.from('super_admin_config').select('*').eq('id', 1).single(),
             supabase.from('store_settings').select('crm_tags').eq('store_id', store_id).single(),
             supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id)
         ])
+
+        const products = productsRaw?.map(p => ({
+            ...p,
+            collect_name: p.collect_name ? p.collect_name.trim() : ""
+        })) || []
 
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
 

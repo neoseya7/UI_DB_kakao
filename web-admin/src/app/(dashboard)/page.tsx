@@ -69,8 +69,12 @@ export default function Dashboard() {
       const managerNicks = settingsData?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
 
       // Fetch active products mapping to append target dates
-      const { data: prodData } = await supabase.from('products').select('*').eq('store_id', user.id)
-      const currentProducts = prodData || []
+      const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id)
+      const currentProducts = productsData?.map(p => ({
+        ...p,
+        collect_name: p.collect_name ? p.collect_name.trim() : "",
+        display_name: p.display_name ? p.display_name.trim() : ""
+      })) || []
       setActiveProducts(currentProducts)
 
       let query = supabase
