@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [dateFilter, setDateFilter] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }))
   const [categoryFilter, setCategoryFilter] = useState("all_category")
   const [orderFilter, setOrderFilter] = useState("all_order")
+  const [anomalyFilter, setAnomalyFilter] = useState("all_anomaly")
+  const [productFilter, setProductFilter] = useState("all_product")
   const [sortOption, setSortOption] = useState("time_desc")
 
   useEffect(() => {
@@ -365,7 +367,10 @@ export default function Dashboard() {
             <Input
               type="date"
               value={dateFilter === "all" ? "" : dateFilter}
-              onChange={(e) => setDateFilter(e.target.value || "all")}
+              onChange={(e) => {
+                setDateFilter(e.target.value || "all")
+                setProductFilter("all_product")
+              }}
               className="border-0 focus-visible:ring-0 h-8 w-[130px] shadow-none px-1"
               title="수집일 선택 (비우면 전체보기)"
             />
@@ -397,6 +402,34 @@ export default function Dashboard() {
               <SelectItem value="n">주문 X (N)</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={anomalyFilter} onValueChange={setAnomalyFilter}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="특이사항 필터" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all_anomaly">특이사항 (전체)</SelectItem>
+              <SelectItem value="out_of_stock">재고초과주문</SelectItem>
+              <SelectItem value="unregistered">상품미등록</SelectItem>
+            </SelectContent>
+          </Select>
+          {dateFilter !== "all" && (
+            <Select value={productFilter} onValueChange={setProductFilter}>
+              <SelectTrigger className="w-[160px] bg-white">
+                <SelectValue placeholder="상품명 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all_product">전체 상품</SelectItem>
+                {Array.from(new Set(
+                  activeProducts
+                    .filter(p => !dateFilter || dateFilter === "all" || p.target_date === dateFilter || p.is_regular_sale)
+                    .map(p => p.collect_name)
+                    .filter(Boolean)
+                )).sort().map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={sortOption} onValueChange={setSortOption}>
             <SelectTrigger className="w-[150px] bg-white">
               <SelectValue placeholder="정렬 방식" />
@@ -500,6 +533,17 @@ export default function Dashboard() {
           if (orderFilter !== "all_order" && match) {
             if (orderFilter === "y") match = match && log.isOrder === "Y";
             if (orderFilter === "n") match = match && log.isOrder !== "Y" && log.isOrder !== "대기";
+          }
+
+          if (anomalyFilter !== "all_anomaly" && match) {
+             const hasOutOfStock = log.matchBadges?.some((b: any) => b.dateText === "재고초과주문") || (log.classification && log.classification.includes("재고초과주문"));
+             const hasUnregistered = log.matchBadges?.some((b: any) => b.dateText === "상품미등록") || (log.classification && log.classification.includes("상품미등록"));
+             if (anomalyFilter === "out_of_stock") match = match && hasOutOfStock;
+             if (anomalyFilter === "unregistered") match = match && hasUnregistered;
+          }
+
+          if (dateFilter !== "all" && productFilter !== "all_product" && match) {
+             match = match && log.product && log.product.includes(productFilter);
           }
 
           return match;
