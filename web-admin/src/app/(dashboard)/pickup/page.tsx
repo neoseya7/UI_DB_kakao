@@ -595,16 +595,30 @@ export default function PickupCalendarPage() {
     }
 
     const toggleCheck = async (id: string, current: boolean, name?: string) => {
-        if (isMerged && name) {
-            const targetIds = rawCustomers.filter(rc => rc.name === name).map(rc => rc.id).filter(Boolean) as string[]
-            if (targetIds.length > 0) {
-                await supabase.from('orders').update({ is_received: !current }).in('id', targetIds)
-                setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
+        try {
+            if (isMerged && name) {
+                const targetIds = rawCustomers.filter(rc => rc.name === name).map(rc => rc.id).filter(Boolean) as string[]
+                if (targetIds.length > 0) {
+                    setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
+                    const { error } = await supabase.from('orders').update({ is_received: !current }).in('id', targetIds)
+                    if (error) throw error
+                }
+            } else {
+                if (!id) return
+                setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
+                const { error } = await supabase.from('orders').update({ is_received: !current }).eq('id', id)
+                if (error) throw error
             }
-        } else {
-            if (!id) return
-            await supabase.from('orders').update({ is_received: !current }).eq('id', id)
-            setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
+        } catch (err: any) {
+            console.error("수령 체크 변경 오류:", err)
+            // Rollback optimistic state changes upon failure
+            if (isMerged && name) {
+                const targetIds = rawCustomers.filter(rc => rc.name === name).map(rc => rc.id).filter(Boolean) as string[]
+                setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, checked: current } : c))
+            } else {
+                setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: current } : c))
+            }
+            alert(`옵티미스틱 업데이트 롤백: 상태 변경 실패 (${err.message})`)
         }
     }
 
