@@ -381,30 +381,47 @@ export async function POST(request: Request) {
         }
 
         // Finalize chat log (Always save classification regardless of whether it's an order)
-        let totalQuantity = 0;
-        let allProductsStr = "-";
+        const classificationStr = classificationString || null;
 
-        if (extractedItems.length > 0) {
-            const productStrings = extractedItems.map(item => {
-                const q = parseInt(item.quantity, 10);
-                if (!isNaN(q) && q > 0) {
-                    totalQuantity += q;
-                    return extractedItems.length > 1 ? `${item.product}(${q})` : item.product;
+        if (extractedItems.length === 0) {
+            await supabase.from('chat_logs').update({
+                is_processed: isActualOrder,
+                product_name: "-",
+                classification: classificationStr
+            }).eq('id', logId);
+        } else {
+            for (let i = 0; i < extractedItems.length; i++) {
+                const item = extractedItems[i];
+                let q = parseInt(item.quantity, 10);
+                
+                const pName = item.product;
+
+                if (i === 0) {
+                    const { error: finalUpdateError } = await supabase.from('chat_logs').update({
+                        is_processed: isActualOrder,
+                        product_name: pName,
+                        quantity: isNaN(q) ? null : q,
+                        classification: classificationStr
+                    }).eq('id', logId);
+                    
+                    if (finalUpdateError) {
+                        console.error("Silent Postgres Update Error on chat_logs:", finalUpdateError)
+                    }
+                } else {
+                    await supabase.from('chat_logs').insert({
+                        store_id,
+                        nickname,
+                        chat_content,
+                        chat_time: parsedTime,
+                        collect_date,
+                        category: finalIntent,
+                        is_processed: isActualOrder,
+                        product_name: pName,
+                        quantity: isNaN(q) ? null : q,
+                        classification: classificationStr
+                    });
                 }
-                return item.product;
-            });
-            allProductsStr = productStrings.join(", ");
-        }
-
-        const { error: finalUpdateError } = await supabase.from('chat_logs').update({
-            is_processed: isActualOrder,
-            product_name: allProductsStr,
-            quantity: totalQuantity > 0 ? totalQuantity : null,
-            classification: classificationString || null
-        }).eq('id', logId)
-
-        if (finalUpdateError) {
-            console.error("Silent Postgres Update Error on chat_logs:", finalUpdateError)
+            }
         }
 
         return NextResponse.json({
