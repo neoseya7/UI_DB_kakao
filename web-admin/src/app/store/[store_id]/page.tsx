@@ -24,6 +24,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
     const [isSearching, setIsSearching] = useState(false)
     const [queriedOrders, setQueriedOrders] = useState<any[] | null>(null)
     const [searchMessage, setSearchMessage] = useState("")
+    const [selectedNickname, setSelectedNickname] = useState<string | null>(null)
 
     const [selectedProduct, setSelectedProduct] = useState<any>(null)
     const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -74,6 +75,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
         setIsSearching(true)
         setSearchMessage("")
         setQueriedOrders(null)
+        setSelectedNickname(null)
 
         try {
             const res = await fetch(`/api/public/orders`, {
@@ -85,8 +87,18 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
             if (data.success) {
                 if (data.orders.length === 0) {
                     setSearchMessage(`'${nickname}' 님으로 접수된 픽업 대기 내역이 없습니다. (수령 완료된 주문은 노출되지 않습니다.)`)
+                    setQueriedOrders(null)
+                    setSelectedNickname(null)
+                } else {
+                    setQueriedOrders(data.orders)
+                    
+                    const uniqueNicks = Array.from(new Set(data.orders.map((o: any) => o.customer_nickname as string))) as string[]
+                    if (uniqueNicks.length === 1) {
+                        setSelectedNickname(uniqueNicks[0])
+                    } else {
+                        setSelectedNickname(null)
+                    }
                 }
-                setQueriedOrders(data.orders)
             } else {
                 setSearchMessage("조회 중 오류가 발생했습니다: " + data.error)
             }
@@ -195,65 +207,115 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                     {/* Queried Orders Inline */}
                     {queriedOrders && queriedOrders.length > 0 && (
                         <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
-                            {queriedOrders.map((order: any) => (
-                                <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 relative overflow-hidden">
-                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
-                                    <div className="flex justify-between items-start mb-3 pl-2">
-                                        <div>
-                                            <span className="text-xs font-bold text-slate-400 block mb-1">
-                                                접수일: {new Date(order.created_at).toLocaleDateString()}
-                                            </span>
-                                            <strong className="text-lg font-black text-slate-800 tracking-tight">픽업 예약일: {order.pickup_date}</strong>
-                                        </div>
-                                        {(() => {
-                                            const isAllItemsStocked = order.order_items?.length > 0 && order.order_items.every((item: any) => item.product?.is_stocked);
-                                            return isAllItemsStocked ? (
-                                                <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-200 font-black px-2 py-0.5 shadow-none">입고</Badge>
-                                            ) : (
-                                                <Badge className="bg-slate-50 text-slate-500 border border-slate-200 font-bold px-2 py-0.5 shadow-none">미입고</Badge>
-                                            );
-                                        })()}
+                            {/* Phase 1: Nickname Selection (If multiple unique nicknames exist and none selected) */}
+                            {!selectedNickname && (
+                                <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 text-center animate-in zoom-in-95 duration-200">
+                                    <h4 className="font-black text-slate-800 text-lg mb-2">🤔 여러 개의 유사한 닉네임이 검색되었습니다</h4>
+                                    <p className="text-slate-500 text-[13px] font-bold tracking-tight mb-5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                        💡 본인의 닉네임을 정확히 <span className="text-blue-500">선택</span>해 주세요.<br/>
+                                        (타인의 주문 내역은 보호됩니다)
+                                    </p>
+                                    <div className="flex flex-col gap-2">
+                                        {Array.from(new Set(queriedOrders.map((o: any) => o.customer_nickname as string))).map((nick: string, idx: number) => (
+                                            <Button 
+                                                key={idx} 
+                                                variant="outline" 
+                                                onClick={() => setSelectedNickname(nick)}
+                                                className="h-auto py-3.5 px-4 rounded-xl border-slate-200 shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:shadow-md transition-all font-bold text-slate-700 w-full justify-between items-center group"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xl group-hover:scale-110 transition-transform">🍏</span>
+                                                    <span className="text-base">{nick}</span>
+                                                </div>
+                                                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-md group-hover:bg-blue-100 group-hover:text-blue-500 transition-colors">
+                                                    {queriedOrders.filter(o => o.customer_nickname === nick).length}건
+                                                </span>
+                                            </Button>
+                                        ))}
                                     </div>
-                                    <ul className="space-y-3 border-t border-slate-100 pt-3 pl-2">
-                                        {order.order_items?.map((item: any) => {
-                                            const itemPrice = item.product?.price || 0;
-                                            const totalItemPrice = itemPrice * item.quantity;
-                                            const showPrice = settings?.show_price ?? true;
-                                            
-                                            return (
-                                                <li key={item.id} className="flex justify-between items-start text-[15px]">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold text-slate-700">
-                                                            {item.product?.display_name || item.product?.collect_name || "알 수 없는 상품"}
-                                                        </span>
-                                                        {showPrice && (
-                                                            <span className="text-[12px] font-semibold text-slate-400 mt-0.5 tracking-tight">
-                                                                개당 {itemPrice.toLocaleString()}원
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-col items-end gap-1.5 mt-0.5">
-                                                        <span className="font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{item.quantity}개</span>
-                                                        {showPrice && (
-                                                            <span className="text-[13px] font-bold text-slate-600">
-                                                                {totalItemPrice.toLocaleString()}원
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                    {(settings?.show_price ?? true) && (
-                                        <div className="border-t border-slate-100 mt-3 pt-3 pl-2 flex justify-between items-center bg-slate-50/50 rounded-b-xl -mx-4 -mb-4 px-4 pb-4">
-                                            <span className="text-[14px] font-bold text-slate-500">총 결제 추정 금액</span>
-                                            <span className="text-[18px] font-black text-slate-800">
-                                                {order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity * (item.product?.price || 0)), 0).toLocaleString()}원
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
-                            ))}
+                            )}
+
+                            {/* Phase 2: Order List for Selected Nickname */}
+                            {selectedNickname && (
+                                <div className="animate-in fade-in slide-in-from-right-2 duration-300">
+                                    <div className="flex justify-between items-end mb-3 pl-1 pr-1 border-b border-slate-200 pb-2">
+                                        <p className="font-bold text-slate-500 text-sm">
+                                            <span className="text-blue-600 font-black text-base">🍏 {selectedNickname}</span> 님의 예약 내역
+                                        </p>
+                                        {Array.from(new Set(queriedOrders.map((o: any) => o.customer_nickname as string))).length > 1 && (
+                                            <button 
+                                                onClick={() => setSelectedNickname(null)}
+                                                className="text-[13px] font-bold text-slate-400 hover:text-blue-500 flex items-center gap-1 transition-colors bg-slate-100 hover:bg-blue-50 px-2.5 py-1 rounded-md"
+                                            >
+                                                <ChevronLeft className="w-3.5 h-3.5" />
+                                                다른 닉네임 선택
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="space-y-3">
+                                        {queriedOrders.filter((order: any) => order.customer_nickname === selectedNickname).map((order: any) => (
+                                            <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 relative overflow-hidden group hover:border-blue-200 transition-colors">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
+                                                <div className="flex justify-between items-start mb-3 pl-2">
+                                                    <div>
+                                                        <span className="text-xs font-bold text-slate-400 block mb-1">
+                                                            접수일: {new Date(order.created_at).toLocaleDateString()}
+                                                        </span>
+                                                        <strong className="text-lg font-black text-slate-800 tracking-tight">픽업 예약일: {order.pickup_date}</strong>
+                                                    </div>
+                                                    {(() => {
+                                                        const isAllItemsStocked = order.order_items?.length > 0 && order.order_items.every((item: any) => item.product?.is_stocked);
+                                                        return isAllItemsStocked ? (
+                                                            <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-200 font-black px-2 py-0.5 shadow-none">입고</Badge>
+                                                        ) : (
+                                                            <Badge className="bg-slate-50 text-slate-500 border border-slate-200 font-bold px-2 py-0.5 shadow-none">미입고</Badge>
+                                                        );
+                                                    })()}
+                                                </div>
+                                                <ul className="space-y-3 border-t border-slate-100 pt-3 pl-2">
+                                                    {order.order_items?.map((item: any) => {
+                                                        const itemPrice = item.product?.price || 0;
+                                                        const totalItemPrice = itemPrice * item.quantity;
+                                                        const showPrice = settings?.show_price ?? true;
+                                                        
+                                                        return (
+                                                            <li key={item.id} className="flex justify-between items-start text-[15px]">
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-slate-700">
+                                                                        {item.product?.display_name || item.product?.collect_name || "알 수 없는 상품"}
+                                                                    </span>
+                                                                    {showPrice && (
+                                                                        <span className="text-[12px] font-semibold text-slate-400 mt-0.5 tracking-tight">
+                                                                            개당 {itemPrice.toLocaleString()}원
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-col items-end gap-1.5 mt-0.5">
+                                                                    <span className="font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{item.quantity}개</span>
+                                                                    {showPrice && (
+                                                                        <span className="text-[13px] font-bold text-slate-600">
+                                                                            {totalItemPrice.toLocaleString()}원
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                                {(settings?.show_price ?? true) && (
+                                                    <div className="border-t border-slate-100 mt-3 pt-3 pl-2 flex justify-between items-center bg-slate-50/50 rounded-b-xl -mx-4 -mb-4 px-4 pb-4">
+                                                        <span className="text-[14px] font-bold text-slate-500">총 결제 추정 금액</span>
+                                                        <span className="text-[18px] font-black text-slate-800">
+                                                            {order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity * (item.product?.price || 0)), 0).toLocaleString()}원
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </section>
