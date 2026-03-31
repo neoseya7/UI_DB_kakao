@@ -40,11 +40,34 @@ export async function POST(request: Request) {
         }
 
         // 1. Fetch Configs & CRM Tags & Products First
-        const [{ data: config }, { data: settings }, { data: products }] = await Promise.all([
+        const [{ data: config }, { data: settings }, { data: productsRaw }] = await Promise.all([
             supabase.from('super_admin_config').select('*').eq('id', 1).single(),
             supabase.from('store_settings').select('crm_tags').eq('store_id', store_id).single(),
-            supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id)
+            supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id).eq('is_hidden', false)
         ])
+
+        const productIds = productsRaw?.map((p: any) => p.id) || [];
+        let qtyMap: Record<string, number> = {};
+        if (productIds.length > 0) {
+            const { data: rpcData, error: rpcErr } = await supabase.rpc('get_product_sales_sum', {
+                p_store_id: store_id,
+                p_product_ids: productIds
+            });
+
+            if (rpcData && !rpcErr) {
+                for (const item of rpcData) {
+                    qtyMap[item.product_id] = parseInt(item.total_quantity, 10) || 0;
+                }
+            } else {
+                console.error("RPC Error:", rpcErr);
+            }
+        }
+
+        const products = productsRaw?.map((p: any) => ({
+            ...p,
+            collect_name: p.collect_name ? p.collect_name.trim() : "",
+            remaining_stock: p.allocated_stock !== null ? Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0)) : null
+        })) || []
 
         // 2. Filter out Manager and System messages to save AI tokens & DB space
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
@@ -256,7 +279,11 @@ export async function POST(request: Request) {
                 if (matchedProduct) {
                     // Check stock first
                     const qty = parseInt(firstItem.quantity, 10) || 1
-                    const isOutOfStock = matchedProduct.allocated_stock !== null && matchedProduct.allocated_stock < qty;
+                    const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
+
+                    if (!isOutOfStock && matchedProduct.remaining_stock !== null) {
+                        matchedProduct.remaining_stock -= qty;
+                    }
 
                     // Inject pickup date (target_date) from matched product if not specified
                     if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") {
