@@ -7,6 +7,7 @@ import { BarChart3, TrendingUp, DollarSign, CalendarDays, Download } from "lucid
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts"
 import { Button } from "@/components/ui/button"
 import { format, startOfWeek, startOfMonth } from "date-fns"
+import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function AnalyticsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -188,7 +189,9 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto pb-10">
             <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
                 <div className="flex flex-col gap-2">
-                    <h2 className="text-2xl font-bold tracking-tight">매출통계</h2>
+                    <GuideBadge text="고객이 예약한 상품 중 수령한 상품을 기준으로 매출이 계산됩니다. 상품정보입력에서 판매가격과 입고가격을 입력하면 자동으로 계산됩니다.">
+                    <h2 className="text-2xl font-bold tracking-tight inline-block">매출통계</h2>
+                    </GuideBadge>
                     <p className="text-muted-foreground">픽업 완료된 주문을 기준으로 매장 재무 실적을 요약합니다.</p>
                 </div>
                 <div className="flex items-center gap-2">

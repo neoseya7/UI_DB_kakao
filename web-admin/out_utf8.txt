@@ -1,0 +1,14 @@
+[dotenv@17.3.1] injecting env (3) from .env.local -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Products found: [
+  {
+    id: '6a1cb614-95f8-4f94-a48b-c63e58c00d59',
+    name: '곤드레나물',
+    date: '2026-03-30',
+    is_regular: false
+  }
+]
+-------------------
+Total Quantity (Raw): 17
+Quantity matching Target Date (2026-03-30): 17
+Quantity with DIFFERENT Pickup Date: 0
+Mismatched Orders: []

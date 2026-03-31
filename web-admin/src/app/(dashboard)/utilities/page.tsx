@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Copy, Blocks, RefreshCw, MessageCircle } from "lucide-react"
+import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function UtilitiesPage() {
     const [products, setProducts] = useState<any[]>([])
@@ -189,7 +190,8 @@ export default function UtilitiesPage() {
             <div className="grid md:grid-cols-[1fr_1fr] gap-6 mt-2">
                 {/* Left Col: Setup */}
                 <div className="space-y-6">
-                    <Card className="shadow-sm border-blue-100 bg-white">
+                    <GuideBadge text="특정 날짜의 품절 혹은 재고가 남은 상품을 선택할 수 있습니다." className="block">
+                    <Card className="shadow-sm border-blue-100 bg-white h-full">
                         <CardHeader className="bg-blue-50/50 pb-4 border-b border-blue-100">
                             <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
                                 <Blocks className="w-5 h-5 text-blue-500" />
@@ -227,8 +229,10 @@ export default function UtilitiesPage() {
                             </div>
                         </CardContent>
                     </Card>
+                    </GuideBadge>
 
-                    <Card className="shadow-sm border-indigo-100 bg-white">
+                    <GuideBadge text="템플릿을 지정하면 지정한 문구의 상품정보가 자동으로 생성됩니다. 생성된 문구는 카톡에 복사해 활용할 수 있습니다. 템플릿은 최대 5개이며 점장님이 원하시는 문구로 수정 저장해 활용할 수 있습니다." className="block h-full">
+                    <Card className="shadow-sm border-indigo-100 bg-white h-full">
                         <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100 flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
@@ -270,6 +274,7 @@ export default function UtilitiesPage() {
                             ))}
                         </CardContent>
                     </Card>
+                    </GuideBadge>
                 </div>
 
                 {/* Right Col: Result */}

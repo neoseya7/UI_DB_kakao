@@ -1,0 +1,17 @@
+﻿commit efd870f607ef6926ec90d0cc1dcc3e23ee9addc0
+Author: neoseya7 <neoseya@naver.com>
+Date:   2026-03-31 09:44:55 +0900
+
+    fix(api): implement aggressive Regex array decomposition for AI hallucinations
+
+commit 3a9f5ee08eacbd313a2bd0ce788d3af106ad058e
+Author: neoseya7 <neoseya@naver.com>
+Date:   2026-03-31 09:16:53 +0900
+
+    fix(api): inject strict JSON array enforcement rule into Gemini prompt to physically block AI from generating un-delimited multi-item bundles
+
+commit 025b43ce6c0bf1c3b452007ac26ccfdbf99e3bc6
+Author: neoseya7 <neoseya@naver.com>
+Date:   2026-03-31 08:05:20 +0900
+
+    fix(api): make multi-item splitting regex highly resilient against Gemini format omissions

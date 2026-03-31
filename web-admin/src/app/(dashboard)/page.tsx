@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function Dashboard() {
   const [logs, setLogs] = useState<any[]>([])
@@ -358,22 +359,25 @@ export default function Dashboard() {
       {/* Top Search & Filter Controls */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1 bg-white rounded-md border px-2 h-10 shadow-sm focus-within:ring-1 focus-within:ring-ring">
-            <Input
-              type="date"
-              value={dateFilter === "all" ? "" : dateFilter}
-              onChange={(e) => {
-                setDateFilter(e.target.value || "all")
-                setProductFilter("all_product")
-              }}
-              className="border-0 focus-visible:ring-0 h-8 w-[130px] shadow-none px-1"
-              title="수집일 선택 (비우면 전체보기)"
-            />
-            {dateFilter !== "all" && (
-              <Button variant="ghost" size="sm" onClick={() => setDateFilter("all")} className="h-7 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground">전체</Button>
-            )}
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <GuideBadge text="대화를 수집한 날짜를 선택할 수 있어요.">
+            <div className="flex items-center gap-1 bg-white rounded-md border px-2 h-10 shadow-sm focus-within:ring-1 focus-within:ring-ring">
+              <Input
+                type="date"
+                value={dateFilter === "all" ? "" : dateFilter}
+                onChange={(e) => {
+                  setDateFilter(e.target.value || "all")
+                  setProductFilter("all_product")
+                }}
+                className="border-0 focus-visible:ring-0 h-8 w-[130px] shadow-none px-1"
+                title="수집일 선택 (비우면 전체보기)"
+              />
+              {dateFilter !== "all" && (
+                <Button variant="ghost" size="sm" onClick={() => setDateFilter("all")} className="h-7 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground">전체</Button>
+              )}
+            </div>
+          </GuideBadge>
+          <GuideBadge text="대화의 분류를 선택할 수 있어요.">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[140px] bg-white">
               <SelectValue placeholder="카테고리" />
             </SelectTrigger>
@@ -387,6 +391,7 @@ export default function Dashboard() {
               <SelectItem value="기타">기타</SelectItem>
             </SelectContent>
           </Select>
+          </GuideBadge>
           <Select value={orderFilter} onValueChange={setOrderFilter}>
             <SelectTrigger className="w-[120px] bg-white">
               <SelectValue placeholder="주문여부" />
@@ -397,8 +402,9 @@ export default function Dashboard() {
               <SelectItem value="n">주문 X (N)</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={anomalyFilter} onValueChange={setAnomalyFilter}>
-            <SelectTrigger className="w-[140px] bg-white">
+          <GuideBadge text="상품미등록과 재고초과주문만 확인할 수 있어요.">
+            <Select value={anomalyFilter} onValueChange={setAnomalyFilter}>
+              <SelectTrigger className="w-[140px] bg-white">
               <SelectValue placeholder="특이사항 필터" />
             </SelectTrigger>
             <SelectContent>
@@ -407,6 +413,7 @@ export default function Dashboard() {
               <SelectItem value="unregistered">상품미등록</SelectItem>
             </SelectContent>
           </Select>
+          </GuideBadge>
           {dateFilter !== "all" && (
             <Select value={productFilter} onValueChange={setProductFilter}>
               <SelectTrigger className="w-[160px] bg-white">
@@ -437,15 +444,17 @@ export default function Dashboard() {
           </Select>
         </div>
 
-        <div className="relative w-full md:w-[320px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="대화 내용, 닉네임, 상품명 검색"
-            className="pl-9 bg-white"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <GuideBadge text="대화내용이나 닉네임, 상품명으로 검색할 수 있어요." className="w-full md:w-[320px]">
+          <div className="relative w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="대화 내용, 닉네임, 상품명 검색"
+              className="pl-9 bg-white"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </GuideBadge>
       </div>
 
       {/* Bulk Action Bar */}
@@ -460,9 +469,10 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-          {/* Change Settings Tools */}
-          <span className="text-sm font-semibold text-indigo-800 shrink-0">상품명지정:</span>
+        <GuideBadge text="AI가 상품을 매칭하지 못했을 경우 날짜와 상품명을 선택해서 쉽게 주문으로 이동시켜줍니다.">
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0 p-1 bg-white/50 rounded-lg border border-indigo-100/50">
+            {/* Change Settings Tools */}
+            <span className="text-sm font-semibold text-indigo-800 shrink-0 ml-1">상품명지정:</span>
 
           <Select value={bulkDate} onValueChange={setBulkDate}>
             <SelectTrigger className="w-full sm:w-[150px] h-9 bg-white shadow-sm">
@@ -497,6 +507,7 @@ export default function Dashboard() {
             <Edit3 className="w-4 h-4" /> 변경
           </Button>
         </div>
+        </GuideBadge>
       </div>
 
       {/* Table */}

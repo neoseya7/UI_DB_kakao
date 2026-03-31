@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2 } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
+import { GuideBadge } from "@/components/ui/guide-badge"
 
-type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean }
+type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string }
 type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, originalIndex?: number }
 
 export default function PickupCalendarPage() {
@@ -159,12 +160,13 @@ export default function PickupCalendarPage() {
             if (data) {
                 setTransferAvailableProducts(data.map(p => ({
                     id: p.id,
-                    name: p.display_name || p.collect_name,
+                    name: p.collect_name,
                     price: p.price || 0,
                     required: p.allocated_stock || 0,
                     stock: p.allocated_stock || 0,
                     target_date: p.target_date,
-                    is_regular_sale: p.is_regular_sale
+                    is_regular_sale: p.is_regular_sale,
+                    product_memo: p.product_memo || ""
                 })))
             }
         }
@@ -191,12 +193,13 @@ export default function PickupCalendarPage() {
 
         const mappedProducts = (pData || []).map(p => ({
             id: p.id,
-            name: p.display_name || p.collect_name,
+            name: p.collect_name,
             price: p.price || 0,
             required: p.allocated_stock || 0,
             stock: p.allocated_stock || 0,
             target_date: p.target_date,
-            is_regular_sale: p.is_regular_sale
+            is_regular_sale: p.is_regular_sale,
+            product_memo: p.product_memo || ""
         }))
         setProducts(mappedProducts)
 
@@ -637,12 +640,18 @@ export default function PickupCalendarPage() {
         }
     }
 
-    const handleUpdateProductField = async (productId: string, field: 'price' | 'allocated_stock', value: string) => {
+    const handleUpdateProductField = async (productId: string, field: 'price' | 'allocated_stock' | 'product_memo', value: string) => {
         if (!productId) return;
-        const numValue = parseInt(value) || 0
-        const { error } = await supabase.from('products').update({ [field]: numValue }).eq('id', productId)
+        const finalValue = field === 'product_memo' ? value : (parseInt(value) || 0)
+        const { error } = await supabase.from('products').update({ [field]: finalValue }).eq('id', productId)
         if (!error) {
-            setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field === 'allocated_stock' ? 'stock' : 'price']: numValue } : p))
+            setProducts(prev => prev.map(p => {
+                if (p.id !== productId) return p;
+                if (field === 'allocated_stock') return { ...p, stock: finalValue as number };
+                if (field === 'price') return { ...p, price: finalValue as number };
+                if (field === 'product_memo') return { ...p, product_memo: finalValue as string };
+                return p;
+            }))
         } else {
             console.error(error)
             alert("상품 정보 업데이트 실패: " + error.message)
@@ -889,9 +898,10 @@ export default function PickupCalendarPage() {
                 {/* 2번째 줄: 액션 버튼 그룹 */}
                 <div className="flex flex-col md:flex-row flex-wrap items-center justify-between xl:justify-end gap-3 border-t pt-4 border-slate-200/60 mt-2">
                     
+                    <GuideBadge text="닉네임과 상품명, 수량을 직접 입력할 수 있어요.">
                     <div className="flex flex-col sm:flex-row items-center gap-2 bg-indigo-50/50 p-1.5 rounded-md border border-indigo-100 shadow-sm w-full xl:w-auto xl:mr-auto">
                         <span className="text-sm font-bold flex items-center gap-1.5 min-w-[max-content] text-indigo-900 border-r border-indigo-200 px-2 shrink-0">
-                            <PlusCircle className="h-4 w-4" /> 수동 추가
+                            <PlusCircle className="h-4 w-4" /> 수동 주문등록
                         </span>
                         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
                             <Input type="date" value={newDate || currentDate} onChange={e => { setNewDate(e.target.value); setNewProductId(""); }} className="w-[125px] h-9 bg-white shadow-sm shrink-0 px-2" />
@@ -912,7 +922,9 @@ export default function PickupCalendarPage() {
                             </Button>
                         </div>
                     </div>
+                    </GuideBadge>
 
+                    <GuideBadge text="상품의 픽업날짜를 변경할 수 있어요. 상시판매로 이동하면 픽업일이 오래된 상품이 상시판매 제품으로 상품리스트에 전시되요.">
                     <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="gap-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100 shadow-sm transition-all h-10 w-full sm:w-auto px-3 shrink-0">
@@ -961,6 +973,7 @@ export default function PickupCalendarPage() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                    </GuideBadge>
 
                     <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
 
@@ -978,6 +991,8 @@ export default function PickupCalendarPage() {
                     </div>
 
                     <div className="flex w-full sm:w-auto gap-2">
+                        <GuideBadge text="버튼을 누르면 주문을 삭제할 수 있는 체크박스가 보여요. 체크박스를 체크한 후 삭제버튼을 클릭하면 주문이 삭제가되요.">
+                        <div className="flex gap-2 w-full sm:w-auto">
                         {isDeleteMode ? (
                             <>
                                 <Button variant="outline" onClick={() => { setIsDeleteMode(false); setSelectedDeleteIds([]); }} className="h-10 px-3 w-full sm:w-auto shadow-sm">취소</Button>
@@ -990,6 +1005,9 @@ export default function PickupCalendarPage() {
                                 <Trash2 className="h-4 w-4" /> 삭제
                             </Button>
                         )}
+                        </div>
+                        </GuideBadge>
+                        <GuideBadge text="1명의 여러상품을 주문했을 때 여러줄이 한줄로 합칠 수 있어요. 물론 다시 분리할수도 있어요.">
                         <Button
                             variant={isMerged ? "default" : "outline"}
                             className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 ${isMerged ? 'bg-primary' : 'bg-white'}`}
@@ -997,6 +1015,7 @@ export default function PickupCalendarPage() {
                         >
                             <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
                         </Button>
+                        </GuideBadge>
                     </div>
                 </div>
             </div>
@@ -1024,13 +1043,15 @@ export default function PickupCalendarPage() {
                                 {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
                                 <th rowSpan={6} className={`border-b border-r px-4 py-3 align-bottom pb-4 ${getStickyClasses('summary').th}`}>주문 상품 요약</th>
                                 <th rowSpan={2} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
-                                <th rowSpan={2} className={`border-b border-r p-2 align-bottom pb-4 bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
-                                    <div className="flex flex-col items-center justify-end h-full gap-1 font-bold text-indigo-900 leading-none">
-                                        <span>고객 비고 1</span>
-                                        <span className="text-[11px] text-indigo-700/80">(고객찜)</span>
-                                    </div>
+                                <th rowSpan={2} className={`border-b border-r p-0 align-bottom bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
+                                    <GuideBadge text="고객이 수령일 변경을 원할 경우 고객찜에 입력을 하면 남은+미체크에 숫자가 변경이 되요." className="w-full h-full p-2 pb-4">
+                                        <div className="flex flex-col items-center justify-end h-full gap-1 font-bold text-indigo-900 leading-none">
+                                            <span>고객 비고 1</span>
+                                            <span className="text-[11px] text-indigo-700/80">(고객찜)</span>
+                                        </div>
+                                    </GuideBadge>
                                 </th>
-                                {products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent" /></th>)}
+                                {products.map((p, i) => <th key={i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors" /></th>)}
                             </tr>
                             <tr>
                                 {products.map((p, i) => (

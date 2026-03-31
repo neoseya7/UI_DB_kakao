@@ -7,6 +7,7 @@ import { Sidebar } from "./sidebar"
 import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
+import { useGuideMode } from "@/components/layout/guide-context"
 
 export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boolean; toggleSidebar?: () => void }) {
     const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -14,6 +15,7 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
+    const { isGuideMode, toggleGuideMode } = useGuideMode()
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -85,7 +87,19 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
             </div>
             
             {userId && (
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
+                    {/* Guide Mode Toggle */}
+                    <Button 
+                        variant={isGuideMode ? "default" : "outline"} 
+                        size="sm" 
+                        onClick={toggleGuideMode}
+                        className={`gap-1.5 h-8 text-[11px] sm:text-xs font-bold shadow-sm transition-colors ${isGuideMode ? 'bg-amber-400 hover:bg-amber-500 text-slate-900 border-amber-400' : 'text-slate-500 border-slate-300 bg-white hover:bg-slate-50 opacity-80'}`}
+                        title="초보자를 위한 가이드 말풍선 켜기/끄기"
+                    >
+                        <span className="text-[13px]">{isGuideMode ? "💡" : "💡"}</span>
+                        <span className="hidden min-[500px]:inline">{isGuideMode ? "가이드 켜짐" : "가이드 끄기"}</span>
+                    </Button>
+
                     <Button 
                         variant="outline" 
                         size="sm" 
@@ -93,7 +107,7 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
                         className="gap-1.5 h-8 text-[11px] sm:text-xs font-bold text-indigo-700 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 shadow-sm mr-2" 
                         title="고객 주문 검색 페이지 주소 복사"
                     >
-                        <Copy className="h-3.5 w-3.5" /> <span className="hidden min-[400px]:inline">주문검색페이지 주소 복사하기</span>
+                        <Copy className="h-3.5 w-3.5" /> <span className="hidden min-[400px]:inline">검색방 주소 복사</span>
                     </Button>
                 </div>
             )}

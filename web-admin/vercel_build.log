@@ -1,0 +1,127 @@
+> [debug] [2026-03-30T17:03:32.014Z] Vercel CLI 50.37.3
+> [debug] [2026-03-30T17:03:32.020Z] Agent/TTY/nonInteractive: isAgent=true agentName=antigravity stdin.isTTY=true --non-interactive=false explicitFalse=false => nonInteractive=false
+> [debug] [2026-03-30T17:03:32.020Z] user supplied known subcommand: "build"
+WARNING! Build not running on Vercel. System environment variables will not be available.
+> [debug] [2026-03-30T17:03:32.116Z] Loaded environment variables from "E:\Project_my\UI_DB_kakao\web-admin\.vercel\.env.preview.local"
+> [debug] [2026-03-30T17:03:32.149Z] vercel-flags: checking env vars for SDK Keys
+> [debug] [2026-03-30T17:03:32.150Z] vercel-flags: found 0 SDK keys
+> [debug] [2026-03-30T17:03:32.153Z] Locating files E:\Project_my\UI_DB_kakao\web-admin
+> [debug] [2026-03-30T17:03:32.163Z] Ignoring E:\Project_my\UI_DB_kakao\web-admin\.env.local
+> [debug] [2026-03-30T17:03:32.164Z] Ignoring E:\Project_my\UI_DB_kakao\web-admin\.gitignore
+> [debug] [2026-03-30T17:03:32.164Z] Ignoring E:\Project_my\UI_DB_kakao\web-admin\.next
+> [debug] [2026-03-30T17:03:32.164Z] Ignoring E:\Project_my\UI_DB_kakao\web-admin\.vercel
+> [debug] [2026-03-30T17:03:32.165Z] Ignoring E:\Project_my\UI_DB_kakao\web-admin\node_modules
+> [debug] [2026-03-30T17:03:32.189Z] Locating files E:\Project_my\UI_DB_kakao\web-admin [28ms]
+> [debug] [2026-03-30T17:03:32.441Z] Imported Builder "@vercel/next" from "C:\Users\neose\AppData\Local\npm-cache\_npx\69f9afb961c37556\node_modules\@vercel\next"
+> [debug] [2026-03-30T17:03:32.441Z] Resolved builders: "@vercel/next => 4.16.3"
+> [debug] [2026-03-30T17:03:32.478Z] Setting env VERCEL_PROJECT_SETTINGS_NODE_VERSION to "24.x"
+> [debug] [2026-03-30T17:03:32.478Z] Building entrypoint "package.json" with "@vercel/next"
+WARNING: You should not upload the `.next` directory.
+Installing dependencies...
+
+up to date in 2s
+
+267 packages are looking for funding
+  run `npm fund` for details
+Detected Next.js version: 16.2.1
+Running "npm run build"
+
+> web-admin@0.1.0 build
+> next build
+
+▲ Next.js 16.2.1 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.7s
+  Running TypeScript ...
+  Finished TypeScript in 10.3s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/22) ...
+  Generating static pages using 15 workers (5/22) 
+  Generating static pages using 15 workers (10/22) 
+  Generating static pages using 15 workers (16/22) 
+✓ Generating static pages using 15 workers (22/22) in 1838ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /analytics
+├ ƒ /api/admin/approve-store
+├ ƒ /api/admin/generate-login-link
+├ ƒ /api/admin/pending-details
+├ ƒ /api/admin/store-settings
+├ ƒ /api/admin/update-role
+├ ƒ /api/admin/update-room
+├ ƒ /api/auth/register-store
+├ ƒ /api/brand-admin/overview
+├ ƒ /api/collect
+├ ƒ /api/collect-bulk
+├ ƒ /api/orders/delete
+├ ƒ /api/products/shared
+├ ƒ /api/products/sync-retroactive
+├ ƒ /api/public/orders
+├ ƒ /api/public/store/[store_id]
+├ ƒ /api/scraper/config
+├ ƒ /api/stores/update-settings
+├ ○ /brand-admin
+├ ○ /login
+├ ○ /orders
+├ ○ /pickup
+├ ○ /products
+├ ○ /settings
+├ ○ /signup
+├ ƒ /store/[store_id]
+└ ○ /utilities
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Traced Next.js server files in: 89.121ms
+Tracing entries due to missing build traces:
+[
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/admin/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/analytics/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/brand-admin/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/orders/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/pickup/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/products/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/settings/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/(dashboard)/utilities/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/_global-error/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/_not-found/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/login/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/signup/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/store/[store_id]/page.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/admin/approve-store/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/admin/generate-login-link/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/admin/pending-details/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/admin/store-settings/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/admin/update-role/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/admin/update-room/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/auth/register-store/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/brand-admin/overview/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/collect-bulk/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/collect/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/orders/delete/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/products/shared/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/products/sync-retroactive/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/public/orders/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/public/store/[store_id]/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/scraper/config/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/api/stores/update-settings/route.js",
+  "E:/Project_my/UI_DB_kakao/web-admin/.next/server/app/favicon.ico/route.js"
+]: 169.421ms
+Created all serverless functions in: 281.766ms
+Collected static files (public/, static/, .next/static): 16.171ms
+Error: EPERM: operation not permitted, symlink 'approve-store.func' -> 'E:\Project_my\UI_DB_kakao\web-admin\.vercel\output\functions\api\admin\generate-login-link.func'
+> [debug] [2026-03-30T17:04:05.718Z] Valid access token, skipping token refresh.
+> [debug] [2026-03-30T17:04:05.780Z] #1 → GET https://api.vercel.com/v2/user
+> [debug] [2026-03-30T17:04:06.223Z] #1 ← 200 OK: sfo1::jk67b-1774890248151-ad2cc5dec553 [443ms]
+> [debug] [2026-03-30T17:04:08.057Z] Telemetry event tracked
+> [debug] [2026-03-30T17:04:08.264Z] Telemetry subprocess killed due to timeout
+> [debug] [2026-03-30T17:04:08.281Z] Telemetry subprocess exited with code null

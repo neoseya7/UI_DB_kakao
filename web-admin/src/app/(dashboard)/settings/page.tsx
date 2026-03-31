@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Save, Loader2 } from "lucide-react"
+import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function SettingsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -146,12 +147,13 @@ export default function SettingsPage() {
                     className="font-bold bg-indigo-600 hover:bg-indigo-700 shadow-md gap-2 w-full sm:w-auto"
                 >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    설정값 마스터 저장
+                    설정 저장
                 </Button>
             </div>
 
             <div className="grid gap-6">
                 {/* 1. POS Sync Settings */}
+                <GuideBadge text="포스와 연동해 주문정보를 한번에 결제까지 이어집니다. 연동을 켠 뒤 설정값 저장 후 주문관리에서 주문앞 체크박스를 체크해보세요. pos로 가는 팝업이 활성화됩니다." className="block">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -175,8 +177,10 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                </GuideBadge>
 
                 {/* 2. Global View Toggles */}
+                <GuideBadge text="고객이 보는 주문검색페이지의 주문정보 내용의 노출 여부를 선택합니다." className="block">
                 <Card>
                     <CardHeader>
                         <CardTitle>2. 주문 검색 페이지 표시 설정</CardTitle>
@@ -207,11 +211,13 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                </GuideBadge>
 
                 {/* 3. Notice Texts Array */}
+                <GuideBadge text="주문검색페이지 상단의 공지사항 정보를 입력할 수 있습니다." className="block">
                 <Card>
                     <CardHeader>
-                        <CardTitle>3. 외부 노출 공지사항 (배너/알림)</CardTitle>
+                        <CardTitle>3. 공지사항 추가</CardTitle>
                         <CardDescription>고객 메인 페이지 상단에 띄울 필독 공지사항입니다. 최대 10줄까지 등록할 수 있습니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -232,11 +238,13 @@ export default function SettingsPage() {
                         </Button>
                     </CardContent>
                 </Card>
+                </GuideBadge>
 
                 {/* 4. Product Guide Page Configuration */}
+                <GuideBadge text="노출되는 상품의 이미지, 상세정보, 재고배지의 노출 여부를 선택할 수 있습니다. 마감 임박 버튼의 수량을 설정할 수 있습니다." className="block">
                 <Card>
                     <CardHeader>
-                        <CardTitle>4. 상품 안내 페이지 설정</CardTitle>
+                        <CardTitle>4. 상품리스트 페이지 설정</CardTitle>
                         <CardDescription>고객에게 노출되는 개별 상품 페이지의 디자인 요소 활성화 및 재고 배지 임계값을 설정합니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -257,7 +265,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="show-badge" className="flex flex-col gap-1 cursor-pointer">
-                                    <span className="text-base font-semibold">재고 배지(품절임박) 상태 노출 여부</span>
+                                    <span className="text-base font-semibold">마감임박 배지 노출 여부</span>
                                     <span className="font-normal text-sm text-muted-foreground">목록의 특정 상품명 옆에 시각적인 재고 배지를 띄웁니다.</span>
                                 </Label>
                                 <Switch id="show-badge" checked={settings.show_stock_badge} onCheckedChange={(v) => setSettings({ ...settings, show_stock_badge: v })} />
@@ -268,8 +276,8 @@ export default function SettingsPage() {
                         <div className={`transition-opacity duration-200 ${!settings.show_stock_badge ? 'opacity-40 pointer-events-none' : ''}`}>
                             <div className="flex items-center justify-between pb-4 mb-4">
                                 <Label htmlFor="low-stock" className="flex flex-col gap-1">
-                                    <span className="text-base font-semibold text-slate-800">품절 임박 경고 허들 수량</span>
-                                    <span className="font-normal text-sm text-muted-foreground">이 숫자 이하로 남은 상품은 색상이 붉은 톤으로 자동 변경되어 위험을 표기합니다.</span>
+                                    <span className="text-base font-semibold text-slate-800">마감임박 배지 노출 수량 설정</span>
+                                    <span className="font-normal text-sm text-muted-foreground">이 숫자 이하로 남은 상품은 마감임박으로 표시됩니다.</span>
                                 </Label>
                                 <div className="flex items-center gap-2">
                                     <Input
@@ -298,18 +306,20 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                </GuideBadge>
 
                 {/* 5. Manager Nicknames Set */}
+                <GuideBadge text="점장님의 닉네임이나 지인의 닉네임을 등록하면 주문 형식의 대화도 주문으로 분류되지 않습니다." className="block">
                 <Card>
                     <CardHeader>
-                        <CardTitle>5. 점장 전용 챗봇 닉네임 필터링 (명령어 통과용)</CardTitle>
+                        <CardTitle>5. 주문제외 닉네임 설정</CardTitle>
                         <CardDescription>고객 채팅이 아닌 '점장 명령'으로 강제 분류되어 스킵될 카카오 인증 닉네임 리스트입니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex flex-col sm:flex-row gap-2">
                             <Input
                                 value={newManager} onChange={e => setNewManager(e.target.value)}
-                                placeholder="등록할 점장의 챗봇 닉네임 정확히 입력 (예: 강남단골1)"
+                                placeholder="예: 강남점점장(띄어쓰기 없이 작성해주세요)"
                                 className="w-full sm:max-w-[400px] shadow-sm bg-white"
                                 onKeyDown={(e) => { if (e.key === 'Enter') addManager() }}
                             />
@@ -326,18 +336,20 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                </GuideBadge>
 
                 {/* 6. Production Orders Alert */}
+                <GuideBadge text="상품정보에 발주마감시간을 입력하면 시간에 맞춰 발주마감을 알리는 팝업이 실행됩니다." className="block">
                 <Card className="border-red-100 shadow-sm">
                     <CardHeader className="bg-red-50/50 border-b border-red-100 py-4">
-                        <CardTitle className="text-red-900 flex items-center gap-2">6. 자동 발주시간 도래 마감 알림 설정</CardTitle>
+                        <CardTitle className="text-red-900 flex items-center gap-2">6. 발주시간 안내 팝업 설정</CardTitle>
                         <CardDescription>각 상품 등록 시 개별 지정된 '발주 마감 시간'이 임박하면 화면 전체에 강제 팝업을 띄웁니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-5 bg-white rounded-b-lg">
                         <div className="flex items-center justify-between">
                             <Label htmlFor="order-alert-enable" className="flex flex-col gap-1 cursor-pointer">
-                                <span className="text-base font-bold text-slate-800">마감 알림 기능 전역 활성화 여부</span>
-                                <span className="font-normal text-sm text-muted-foreground">이 기능을 끄면 발주 마감이 도래해도 대시보드 강제 팝업 스크립트가 중지됩니다.</span>
+                                <span className="text-base font-bold text-slate-800">발주마감시간 팝업 활성화 여부</span>
+                                <span className="font-normal text-sm text-muted-foreground">기능을 활성화하면 설정된 발주시간에 팝업이 실행됩니다.</span>
                             </Label>
                             <Switch
                                 id="order-alert-enable"
@@ -378,6 +390,7 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                </GuideBadge>
             </div>
         </div>
     )

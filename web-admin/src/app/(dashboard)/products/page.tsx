@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Search, CalendarDays, ImageIcon, Eye, EyeOff, Trash2 } from "lucide-react"
+import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function ProductsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -468,7 +469,9 @@ export default function ProductsPage() {
 
                 <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
                     <div className="flex items-center gap-1.5 mr-auto md:mr-2 shrink-0">
+                        <GuideBadge text="특정날짜의 상품을 모두 입고로 전환합니다. 특정 제품만 미입고로 전환하시려면 해당 제품의 수정메뉴에서 가능합니다.">
                         <Button onClick={() => handleBulkStockUpdate(true)} variant="outline" size="sm" className="h-9 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-bold px-2 shadow-sm">전체 입고전환</Button>
+                        </GuideBadge>
                         <Button onClick={() => handleBulkStockUpdate(false)} variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 font-bold px-2 shadow-sm">미입고로 전환</Button>
                         
                         {isDeleteMode ? (
@@ -499,14 +502,18 @@ export default function ProductsPage() {
                             <SelectItem value="name_asc">이름 가나다순</SelectItem>
                         </SelectContent>
                     </Select>
+                    <GuideBadge text="다른 매장이 먼저등록한 상품을 선택해 빠르게 상품정보를 업데이트할 수 있습니다.">
                     <Button onClick={openSharedProductsDialog} variant="secondary" className="shrink-0 font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 shadow-sm h-9">
                         🎁 타 매장 상품 불러오기
                     </Button>
+                    </GuideBadge>
+                    <GuideBadge text="새로운 상품을 등록합니다. 박스당 수량을 입력하면 상품카드에 주문수량에 맞춰 박스수량이 표기됩니다.">
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                             <Button onClick={openNewProductDialog} className="shrink-0 font-medium shadow-sm transition-transform active:scale-95 text-sm h-9">+ 새 상품 등록</Button>
                         </DialogTrigger>
                     </Dialog>
+                    </GuideBadge>
                 </div>
             </div>
 
@@ -791,6 +798,7 @@ export default function ProductsPage() {
                 ) : products.length === 0 ? (
                     <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-xl border-muted">등록된 상품이 없습니다. [+ 새 상품 등록] 버튼을 눌러 추가해주세요.</div>
                 ) : (
+                    <GuideBadge text="발주량을 직접 수정할 수 있습니다. 주문과 잔여수량이 표기되며, 잔여가 0이 되면 주문이 수집되지 않습니다." className="w-full">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                         {products
                             .filter(p => filterDate === "all" || (filterDate === "regular" && p.is_regular_sale) || p.target_date === filterDate)
@@ -882,6 +890,7 @@ export default function ProductsPage() {
                                 </Card>
                             ))}
                     </div>
+                    </GuideBadge>
                 )
             }
         </div >

@@ -1,0 +1,28 @@
+
+=================================
+Product: 왕고구마빵 | Allocated: 1 | ID: ac82bc6e-7afb-40b1-87fd-aceafe4794df
+Timeline of 1 valid orders:
+[2026-03-29T13:49:35.042293+00:00] Nick: 노고         | Qty: 1 | Running Sum: 1 / 1 | Note: 
+
+=================================
+Product: 고구마 | Allocated: 20 | ID: 8d5ac5f8-7bda-4418-828d-0081499e3b08
+Timeline of 19 valid orders:
+[2026-03-31T02:46:00.817351+00:00] Nick: 라이언106     | Qty: 1 | Running Sum: 1 / 20 | Note: AI 수집
+[2026-03-31T02:46:10.580922+00:00] Nick: 라이언106     | Qty: 1 | Running Sum: 2 / 20 | Note: 중복 접수됨
+[2026-03-31T02:46:14.045504+00:00] Nick: 에스케이8417   | Qty: 1 | Running Sum: 3 / 20 | Note: AI 수집
+[2026-03-31T02:46:20.855074+00:00] Nick: 엉엉우는어피치    | Qty: 2 | Running Sum: 5 / 20 | Note: AI 수집
+[2026-03-31T02:46:48.687441+00:00] Nick: 평온한하루      | Qty: 1 | Running Sum: 6 / 20 | Note: AI 수집
+[2026-03-31T02:46:51.343434+00:00] Nick: 에스티움감동     | Qty: 1 | Running Sum: 7 / 20 | Note: AI 수집
+[2026-03-31T02:55:59.879077+00:00] Nick: 아이스라떼      | Qty: 1 | Running Sum: 8 / 20 | Note: AI 수집
+[2026-03-31T02:56:30.492326+00:00] Nick: 쫑아리        | Qty: 1 | Running Sum: 9 / 20 | Note: AI 수집
+[2026-03-31T03:06:16.025816+00:00] Nick: 데레사        | Qty: 1 | Running Sum: 10 / 20 | Note: AI 수집
+[2026-03-31T03:06:18.932956+00:00] Nick: 커피마시는어피치1234 | Qty: 1 | Running Sum: 11 / 20 | Note: AI 수집
+[2026-03-31T03:06:23.204558+00:00] Nick: 엄지척어피치     | Qty: 1 | Running Sum: 12 / 20 | Note: AI 수집
+[2026-03-31T03:16:36.121383+00:00] Nick: 국민상회56     | Qty: 2 | Running Sum: 14 / 20 | Note: AI 수집
+[2026-03-31T03:36:36.27535+00:00] Nick: 눈치         | Qty: 1 | Running Sum: 15 / 20 | Note: AI 수집
+[2026-03-31T03:36:48.31867+00:00] Nick: 클라비온써밋     | Qty: 1 | Running Sum: 16 / 20 | Note: AI 수집
+[2026-03-31T03:37:00.827314+00:00] Nick: 기준맘        | Qty: 2 | Running Sum: 18 / 20 | Note: AI 수집
+[2026-03-31T03:37:11.962973+00:00] Nick: 레오리        | Qty: 1 | Running Sum: 19 / 20 | Note: AI 수집
+[2026-03-31T03:37:15.081623+00:00] Nick: 우리동네굳      | Qty: 3 | Running Sum: 22 / 20 | Note: AI 수집
+[2026-03-31T03:37:25.025354+00:00] Nick: 마른장작       | Qty: 1 | Running Sum: 23 / 20 | Note: AI 수집
+[2026-03-31T03:37:28.560363+00:00] Nick: 헤스티아       | Qty: 1 | Running Sum: 24 / 20 | Note: AI 수집

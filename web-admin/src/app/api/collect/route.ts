@@ -72,7 +72,10 @@ export async function POST(request: Request) {
         // 2. Filter out Manager and System messages to save AI tokens & DB space
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
         const isSystem = !nickname || nickname === "System" || nickname === "시스템" || nickname === "카카오톡" || nickname === "알림톡" || nickname === "알수없음"
-        const isManager = managerNicks.includes(nickname)
+        
+        const normalizeNick = (n: string) => n ? n.toString().replace(/\[|\]|\s/g, '') : ''
+        const cleanNickname = normalizeNick(nickname)
+        const isManager = managerNicks.some((n: string) => normalizeNick(n) === cleanNickname)
 
         if (isSystem || isManager) {
             return NextResponse.json({ success: true, message: 'Message ignored (System or Manager)' })
