@@ -197,12 +197,11 @@ export async function POST(request: Request) {
                     const newItems: any[] = [];
                     for (const item of extractedItems) {
                         let combinedName = item.product || "";
-                        // Catch commas, plus signs, slashes, or ANDs. But be careful not to split standard spacing like "대저 토마토".
-                        // Wait, if it has "항정살(1) 가브리살(1)", the delimiter is literally a space between closing parenthesis and text!
-                        // Let's normalize it first: replace ") " with "), "
+                        // Catch parenthesis spacing (e.g. "가브리살(1) 항정살(1)" -> "가브리살(1), 항정살(1)")
                         combinedName = combinedName.replace(/\)\s+([^\s])/g, '), $1');
+                        // Catch number spacing (e.g. "삼겹살 2 목살 2" -> "삼겹살 2, 목살 2")
+                        combinedName = combinedName.replace(/(\d)\s+([가-힣a-zA-Z])/g, '$1, $2');
                         
-                        // Now any "가브리살(1) 항정살(1)" becomes "가브리살(1), 항정살(1)"
                         if (combinedName.includes(",") || combinedName.includes("+") || combinedName.includes("&") || combinedName.includes("/")) {
                             // Split by all common delimiters
                             const productsStr = combinedName.split(/[,+&/]/).map((s: string) => s.trim()).filter(Boolean);
@@ -216,6 +215,13 @@ export async function POST(request: Request) {
                                 if (qtyMatch) {
                                     rawName = qtyMatch[1].trim();
                                     itemQtyStr = qtyMatch[2];
+                                } else {
+                                    // Match single/double digit trailing quantities preceded by space or attached
+                                    const spaceNumMatch = rawName.match(/(.+?)\s*(\d{1,2})$/);
+                                    if (spaceNumMatch) {
+                                        rawName = spaceNumMatch[1].trim();
+                                        itemQtyStr = spaceNumMatch[2];
+                                    }
                                 }
                                 newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
                             }
@@ -226,6 +232,12 @@ export async function POST(request: Request) {
                             if (qtyMatch) {
                                 rawName = qtyMatch[1].trim();
                                 itemQtyStr = qtyMatch[2];
+                            } else {
+                                const spaceNumMatch = rawName.match(/(.+?)\s*(\d{1,2})$/);
+                                if (spaceNumMatch) {
+                                    rawName = spaceNumMatch[1].trim();
+                                    itemQtyStr = spaceNumMatch[2];
+                                }
                             }
                             newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
                         }
