@@ -196,7 +196,7 @@ export default function PickupCalendarPage() {
         }
 
         // 1. Fetch active products
-        let pQuery = supabase.from('products').select('*').eq('store_id', storeId)
+        let pQuery = supabase.from('products').select('*').eq('store_id', storeId).limit(5000)
         if (searchScope === "today") {
             pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
         }
@@ -236,10 +236,10 @@ export default function PickupCalendarPage() {
 
         // 3. Fetch order items
         let orderItems: any[] = []
-        const CHUNK_SIZE = 250
+        const CHUNK_SIZE = 50 // Decreased chunk size to 50 to prevent HTTP 414 URI Too Long limits on Vercel
         for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
             const chunk = orderIds.slice(i, i + CHUNK_SIZE)
-            const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk)
+            const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk).limit(5000)
             if (chunkData) orderItems = orderItems.concat(chunkData)
         }
 
