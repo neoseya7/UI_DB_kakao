@@ -277,11 +277,14 @@ export async function POST(request: Request) {
 
                 // Use the matching result
                 firstItem.product = fixedProductName;
+                
+                const qty = parseInt(firstItem.quantity, 10) || 1;
+                const matchedProduct = 
+                    products.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
+                    || products.find(p => p.collect_name === fixedProductName);
 
-                const matchedProduct = products.find(p => p.collect_name === fixedProductName);
                 if (matchedProduct) {
                     // Check stock first
-                    const qty = parseInt(firstItem.quantity, 10) || 1
                     const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
 
                     if (!isOutOfStock && matchedProduct.remaining_stock !== null) {

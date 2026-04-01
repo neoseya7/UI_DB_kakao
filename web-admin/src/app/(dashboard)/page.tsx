@@ -127,7 +127,9 @@ export default function Dashboard() {
             const rawName = row.product_name;
             const itemQty = row.quantity && row.quantity > 0 ? row.quantity : 1;
 
-            const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName)
+            const matchedProd = 
+              currentProducts.find((p: any) => (p.collect_name === rawName || p.display_name === rawName) && (p.allocated_stock === null || p.allocated_stock >= itemQty))
+              || currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName);
             if (matchedProd) {
               if (!row.is_processed) {
                 // Product exists NOW, but the order was never synced into the DB when originally created.
@@ -313,7 +315,9 @@ export default function Dashboard() {
           }
 
           if (orderId && activeProducts) {
-            const prod = activeProducts.find(p => p.collect_name === targetProduct)
+            const prod = 
+              activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0))
+              || activeProducts.find(p => p.collect_name === targetProduct);
             if (prod) {
               const { data: existingItems } = await supabase.from('order_items')
                 .select('id, quantity')

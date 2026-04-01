@@ -268,10 +268,13 @@ export async function POST(request: Request) {
                         }
 
                         item.product = fixedProductName;
-                        const matchedProduct = products.find(p => p.collect_name === fixedProductName);
+                        
+                        const qty = parseInt(item.quantity, 10) || 1;
+                        const matchedProduct = 
+                            products.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
+                            || products.find(p => p.collect_name === fixedProductName);
 
                         if (matchedProduct) {
-                            const qty = parseInt(item.quantity, 10) || 1
                             const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
 
                             if (!isOutOfStock && matchedProduct.remaining_stock !== null) {
