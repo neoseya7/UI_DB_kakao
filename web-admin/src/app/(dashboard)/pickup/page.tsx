@@ -877,7 +877,10 @@ export default function PickupCalendarPage() {
                                     key={date}
                                     variant={currentDate === date ? "default" : "outline"}
                                     size="sm"
-                                    onClick={() => setCurrentDate(date)}
+                                    onClick={() => {
+                                        setCurrentDate(date)
+                                        setSearchScope("today")
+                                    }}
                                     className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${currentDate === date ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
                                 >
                                     {date} ({new Date(date).toLocaleDateString('ko-KR', { weekday: 'short' })})
@@ -887,7 +890,10 @@ export default function PickupCalendarPage() {
                                 type="date"
                                 className="w-[140px] h-10 font-bold bg-white border-slate-200 rounded-full shadow-sm text-center text-slate-600 focus-visible:ring-indigo-500 transition-colors cursor-pointer shrink-0"
                                 value={currentDate}
-                                onChange={(e) => setCurrentDate(e.target.value)}
+                                onChange={(e) => {
+                                    setCurrentDate(e.target.value)
+                                    setSearchScope("today")
+                                }}
                                 title="달력에서 날짜 직접 지정"
                             />
                         </div>
