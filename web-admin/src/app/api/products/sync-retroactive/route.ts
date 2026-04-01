@@ -24,6 +24,7 @@ export async function POST(request: Request) {
             .eq('store_id', store_id)
             .gte('created_at', twoDaysAgo.toISOString())
             .like('product_name', `%${product_name}%`)
+            .neq('category', 'ORDER') // User-Approved Idempotency Lock: Skip already-fulfilled orders!
             .eq('is_processed', true);
 
         if (logsError) throw new Error("Failed to fetch logs: " + logsError.message)

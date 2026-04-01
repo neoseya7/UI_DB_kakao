@@ -46,9 +46,17 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                     if (data.products && data.products.length > 0) {
                         const hasRegular = data.products.some((p: any) => p.is_regular_sale)
                         if (!hasRegular) {
-                            const dates = data.products.map((p: any) => p.target_date).filter(Boolean)
+                            const dates = Array.from(new Set(data.products.map((p: any) => p.target_date).filter(Boolean))).sort() as string[]
                             if (dates.length > 0) {
-                                setActiveFilter(dates.sort()[0])
+                                const today = new Date()
+                                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+                                
+                                if (dates.includes(todayStr)) {
+                                    setActiveFilter(todayStr)
+                                } else {
+                                    const futureDates = dates.filter(d => d >= todayStr)
+                                    setActiveFilter(futureDates.length > 0 ? futureDates[0] : dates[0])
+                                }
                             }
                         }
                     }
@@ -125,11 +133,30 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
 
     // Filtered products list
     const filteredProducts = useMemo(() => {
+        let baseList = []
         if (activeFilter === 'regular') {
-            return products.filter(p => p.is_regular_sale)
+            baseList = products.filter(p => p.is_regular_sale)
+        } else {
+            baseList = products.filter(p => !p.is_regular_sale && p.target_date === activeFilter)
         }
-        return products.filter(p => !p.is_regular_sale && p.target_date === activeFilter)
-    }, [products, activeFilter])
+
+        const threshold = settings?.badge_stock_level || 3;
+
+        return baseList.sort((a, b) => {
+            const getRank = (p: any) => {
+                if (p.allocated_stock === null) return 2;
+                if (p.allocated_stock <= 0) return 3; // Sold Out
+                if (p.allocated_stock <= threshold) return 1; // Closing Soon
+                return 2; // Available
+            }
+            const rankA = getRank(a);
+            const rankB = getRank(b);
+
+            if (rankA !== rankB) return rankA - rankB;
+            // secondary sort by ID or name to prevent hydration mismatches on same rank
+            return (a.display_name || "").localeCompare(b.display_name || "", 'ko')
+        })
+    }, [products, activeFilter, settings])
 
     if (isLoadingInit) {
         return (

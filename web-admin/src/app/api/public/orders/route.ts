@@ -45,6 +45,7 @@ export async function POST(request: Request) {
             .eq('store_id', store_id)
             .ilike('customer_nickname', `%${nickname.trim()}%`)
             .eq('is_received', false)
+            .eq('is_hidden', false)
             .order('pickup_date', { ascending: false })
             .limit(10) // Limit to most recent 10 orders for safety
 

@@ -132,14 +132,25 @@ export default function PickupCalendarPage() {
 
     useEffect(() => {
         const initUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-                setStoreId(user.id)
-                const { data: sData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
-                if (sData) {
-                    const isPosEnabled = sData.crm_tags?.find((t:any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false;
-                    setPosSyncEnabled(isPosEnabled)
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                let user: any = session?.user
+                
+                if (!user) {
+                    const { data } = await supabase.auth.getUser()
+                    user = data?.user
                 }
+
+                if (user) {
+                    setStoreId(user.id)
+                    const { data: sData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
+                    if (sData) {
+                        const isPosEnabled = sData.crm_tags?.find((t:any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false;
+                        setPosSyncEnabled(isPosEnabled)
+                    }
+                }
+            } catch (err) {
+                console.warn("Auth initialization warning:", err)
             }
         }
         initUser()
@@ -204,7 +215,7 @@ export default function PickupCalendarPage() {
         setProducts(mappedProducts)
 
         // 2. Fetch orders
-        let oQuery = supabase.from('orders').select('*').eq('store_id', storeId)
+        let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
             oQuery = oQuery.eq('pickup_date', currentDate)
         } else if (searchScope === "date_range" && customSearchDate && customEndDate) {
@@ -622,6 +633,46 @@ export default function PickupCalendarPage() {
         }
     }
 
+    const handleHideDataByDate = async () => {
+        if (!currentDate) return;
+        const confirmMsg = `${currentDate} 일자의 모든 [상품]과 [주문 내역]을 숨김 처리하시겠습니까?\n이 작업 후에는 관리자 화면 및 고객 검색에서 해당 날짜의 데이터가 보이지 않게 됩니다.`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            setIsLoading(true);
+            
+            // 1. Hide Products for the target_date
+            const { error: pErr } = await supabase
+                .from('products')
+                .update({ is_hidden: true })
+                .eq('store_id', storeId)
+                .eq('target_date', currentDate)
+                .eq('is_regular_sale', false); // Do not hide regular items
+            
+            if (pErr) throw pErr;
+
+            // 2. Hide Orders for the pickup_date
+            const { error: oErr } = await supabase
+                .from('orders')
+                .update({ is_hidden: true })
+                .eq('store_id', storeId)
+                .eq('pickup_date', currentDate);
+            
+            if (oErr) throw oErr;
+
+            alert(`${currentDate} 일자 데이터가 성공적으로 숨김 처리되었습니다.`);
+            
+            // Re-fetch data
+            await fetchMatrixData();
+            
+        } catch (error: any) {
+            console.error("Bulk hide by date error:", error);
+            alert("일괄 숨김 처리 중 오류가 발생했습니다: " + error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     const handleDeleteOrder = async (id: string, name: string) => {
         if (!confirm(`[${name}] 고객의 이 주문 내역을 완전히 삭제하시겠습니까?`)) return
 
@@ -989,6 +1040,16 @@ export default function PickupCalendarPage() {
                     </Dialog>
                     </GuideBadge>
 
+                    <GuideBadge text="선택된 날짜의 모든 상품과 주문 데이터를 시스템에서 안전하게 숨김(Soft-hide) 처리합니다. 검색에서도 제외됩니다.">
+                        <Button 
+                            variant="outline" 
+                            onClick={handleHideDataByDate}
+                            className="gap-2 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:text-rose-800 shadow-sm h-10 w-full xl:w-auto px-3 shrink-0 font-bold transition-colors"
+                        >
+                            <span className="text-lg leading-none mt-[-2px]">🚫</span> 해당일자삭제
+                        </Button>
+                    </GuideBadge>
+
                     <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
 
                     <div className="flex items-center gap-1.5 bg-emerald-50/50 p-1 border border-emerald-100 rounded-md w-full sm:w-auto justify-center">
@@ -1070,8 +1131,11 @@ export default function PickupCalendarPage() {
                             <tr>
                                 {products.map((p, i) => (
                                     <th key={p.id || i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
-                                        <div>{p.name}</div>
-                                        <div className="flex items-center justify-center gap-1 mt-1">
+                                        <div className="flex flex-col items-center justify-center gap-0.5">
+                                            <span>{p.name}</span>
+                                            <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-100/50 px-1.5 py-0.5 rounded shadow-sm border border-indigo-100">{p.is_regular_sale ? "상시판매" : (p.target_date ? p.target_date.substring(5).replace('-', '/') : "날짜없음")}</span>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-1 mt-1.5">
                                             <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-6 w-[70px] text-[12px] font-mono text-center px-1 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
                                             <span className="text-[12px] text-muted-foreground font-normal">원</span>
                                         </div>
