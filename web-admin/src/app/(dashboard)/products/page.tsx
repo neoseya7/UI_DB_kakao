@@ -51,6 +51,7 @@ export default function ProductsPage() {
         is_stocked: false,
         box_quantity: "",
         unit_text: "",
+        product_memo: "",
         tiered_prices: [] as {qty: number, price: number}[]
     })
     const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([])
@@ -211,6 +212,7 @@ export default function ProductsPage() {
             deadline_date: formData.deadline_date || null,
             deadline_time: formData.deadline_time || null,
             description: formData.description,
+            product_memo: formData.product_memo,
             image_url: primaryImageUrl,
             image_urls: strictFinalImageUrls,
             is_visible: formData.is_visible,
@@ -262,7 +264,7 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", unit_text: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
+                    collect_name: "", display_name: "", unit_text: "", product_memo: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
                 })
                 setSelectedImageFiles([])
                 fetchProducts(storeId)
@@ -277,7 +279,7 @@ export default function ProductsPage() {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", unit_text: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
+            collect_name: "", display_name: "", unit_text: "", product_memo: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
         })
         setSelectedImageFiles([])
         setIsDialogOpen(true)
@@ -305,6 +307,7 @@ export default function ProductsPage() {
             deadline_date: product.deadline_date || "",
             deadline_time: product.deadline_time || "",
             description: product.description || "",
+            product_memo: product.product_memo || "",
             image_url: product.image_url || "",
             image_urls: loadedUrls,
             is_visible: product.is_visible !== false,
@@ -598,6 +601,16 @@ export default function ProductsPage() {
                                         onChange={e => setFormData({ ...formData, unit_text: e.target.value })}
                                     />
                                     <p className="text-[11px] text-indigo-700/80 mt-1 font-medium bg-indigo-50/50 p-1.5 rounded-sm border border-indigo-100 italic">설정 시 주문 현황표에 자동으로 <b>{formData.collect_name ? formData.collect_name : "상품명"}({formData.unit_text ? formData.unit_text : "단위"})</b> 형태로 조립되어 표기됩니다.</p>
+                                </div>
+                                <div className="mt-3">
+                                    <Label htmlFor="product_memo">상품 기본 비고 (<span className="font-normal text-muted-foreground">선택사항</span>)</Label>
+                                    <Input
+                                        id="product_memo"
+                                        placeholder="주문 현황판(픽업 확인표) 상단의 상품명 밑에 표시될 메모입니다."
+                                        value={formData.product_memo}
+                                        onChange={e => setFormData({ ...formData, product_memo: e.target.value })}
+                                    />
+                                    <p className="text-[11px] text-indigo-700/80 mt-1 font-medium bg-indigo-50/50 p-1.5 rounded-sm border border-indigo-100">이곳에 입력한 내용은 주문 현황 창의 <b>상품명 열 추가 비고란</b>과 실시간 연동됩니다.</p>
                                 </div>
                                 {isDuplicate && duplicateProduct && (
                                     <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[13px] font-medium animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
