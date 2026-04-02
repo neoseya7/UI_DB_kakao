@@ -340,6 +340,20 @@ export default function Dashboard() {
         
 
 
+        let prod: any = null;
+        if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-") {
+            if (activeProducts) {
+              prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate && (p.allocated_stock === null || p.allocated_stock > 0));
+              if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate);
+              if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0));
+              if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct);
+            }
+            if (!prod) {
+              alert(`⚠️ 주분 복구 실패: "${log.nickname}" 님의 데이터 중 ["${targetProduct}"] 상품은 상품관리 목록에 존재하지 않습니다.\n이 항목을 무시하고 건너뜁니다. 상품 등록 후 다시 수동수정해주세요.`);
+              continue; 
+            }
+        }
+
         await supabase.from('chat_logs').update({
           product_name: newProductName,
           is_processed: true,
@@ -347,7 +361,7 @@ export default function Dashboard() {
           classification: targetDate && targetDate !== "-" ? `분류:수정, [${targetDate} 반영]` : '분류:수정'
         }).eq('id', log.id)
 
-        if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-") {
+        if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-" && prod) {
           let orderId = null
 
           // --- FEATURE: Delete old order_item if it was already processed ---
@@ -383,28 +397,20 @@ export default function Dashboard() {
             }
           }
 
-          if (orderId && activeProducts) {
-            // STRICT DATE MATCHING (Fixing the core bug)
-            let prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate && (p.allocated_stock === null || p.allocated_stock > 0));
-            if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate);
-            if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0));
-            if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct);
+          if (orderId) {
+            const { data: existingItems } = await supabase.from('order_items')
+              .select('id, quantity')
+              .eq('order_id', orderId)
+              .eq('product_id', prod.id)
 
-            if (prod) {
-              const { data: existingItems } = await supabase.from('order_items')
-                .select('id, quantity')
-                .eq('order_id', orderId)
-                .eq('product_id', prod.id)
-
-              if (existingItems && existingItems.length > 0) {
-                await supabase.from('order_items').update({ quantity: finalQty }).eq('id', existingItems[0].id)
-              } else {
-                await supabase.from('order_items').insert({
-                  order_id: orderId,
-                  product_id: prod.id,
-                  quantity: finalQty
-                })
-              }
+            if (existingItems && existingItems.length > 0) {
+              await supabase.from('order_items').update({ quantity: finalQty }).eq('id', existingItems[0].id)
+            } else {
+              await supabase.from('order_items').insert({
+                order_id: orderId,
+                product_id: prod.id,
+                quantity: finalQty
+              })
             }
           }
         }
