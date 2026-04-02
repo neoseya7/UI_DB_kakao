@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks, BarChart3 } from "lucide-react"
+import { MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks, BarChart3, Key } from "lucide-react"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
@@ -113,6 +113,13 @@ export function Sidebar({ className }: { className?: string }) {
                   * 시스템 최고 관리자
                 </Link>
               )}
+              <Link
+                href="/reset-password"
+                className="w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 mt-1 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50"
+              >
+                <Key className="h-4 w-4" />
+                비밀번호 변경
+              </Link>
               <button
                 onClick={handleLogout}
                 className="w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 mt-1 text-muted-foreground transition-all hover:text-destructive hover:bg-destructive/10"
