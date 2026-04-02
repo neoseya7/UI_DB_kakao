@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2, MoreVertical } from "lucide-react"
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string, tiered_prices?: {qty: number, price: number}[], unit_text?: string }
-type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, originalIndex?: number }
+type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, originalIndex?: number, crm?: { category: string, memo: string } }
 
 export default function PickupCalendarPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
