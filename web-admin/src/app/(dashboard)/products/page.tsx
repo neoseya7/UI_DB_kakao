@@ -62,6 +62,7 @@ export default function ProductsPage() {
 
     useEffect(() => {
         let channel: any = null;
+        let timeoutId: NodeJS.Timeout;
 
         const initData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -75,7 +76,10 @@ export default function ProductsPage() {
                         'postgres_changes',
                         { event: '*', schema: 'public', table: 'products' },
                         (payload) => {
-                            fetchProducts(user.id)
+                            clearTimeout(timeoutId)
+                            timeoutId = setTimeout(() => {
+                                fetchProducts(user.id)
+                            }, 1500)
                         }
                     )
                     .subscribe()
@@ -85,6 +89,7 @@ export default function ProductsPage() {
         initData()
 
         return () => {
+            clearTimeout(timeoutId)
             if (channel) supabase.removeChannel(channel)
         }
     }, [])

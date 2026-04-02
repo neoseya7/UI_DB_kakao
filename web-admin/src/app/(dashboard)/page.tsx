@@ -37,6 +37,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetchLogs()
 
+    let timeoutId: NodeJS.Timeout;
+
     // Subscribe to realtime changes
     const channel = supabase
       .channel('chat_logs_changes')
@@ -44,12 +46,17 @@ export default function Dashboard() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_logs' },
         (payload) => {
-          fetchLogs() // Refresh on any change
+          // Debounce fetchLogs to prevent server overload
+          clearTimeout(timeoutId)
+          timeoutId = setTimeout(() => {
+            fetchLogs()
+          }, 1500)
         }
       )
       .subscribe()
 
     return () => {
+      clearTimeout(timeoutId)
       supabase.removeChannel(channel)
     }
   }, [dateFilter]) // Added dateFilter to dependency array to re-fetch when it changes
