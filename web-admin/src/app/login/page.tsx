@@ -67,7 +67,8 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-muted/30 p-4">
+        <>
+            <div className="flex h-screen w-full items-center justify-center bg-muted/30 p-4">
             <Card className="w-full max-w-sm shadow-xl">
                 <CardHeader className="space-y-1 text-center">
                     <CardTitle className="text-2xl font-bold tracking-tight">관리자 로그인</CardTitle>
@@ -96,47 +97,13 @@ export default function LoginPage() {
                         <div className="grid gap-2 text-left">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">비밀번호</Label>
-                                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <button type="button" className="text-sm text-primary hover:underline">
-                                            비밀번호 찾기
-                                        </button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>비밀번호 찾기</DialogTitle>
-                                            <DialogDescription>
-                                                가입하신 이메일 주소를 입력하시면 비밀번호를 재설정할 수 있는 링크를 보내드립니다.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <form onSubmit={handlePasswordReset}>
-                                            <div className="grid gap-4 py-4">
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="resetEmail">이메일</Label>
-                                                    <Input
-                                                        id="resetEmail"
-                                                        type="email"
-                                                        placeholder="가입 이메일 주소"
-                                                        value={resetEmail}
-                                                        onChange={(e) => setResetEmail(e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                {resetMessage && (
-                                                    <div className={`p-3 rounded-md text-sm ${resetMessage.includes("실패") ? "bg-red-50 text-red-600 border border-red-200" : "bg-green-50 text-green-700 border border-green-200"}`}>
-                                                        {resetMessage}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <DialogFooter>
-                                                <Button type="button" variant="outline" onClick={() => setIsResetDialogOpen(false)}>취소</Button>
-                                                <Button type="submit" disabled={isResetLoading}>
-                                                    {isResetLoading ? "발송 중..." : "재설정 링크 받기"}
-                                                </Button>
-                                            </DialogFooter>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
+                                <button 
+                                    type="button" 
+                                    onClick={(e) => { e.preventDefault(); setIsResetDialogOpen(true); }}
+                                    className="text-sm text-primary hover:underline"
+                                >
+                                    비밀번호 찾기
+                                </button>
                             </div>
                             <Input
                                 id="password"
@@ -162,5 +129,44 @@ export default function LoginPage() {
                 </form>
             </Card>
         </div>
+            
+            {/* 비밀번호 재설정 모달 (폼 이벤트 버블링 방지를 위해 폼 외부에 배치) */}
+            <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>비밀번호 찾기</DialogTitle>
+                        <DialogDescription>
+                            가입하신 이메일 주소를 입력하시면 비밀번호를 재설정할 수 있는 링크를 보내드립니다.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePasswordReset}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2 text-left">
+                                <Label htmlFor="resetEmail">이메일</Label>
+                                <Input
+                                    id="resetEmail"
+                                    type="email"
+                                    placeholder="가입 이메일 주소"
+                                    value={resetEmail}
+                                    onChange={(e) => setResetEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            {resetMessage && (
+                                <div className={`p-3 rounded-md text-sm text-left ${resetMessage.includes("실패") ? "bg-red-50 text-red-600 border border-red-200" : "bg-green-50 text-green-700 border border-green-200"}`}>
+                                    {resetMessage}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsResetDialogOpen(false)}>취소</Button>
+                            <Button type="submit" disabled={isResetLoading}>
+                                {isResetLoading ? "발송 중..." : "재설정 링크 받기"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }
