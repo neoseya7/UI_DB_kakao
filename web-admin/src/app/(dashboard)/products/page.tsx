@@ -101,6 +101,7 @@ export default function ProductsPage() {
             .eq('store_id', sid)
             .eq('is_hidden', false)
             .order('created_at', { ascending: false })
+            .limit(5000)
             
         if (data) {
             const productIds = data.map(p => p.id);

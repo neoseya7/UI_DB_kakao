@@ -80,7 +80,7 @@ export default function Dashboard() {
       setCrmDict(crmMap)
 
       // Fetch active products mapping to append target dates
-      const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id).eq('is_hidden', false)
+      const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id).eq('is_hidden', false).order('created_at', { ascending: false }).limit(5000)
       const currentProducts = productsData?.map(p => ({
         ...p,
         collect_name: p.collect_name ? p.collect_name.trim() : "",
