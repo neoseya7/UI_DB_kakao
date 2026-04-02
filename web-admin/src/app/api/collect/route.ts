@@ -346,42 +346,61 @@ export async function POST(request: Request) {
         const finalIntent = isActualOrder ? "ORDER" : classifications.includes("재고초과주문") ? "UNKNOWN" : promptCat === "주문취소" ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
         await supabase.from('chat_logs').update({ category: finalIntent }).eq('id', logId)
 
-        // 6. Save to Orders DB
+        // 6. Save to Orders DB (1 Order per Product Item)
         if (extractedItems.length > 0 && isActualOrder) {
-            let finalDateStr = collect_date
-            if (firstItem.pickup_date && firstItem.pickup_date !== "날짜미지정") {
-                if (firstItem.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    finalDateStr = firstItem.pickup_date;
-                } else {
-                    const year = collect_date.split('-')[0]
-                    const mmdd = firstItem.pickup_date.replace('/', '-')
-                    if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                        const parts = mmdd.split('-')
-                        finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+            for (const item of extractedItems) {
+                const matchedProduct = products?.find(p => p.collect_name === item.product)
+                
+                // Determine the pickup date for this specific item
+                let finalDateStr = collect_date;
+                
+                // 1. Priortize the Product's default target_date if it's set
+                if (matchedProduct && matchedProduct.target_date) {
+                    finalDateStr = matchedProduct.target_date;
+                } 
+                // 2. Otherwise fall back to AI extracted date
+                else if (item.pickup_date && item.pickup_date !== "날짜미지정") {
+                    if (item.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        finalDateStr = item.pickup_date;
+                    } else {
+                        const year = collect_date.split('-')[0]
+                        const mmdd = item.pickup_date.replace('/', '-')
+                        if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
+                            const parts = mmdd.split('-')
+                            finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+                        }
                     }
+                } else if (extractedItems[0].pickup_date && extractedItems[0].pickup_date !== "날짜미지정") {
+                     // Fallback to the first item's date if current item has no specific date extracted
+                     const firstPD = extractedItems[0].pickup_date;
+                     if (firstPD.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                         finalDateStr = firstPD;
+                     } else {
+                         const year = collect_date.split('-')[0]
+                         const mmdd = firstPD.replace('/', '-')
+                         if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
+                             const parts = mmdd.split('-')
+                             finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+                         }
+                     }
                 }
-            }
 
-            const targetDate = new Date(finalDateStr)
+                const targetDate = new Date(finalDateStr)
 
-            const { data: orderData } = await supabase.from('orders').insert({
-                store_id,
-                pickup_date: targetDate.toISOString().split('T')[0],
-                customer_nickname: nickname,
-                is_received: false,
-                customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
-            }).select().single()
+                const { data: orderData } = await supabase.from('orders').insert({
+                    store_id,
+                    pickup_date: targetDate.toISOString().split('T')[0],
+                    customer_nickname: nickname,
+                    is_received: false,
+                    customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
+                }).select().single()
 
-            if (orderData) {
-                for (const item of extractedItems) {
-                    const matchedProduct = products?.find(p => p.collect_name === item.product)
-                    if (matchedProduct) {
-                        await supabase.from('order_items').insert({
-                            order_id: orderData.id,
-                            product_id: matchedProduct.id,
-                            quantity: item.quantity || 1
-                        })
-                    }
+                if (orderData && matchedProduct) {
+                    await supabase.from('order_items').insert({
+                        order_id: orderData.id,
+                        product_id: matchedProduct.id,
+                        quantity: item.quantity || 1
+                    })
                 }
             }
         }
