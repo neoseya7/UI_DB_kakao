@@ -1,0 +1,32 @@
+[
+  {
+    "collect_name": "차돌박이",
+    "target_date": "2026-04-06",
+    "is_hidden": false,
+    "is_regular_sale": false
+  },
+  {
+    "collect_name": "달래",
+    "target_date": "2026-04-02",
+    "is_hidden": false,
+    "is_regular_sale": false
+  },
+  {
+    "collect_name": "냉이",
+    "target_date": "2026-04-02",
+    "is_hidden": false,
+    "is_regular_sale": false
+  },
+  {
+    "collect_name": "해산물믹스",
+    "target_date": "2026-04-06",
+    "is_hidden": false,
+    "is_regular_sale": false
+  },
+  {
+    "collect_name": "가자미",
+    "target_date": "2026-04-06",
+    "is_hidden": false,
+    "is_regular_sale": false
+  }
+]

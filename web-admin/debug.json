@@ -1,0 +1,272 @@
+{
+  "logs": [
+    {
+      "id": "32d85281-a40a-4ae4-8f4e-4a538f766ad7",
+      "chat_content": "[이편한7660] [오후 4:32] 해산물1 차돌박이1 달래1 냉이1 가자미1",
+      "classification": "분류:주문",
+      "category": "ORDER",
+      "is_processed": true,
+      "product_name": "가자미",
+      "quantity": 1,
+      "collect_date": "2026-04-02"
+    },
+    {
+      "id": "c951612a-6069-4861-ad84-3dcf8ca17c55",
+      "chat_content": "[이편한7660] [오후 4:32] 해산물1 차돌박이1 달래1 냉이1 가자미1",
+      "classification": "분류:주문",
+      "category": "ORDER",
+      "is_processed": true,
+      "product_name": "냉이",
+      "quantity": 1,
+      "collect_date": "2026-04-02"
+    },
+    {
+      "id": "4ab0ff83-0eb3-427a-889d-aa5502bc7a93",
+      "chat_content": "[이편한7660] [오후 4:32] 해산물1 차돌박이1 달래1 냉이1 가자미1",
+      "classification": "분류:주문",
+      "category": "ORDER",
+      "is_processed": true,
+      "product_name": "달래",
+      "quantity": 1,
+      "collect_date": "2026-04-02"
+    },
+    {
+      "id": "2b78318c-693a-4652-8024-27f4de379003",
+      "chat_content": "[이편한7660] [오후 4:32] 해산물1 차돌박이1 달래1 냉이1 가자미1",
+      "classification": "분류:주문",
+      "category": "ORDER",
+      "is_processed": true,
+      "product_name": "차돌박이",
+      "quantity": 1,
+      "collect_date": "2026-04-02"
+    },
+    {
+      "id": "e0155134-74e7-49e4-a425-7a6a520ab458",
+      "chat_content": "[이편한7660] [오후 4:32] 해산물1 차돌박이1 달래1 냉이1 가자미1",
+      "classification": "분류:주문",
+      "category": "ORDER",
+      "is_processed": true,
+      "product_name": "해산물믹스",
+      "quantity": 1,
+      "collect_date": "2026-04-02"
+    }
+  ],
+  "orders": [
+    {
+      "id": "47e34fd7-cf3a-44a7-8461-d9aaecc4bc7b",
+      "pickup_date": "2026-04-02",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "애슐리주먹밥김치콘치즈"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "8977ba6f-286c-4182-a4e8-36207732d805",
+      "pickup_date": "2026-04-02",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "애슐리주먹밥소고기스크램블"
+          },
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "4b117cca-a428-4cb8-9ae6-6cb1be75d666",
+      "pickup_date": "2026-04-02",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "애슐리주먹밥버터와규"
+          },
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "d21cf1ab-da41-4749-85ba-e596464deb09",
+      "pickup_date": "2026-04-02",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "야채크리스피"
+          },
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "0dcc1e9d-7e72-4258-a927-625c273dc775",
+      "pickup_date": "2026-04-03",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "항정살"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "270d7892-e8ce-4e23-bdca-cb95b33269bb",
+      "pickup_date": "2026-04-06",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "달래"
+          },
+          "quantity": 1
+        },
+        {
+          "product": {
+            "collect_name": "냉이"
+          },
+          "quantity": 1
+        },
+        {
+          "product": {
+            "collect_name": "차돌박이"
+          },
+          "quantity": 1
+        },
+        {
+          "product": {
+            "collect_name": "가자미"
+          },
+          "quantity": 1
+        },
+        {
+          "product": {
+            "collect_name": "해산물믹스"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "834f367e-3e3b-4a59-b31f-f97ed2f9165f",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "간편대파"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "48a325cc-ec9e-4abe-a934-92de38ede286",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "간편한알 고추"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "d1a042c7-196d-48de-a866-b7c3aa281f83",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "간편한알 마늘"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "36862ade-531f-4b80-b1db-268d06776771",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "고구마빵"
+          },
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "83a85c8f-8faa-4294-9382-f3b23a29911e",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "국내산새싹현미"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "12ba3603-9166-4d5a-a8e4-64cda4528883",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "특대왕갈치"
+          },
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "96f94262-4d7e-4dcd-8a00-bf4396253907",
+      "pickup_date": "2026-03-30",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "호주산수수쌀"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "a02c4a68-edd9-43c8-acba-af726be0f8bc",
+      "pickup_date": "2026-03-31",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "멜리오시카스피큘앰플"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "65bf6651-6b44-4ed6-a7b4-a53a9f1b1175",
+      "pickup_date": "2026-03-31",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "글로스틴콜라겐앰플"
+          },
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "d6f6417b-c94e-40fb-bdfd-961f9b95d214",
+      "pickup_date": "2026-04-01",
+      "order_items": [
+        {
+          "product": {
+            "collect_name": "통영왕바지락"
+          },
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}

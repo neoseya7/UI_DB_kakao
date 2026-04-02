@@ -206,10 +206,66 @@ export default function PickupCalendarPage() {
             setAvailableDates(uniqueDates)
         }
 
-        // 1. Fetch active products
+        // 1. Fetch orders FIRST (Try RPC First for Extreme Performance)
+        let pDate = null, startDate = null, endDate = null
+        if (searchScope === "today") pDate = currentDate
+        else if (searchScope === "date_range") {
+            if (customSearchDate && customEndDate) { startDate = customSearchDate; endDate = customEndDate; }
+            else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
+        }
+
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_matrix_orders', {
+            p_store_id: storeId,
+            p_pickup_date: pDate,
+            p_start_date: startDate,
+            p_end_date: endDate
+        })
+
+        let orders: any[] = []
+        if (!rpcError && rpcData) {
+            orders = rpcData || []
+        } else {
+            console.warn("RPC fetch failed or function missing, parsing via legacy loop:", rpcError);
+            let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
+            if (searchScope === "today") {
+                oQuery = oQuery.eq('pickup_date', currentDate)
+            } else if (searchScope === "date_range" && customSearchDate && customEndDate) {
+                oQuery = oQuery.gte('pickup_date', customSearchDate).lte('pickup_date', customEndDate)
+            } else if (searchScope === "date_range" && customSearchDate && !customEndDate) {
+                oQuery = oQuery.eq('pickup_date', customSearchDate)
+            }
+            const { data: oData } = await oQuery.limit(2000).order('pickup_date', { ascending: false })
+            orders = oData || []
+        }
+
+        // Extract all product IDs that appear in the fetched orders
+        const orderedProductIds = new Set<string>()
+        if (!rpcError && rpcData) {
+            orders.forEach((o: any) => {
+                if (o.items) o.items.forEach((oi: any) => orderedProductIds.add(oi.product_id))
+            })
+        } else {
+            // legacy fallback parsing (if we used oData items directly, but we skip it here and just fetch items below)
+            for (let chunkFilter = 0; chunkFilter < orders.length; chunkFilter += 100) {
+               const chunkIds = orders.slice(chunkFilter, chunkFilter + 100).map((o: any) => o.id)
+               const { data: itemData } = await supabase.from('order_items').select('product_id').in('order_id', chunkIds)
+               if (itemData) itemData.forEach(oi => orderedProductIds.add(oi.product_id))
+            }
+        }
+        const strIdList = Array.from(orderedProductIds).join(',')
+
+        // 2. Fetch active products (including ANY products found in the current orders)
         let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
-            pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+            if (strIdList.length > 0) {
+                pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true,id.in.(${strIdList})`)
+            } else {
+                pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+            }
+        } else if (searchScope === "date_range") {
+            if (strIdList.length > 0) {
+                pQuery = pQuery.or(`id.in.(${strIdList}),is_regular_sale.eq.true`)
+            }
         }
         const { data: pData } = await pQuery
 
@@ -227,24 +283,8 @@ export default function PickupCalendarPage() {
         }))
         setProducts(mappedProducts)
 
-        // 2. Fetch orders (Try RPC First for Extreme Performance)
-        let pDate = null, startDate = null, endDate = null
-        if (searchScope === "today") pDate = currentDate
-        else if (searchScope === "date_range") {
-            if (customSearchDate && customEndDate) { startDate = customSearchDate; endDate = customEndDate; }
-            else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
-        }
-
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_matrix_orders', {
-            p_store_id: storeId,
-            p_pickup_date: pDate,
-            p_start_date: startDate,
-            p_end_date: endDate
-        })
-
         // -- RPC SUCCESS PATH --
         if (!rpcError && rpcData) {
-            const orders = rpcData || []
 
             if (orders.length === 0) {
                 setRawCustomers([])
@@ -286,17 +326,6 @@ export default function PickupCalendarPage() {
 
         // -- FALLBACK PATH (Legacy: N+1 Chunked Requests) --
         /* 기존 로직 무스탑 롤백 보험 코드 */
-        console.warn("RPC fetch failed or function missing, parsing via legacy loop:", rpcError);
-        let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
-        if (searchScope === "today") {
-            oQuery = oQuery.eq('pickup_date', currentDate)
-        } else if (searchScope === "date_range" && customSearchDate && customEndDate) {
-            oQuery = oQuery.gte('pickup_date', customSearchDate).lte('pickup_date', customEndDate)
-        } else if (searchScope === "date_range" && customSearchDate && !customEndDate) {
-            oQuery = oQuery.eq('pickup_date', customSearchDate)
-        }
-        const { data: oData } = await oQuery.limit(2000).order('pickup_date', { ascending: false })
-        const orders = oData || []
 
         if (orders.length === 0) {
             setRawCustomers([])
