@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Copy, Blocks, RefreshCw, MessageCircle } from "lucide-react"
+import { Copy, Blocks, RefreshCw, MessageCircle, Plus, Trash2 } from "lucide-react"
 import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function UtilitiesPage() {
@@ -28,11 +28,8 @@ export default function UtilitiesPage() {
             if (storeSet?.crm_tags) {
                 setCrmTags(storeSet.crm_tags)
                 const utilT = storeSet.crm_tags.find((t: any) => t.type === 'util_template')
-                if (utilT && Array.isArray(utilT.templates)) {
-                    // Ensure it always has 5 slots
-                    const loaded = [...utilT.templates]
-                    while(loaded.length < 5) loaded.push("")
-                    setTemplates(loaded.slice(0, 5))
+                if (utilT && Array.isArray(utilT.templates) && utilT.templates.length > 0) {
+                    setTemplates(utilT.templates)
                 }
             }
 
@@ -44,7 +41,7 @@ export default function UtilitiesPage() {
             
             if (pData) setProducts(pData)
 
-            const { data: oData } = await supabase.from('orders').select('id, pickup_date').eq('store_id', user.id).limit(3000)
+            const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received').eq('store_id', user.id).eq('is_hidden', false).limit(3000)
             if (oData && oData.length > 0) {
                 const orderIds = oData.map(o => o.id)
                 const chunkSize = 250
@@ -99,26 +96,58 @@ export default function UtilitiesPage() {
             
             // Calculate remaining stock
             let relevantOrderIds: string[] = []
+            let noshowNames: string[] = []
+            
             if (selectedDate !== "all" && selectedDate !== "regular") {
-                relevantOrderIds = orders.filter(o => o.pickup_date === selectedDate).map(o => o.id)
+                const dateOrders = orders.filter(o => o.pickup_date === selectedDate)
+                relevantOrderIds = dateOrders.map(o => o.id)
+                noshowNames = Array.from(new Set(dateOrders.filter(o => !o.is_received).map(o => o.customer_nickname || "알수없음")))
             } else {
                 relevantOrderIds = orders.map(o => o.id)
+                noshowNames = Array.from(new Set(orders.filter(o => !o.is_received).map(o => o.customer_nickname || "알수없음")))
             }
+            
+            const noshowString = noshowNames.length > 0 ? noshowNames.map(n => `@${n}`).join(" ") : "(미수령고객 없음)"
             
             const relevantItems = orderItems.filter(oi => oi.product_id === p.id && relevantOrderIds.includes(oi.order_id))
             const orderSum = relevantItems.reduce((acc, curr) => acc + (curr.quantity || 0), 0)
             const remaining = Math.max(0, (p.allocated_stock || 0) - orderSum)
             
+            const prodOrderIds = relevantItems.map(oi => oi.order_id);
+            const prodNoshowOrders = orders.filter(o => prodOrderIds.includes(o.id) && !o.is_received);
+            const prodNoshowNames = Array.from(new Set(prodNoshowOrders.map(o => o.customer_nickname || "알수없음")));
+            const prodNoshowString = prodNoshowNames.length > 0 ? prodNoshowNames.map(n => `@${n}`).join(" ") : "(미수령고객 없음)";
+
             // Inject calculated remaining stock into the product object temporarily for mapping
             p._calculated_remaining = remaining;
             p._order_sum = orderSum;
+            p._noshow_string = prodNoshowString;
 
             // Stock logic
             if (filterType === "all") return true;
             if (filterType === "soldout") return (p.allocated_stock !== null && remaining <= 0);
             if (filterType === "instock") return remaining > 0;
+            if (filterType === "noshow") return prodNoshowOrders.length > 0;
             return true;
         });
+
+        // If template doesn't use product-specific variables, generate it just once
+        const hasProductVariables = /\[(상품명|수량|재고|주문수량)\]/.test(template);
+
+        if (!hasProductVariables) {
+            let globalNoshow = "(미수령고객 없음)";
+            if (selectedDate !== "all" && selectedDate !== "regular") {
+                const currentNoshows = Array.from(new Set(orders.filter(o => o.pickup_date === selectedDate && !o.is_received).map(o => o.customer_nickname || "알수없음")));
+                globalNoshow = currentNoshows.length > 0 ? currentNoshows.map(n => `@${n}`).join(" ") : "(미수령고객 없음)";
+            } else {
+                const currentNoshows = Array.from(new Set(orders.filter(o => !o.is_received).map(o => o.customer_nickname || "알수없음")));
+                globalNoshow = currentNoshows.length > 0 ? currentNoshows.map(n => `@${n}`).join(" ") : "(미수령고객 없음)";
+            }
+            
+            const result = template.replace(/\[노쇼고객\]/g, globalNoshow).replace(/@@/g, '@');
+            setEditableText(result);
+            return;
+        }
 
         const result = filtered.map(p => {
             const prodName = p.display_name || p.collect_name;
@@ -135,16 +164,38 @@ export default function UtilitiesPage() {
                 .replace(/\[수량\]/g, stockStr)
                 .replace(/\[재고\]/g, stockStr)
                 .replace(/\[주문수량\]/g, orderSumStr)
+                .replace(/\[노쇼고객\]/g, p._noshow_string || "")
+                .replace(/@@/g, '@')
         }).join("\n");
 
         setEditableText(result);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterType, activeTemplateIdx, templates]);
+    }, [filterType, activeTemplateIdx, templates, selectedDate, products, orders, orderItems]);
 
     const updateTemplate = (idx: number, val: string) => {
         const newT = [...templates]
         newT[idx] = val
         setTemplates(newT)
+    }
+
+    const addTemplate = () => {
+        setTemplates([...templates, ""])
+        setActiveTemplateIdx(templates.length)
+    }
+
+    const deleteTemplate = (idx: number) => {
+        if (templates.length <= 1) return alert("최소 1개의 템플릿은 유지해야 합니다.")
+        if (!confirm("이 템플릿을 삭제하시겠습니까?")) return
+        const newT = templates.filter((_, i) => i !== idx)
+        setTemplates(newT)
+        // Adjust active index
+        if (activeTemplateIdx >= newT.length) {
+            setActiveTemplateIdx(newT.length - 1)
+        } else if (activeTemplateIdx === idx) {
+            setActiveTemplateIdx(0)
+        } else if (activeTemplateIdx > idx) {
+            setActiveTemplateIdx(activeTemplateIdx - 1)
+        }
     }
 
     const saveTemplatesToDB = async () => {
@@ -191,14 +242,14 @@ export default function UtilitiesPage() {
                 {/* Left Col: Setup */}
                 <div className="space-y-6">
                     <GuideBadge text="특정 날짜의 품절 혹은 재고가 남은 상품을 선택할 수 있습니다." className="block">
-                    <Card className="shadow-sm border-blue-100 bg-white h-full">
+                    <Card className="shadow-sm border-blue-100 bg-white">
                         <CardHeader className="bg-blue-50/50 pb-4 border-b border-blue-100">
                             <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
                                 <Blocks className="w-5 h-5 text-blue-500" />
                                 1. 대상 상품 필터
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-4 grid sm:grid-cols-2 gap-4">
+                        <CardContent className="pt-4 pb-5 grid sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-sm font-semibold text-slate-700">판매 일자 기준</Label>
                                 <Select value={selectedDate} onValueChange={setSelectedDate}>
@@ -224,6 +275,7 @@ export default function UtilitiesPage() {
                                         <SelectItem value="all">상태 무관 (전체)</SelectItem>
                                         <SelectItem value="soldout"><span className="text-rose-600">품절 (마감) 처리된 상품만</span></SelectItem>
                                         <SelectItem value="instock"><span className="text-emerald-600">현재 잔여 재고가 있는 상품만</span></SelectItem>
+                                        <SelectItem value="noshow"><span className="text-indigo-600">미수령 고객이 있는 상품만</span></SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -231,16 +283,16 @@ export default function UtilitiesPage() {
                     </Card>
                     </GuideBadge>
 
-                    <GuideBadge text="템플릿을 지정하면 지정한 문구의 상품정보가 자동으로 생성됩니다. 생성된 문구는 카톡에 복사해 활용할 수 있습니다. 템플릿은 최대 5개이며 점장님이 원하시는 문구로 수정 저장해 활용할 수 있습니다." className="block h-full">
-                    <Card className="shadow-sm border-indigo-100 bg-white h-full">
+                    <GuideBadge text="템플릿을 추가하거나 삭제할 수 있습니다. 템플릿 지정 후 문구를 생성해 카톡에 복사해 원활히 소통하세요." className="block h-full">
+                    <Card className="shadow-sm border-indigo-100 bg-white h-full flex flex-col">
                         <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100 flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
                                     <MessageCircle className="w-5 h-5 text-indigo-500" />
-                                    2. 메시지 템플릿 저장소 (최대 5개)
+                                    2. 메시지 템플릿 저장소
                                 </CardTitle>
                                 <CardDescription className="text-xs mt-1">
-                                    자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[주문수량]</strong>
+                                    자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[주문수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[노쇼고객]</strong>
                                 </CardDescription>
                             </div>
                             <Button onClick={saveTemplatesToDB} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm h-8 px-3 text-xs gap-1.5 flex-shrink-0">
@@ -262,16 +314,25 @@ export default function UtilitiesPage() {
                                     </div>
                                     <div className="w-full space-y-1.5 focus-within:text-indigo-900">
                                         <Label className={`text-xs font-bold ${activeTemplateIdx === i ? 'text-indigo-700' : 'text-slate-500'}`}>템플릿 {i + 1} 슬롯</Label>
-                                        <Input
-                                            value={t}
-                                            onChange={e => updateTemplate(i, e.target.value)}
-                                            onFocus={() => setActiveTemplateIdx(i)}
-                                            placeholder="자주 쓰는 공지 문구를 입력하세요. (예: [상품명] ма감)"
-                                            className={`h-9 font-medium shadow-sm active:ring-indigo-500 focus-visible:ring-indigo-500 ${activeTemplateIdx === i ? 'bg-white border-indigo-300' : 'bg-transparent border-slate-300 text-slate-500 shadow-none'}`}
-                                        />
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={t}
+                                                onChange={e => updateTemplate(i, e.target.value)}
+                                                onFocus={() => setActiveTemplateIdx(i)}
+                                                placeholder="자주 쓰는 공지 문구를 입력하세요. (예: [상품명] 마감)"
+                                                className={`h-9 font-medium shadow-sm active:ring-indigo-500 focus-visible:ring-indigo-500 ${activeTemplateIdx === i ? 'bg-white border-indigo-300' : 'bg-transparent border-slate-300 text-slate-500 shadow-none'}`}
+                                            />
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 shrink-0" onClick={() => deleteTemplate(i)}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
+                            <Button variant="outline" className="w-full mt-2 border-dashed border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700" onClick={addTemplate}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                템플릿 추가하기
+                            </Button>
                         </CardContent>
                     </Card>
                     </GuideBadge>

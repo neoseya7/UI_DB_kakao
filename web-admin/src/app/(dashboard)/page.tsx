@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeProducts, setActiveProducts] = useState<any[]>([])
+  const [crmDict, setCrmDict] = useState<Record<string, { category: string, memo: string }>>({})
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("")
@@ -63,9 +64,16 @@ export default function Dashboard() {
       // Fetch settings first to get manager filter
       const { data: settingsData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
       const managerNicks = settingsData?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
+      
+      const crmTagsList = settingsData?.crm_tags?.filter((t: any) => t.type === 'crm') || []
+      const crmMap = crmTagsList.reduce((acc: any, t: any) => {
+          acc[t.name] = { category: t.category, memo: t.memo }
+          return acc
+      }, {})
+      setCrmDict(crmMap)
 
       // Fetch active products mapping to append target dates
-      const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id)
+      const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id).eq('is_hidden', false)
       const currentProducts = productsData?.map(p => ({
         ...p,
         collect_name: p.collect_name ? p.collect_name.trim() : "",
@@ -122,23 +130,33 @@ export default function Dashboard() {
           let finalClassification = otherClassifications.join(", ")
 
           const isOrderType = displayCat === "픽업고지" || row.category === "ORDER" || displayCat.includes("주문");
+          let finalProductName = row.product_name || "-";
 
           if (isOrderType && row.product_name && row.product_name !== "-") {
             const rawName = row.product_name;
             const itemQty = row.quantity && row.quantity > 0 ? row.quantity : 1;
 
+            let assignedDate = null;
+            if (row.classification) {
+              const dateMatch = row.classification.match(/\[(20\d{2}-\d{2}-\d{2}) 반영\]/);
+              if (dateMatch) assignedDate = dateMatch[1];
+            }
+
             const matchedProd = 
-              currentProducts.find((p: any) => (p.collect_name === rawName || p.display_name === rawName) && (p.allocated_stock === null || p.allocated_stock >= itemQty))
+              (assignedDate ? currentProducts.find((p: any) => (p.collect_name === rawName || p.display_name === rawName) && p.target_date === assignedDate) : null)
+              || currentProducts.find((p: any) => (p.collect_name === rawName || p.display_name === rawName) && (p.allocated_stock === null || p.allocated_stock >= itemQty))
               || currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName);
+            
             if (matchedProd) {
+              const badgeName = matchedProd.unit_text ? `${rawName}(${matchedProd.unit_text})` : rawName;
+              finalProductName = badgeName;
               if (!row.is_processed) {
-                // Product exists NOW, but the order was never synced into the DB when originally created.
-                matchBadges.push({ name: rawName, isMatched: false, dateText: "연동 대기" })
+                matchBadges.push({ name: badgeName, isMatched: false, dateText: "연동 대기" })
               } else if (matchedProd.allocated_stock !== null && matchedProd.allocated_stock < itemQty) {
-                matchBadges.push({ name: rawName, isMatched: false, dateText: "재고초과주문" })
+                matchBadges.push({ name: badgeName, isMatched: false, dateText: "재고초과주문" })
               } else {
                 const dateStr = matchedProd.target_date || "상시판매"
-                matchBadges.push({ name: rawName, isMatched: true, dateText: dateStr })
+                matchBadges.push({ name: badgeName, isMatched: true, dateText: dateStr })
               }
             } else {
               matchBadges.push({ name: rawName, isMatched: false, dateText: "상품미등록" })
@@ -156,30 +174,29 @@ export default function Dashboard() {
             time: row.chat_time ? row.chat_time.substring(0, 5) : "-", // HH:mm
             category: displayCat,
             nickname: row.nickname || "알수없음",
-            product: row.product_name || "-",
+            product: finalProductName,
             quantity: row.quantity || 0,
             classification: finalClassification,
             matchBadges: matchBadges,
             isOrder: row.is_processed ? "Y" : (displayCat === "픽업고지" ? "대기" : "N"),
-            raw_category: displayCat
+            raw_category: displayCat,
+            isSuspectedDuplicate: false
           }
         })
 
         // Second pass: Cross-reference to detect suspected duplicates 
-        // 1. Same date, same time, same product, DIFFERENT nickname
-        // 2. Same date, same nickname, same product, DIFFERENT quantity
-        const finalMappedLogs = mappedLogs.map((row, index, self) => {
+        // 1. Same date, same nickname, same product, DIFFERENT quantity (수동 수정이나 오입력 가능성)
+        let finalMappedLogs = mappedLogs.map((row, index, self) => {
           let isSuspectedDuplicate = false
 
           for (let i = 0; i < self.length; i++) {
             if (i === index) continue
             const other = self[i]
 
-            // Condition 1
-            if (row.date === other.date && row.time === other.time && row.product === other.product && row.nickname !== other.nickname) {
-              isSuspectedDuplicate = true; break;
-            }
-            // Condition 2
+            // 닉네임만 다르고 동일한 내용은 삭제 (우연히 같은 주문일 수 있음)
+            // 기존 Condition 1 삭제됨
+            
+            // Condition 2: 닉네임&상품이 같은데 수량이 다른 경우 (기존 중복의심 로직 보존)
             if (row.date === other.date && row.nickname === other.nickname && row.product === other.product && row.quantity !== other.quantity) {
               isSuspectedDuplicate = true; break;
             }
@@ -191,6 +208,26 @@ export default function Dashboard() {
           }
           return row
         })
+
+        // Third pass: Time Jump(시간 역행) 감지 (과거 대화 끌올 감지)
+        let maxContextTime = 0;
+        // self는 created_at 역순(최신이 0번 인덱스)이므로 제일 뒤(가장 오래된 수집)부터 앞으로 오면서 스트림 검사
+        for (let i = finalMappedLogs.length - 1; i >= 0; i--) {
+            const row = finalMappedLogs[i];
+            if (row.date !== "-" && row.time !== "-") {
+                // 시간 문자열 파싱
+                const parsedTime = new Date(`${row.date}T${row.time}:00`).getTime();
+                if (!isNaN(parsedTime)) {
+                    // 현재 대화가 "지금까지 스크래핑된 가장 최신 대화시간"보다 1시간(60분) 이상 과거로 튄다면?
+                    if (parsedTime < maxContextTime - (60 * 60 * 1000)) {
+                        row.isSuspectedDuplicate = true; // 중복의심과 동일하게 붉은색 UI 사용
+                        row.classification = row.classification ? row.classification + ", [⏰과거대화의심]" : "[⏰과거대화의심]";
+                    } else if (parsedTime > maxContextTime) {
+                        maxContextTime = parsedTime; // 정상적인 시간의 흐름이면 Max Time 갱신
+                    }
+                }
+            }
+        }
 
         setLogs(finalMappedLogs)
       }
@@ -292,32 +329,52 @@ export default function Dashboard() {
           product_name: newProductName,
           is_processed: true,
           category: 'ORDER',
-          classification: '분류:수정'
+          classification: targetDate && targetDate !== "-" ? `분류:수정, [${targetDate} 반영]` : '분류:수정'
         }).eq('id', log.id)
 
         if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-") {
           let orderId = null
 
-          // Unconditionally create a brand new separate row per user request, preventing product merges into existing nicknames
-          const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
-            store_id: user.id,
-            pickup_date: targetDate,
-            customer_nickname: log.nickname,
-            is_received: false,
-            customer_memo_1: '관리자 수동 복구'
-          }).select().single()
+          // --- FEATURE: Delete old order_item if it was already processed ---
+          if (log.is_processed && log.product && log.product !== "-") {
+            const oldProd = activeProducts?.find(p => p.collect_name === log.product && p.target_date === log.date) || activeProducts?.find(p => p.collect_name === log.product);
+            if (oldProd) {
+              const { data: oldOrders } = await supabase.from('orders').select('id').eq('store_id', user.id).eq('pickup_date', log.date).eq('customer_nickname', log.nickname).limit(1)
+              if (oldOrders && oldOrders.length > 0) {
+                await supabase.from('order_items').delete().eq('order_id', oldOrders[0].id).eq('product_id', oldProd.id)
+              }
+            }
+          }
 
-          if (newOrder) orderId = newOrder.id
+          // 1. Try to find existing order for the NEW target date
+          const { data: existingTargetOrders } = await supabase.from('orders').select('id').eq('store_id', user.id).eq('pickup_date', targetDate).eq('customer_nickname', log.nickname).limit(1)
+          
+          if (existingTargetOrders && existingTargetOrders.length > 0) {
+            orderId = existingTargetOrders[0].id
+          } else {
+            // 2. Create new order if it doesn't exist
+            const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
+              store_id: user.id,
+              pickup_date: targetDate,
+              customer_nickname: log.nickname,
+              is_received: false,
+              customer_memo_1: '관리자 수동 복구'
+            }).select().single()
 
-          if (orderErr) {
-            console.error("New order generation failed:", orderErr)
-            continue
+            if (newOrder) orderId = newOrder.id
+            if (orderErr) {
+              console.error("New order generation failed:", orderErr)
+              continue
+            }
           }
 
           if (orderId && activeProducts) {
-            const prod = 
-              activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0))
-              || activeProducts.find(p => p.collect_name === targetProduct);
+            // STRICT DATE MATCHING (Fixing the core bug)
+            let prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate && (p.allocated_stock === null || p.allocated_stock > 0));
+            if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate);
+            if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0));
+            if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct);
+
             if (prod) {
               const { data: existingItems } = await supabase.from('order_items')
                 .select('id, quantity')
@@ -620,7 +677,17 @@ export default function Dashboard() {
                               {log.raw_category || "기타"}
                             </Badge>
                           </td>
-                          <td className={`px-4 py-3 font-semibold truncate ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-slate-800 group-hover:text-primary'}`} title={log.nickname}>{log.nickname}</td>
+                          <td className={`px-4 py-3 font-semibold ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-slate-800 group-hover:text-primary'}`} title={log.nickname}>
+                            <div className="flex flex-col items-start gap-1">
+                              <span className="truncate w-full block">{log.nickname}</span>
+                              {crmDict[log.nickname] && (
+                                <Badge variant="outline" className={`font-medium whitespace-nowrap text-[10px] px-1.5 py-0 shadow-sm ${crmDict[log.nickname].category === '노쇼' ? 'border-red-200 text-red-700 bg-red-50' : crmDict[log.nickname].category === '단골' ? 'border-blue-200 text-blue-700 bg-blue-50' : 'border-slate-200 text-slate-700 bg-slate-50'}`} title={crmDict[log.nickname].memo || crmDict[log.nickname].category}>
+                                  {crmDict[log.nickname].category === '노쇼' ? '🔴 노쇼' : crmDict[log.nickname].category === '단골' ? '🔵 단골' : `⚪ ${crmDict[log.nickname].category}`}
+                                  {crmDict[log.nickname].memo ? ` : ${crmDict[log.nickname].memo}` : ''}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
                           <td className={`px-4 py-3 font-semibold break-words whitespace-normal leading-tight ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-primary/90'}`} title={log.product}>{log.product}</td>
                           <td className={`px-4 py-3 text-center font-bold ${log.isSuspectedDuplicate ? 'text-rose-600' : ''}`}>{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">

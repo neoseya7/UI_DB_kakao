@@ -12,18 +12,26 @@ import { useGuideMode } from "@/components/layout/guide-context"
 export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boolean; toggleSidebar?: () => void }) {
     const [userEmail, setUserEmail] = useState<string | null>(null)
     const [userId, setUserId] = useState<string | null>(null)
+    const [storeName, setStoreName] = useState<string | null>(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
     const { isGuideMode, toggleGuideMode } = useGuideMode()
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        const fetchUserData = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
             if (user && user.email) {
                 setUserEmail(user.email)
                 setUserId(user.id)
+                
+                const { data } = await supabase.from('stores').select('name').eq('id', user.id).single()
+                if (data && data.name) {
+                    setStoreName(data.name)
+                }
             }
-        })
+        }
+        fetchUserData()
     }, [])
 
     useEffect(() => {
@@ -120,14 +128,14 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
                 >
                     <UserCircle className="h-6 w-6 text-slate-600" />
                     <span className="text-sm font-medium text-slate-700 hidden sm:inline-block">
-                        {userEmail ? userEmail : "로딩 중..."}
+                        {storeName ? storeName : (userEmail ? userEmail : "로딩 중...")}
                     </span>
                 </Button>
                 {isMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                         <div className="py-2 p-2">
                             <div className="flex flex-col space-y-1 px-3 py-2">
-                                <p className="text-sm font-medium leading-none">로그인된 계정</p>
+                                <p className="text-sm font-bold leading-none">{storeName || "운영중인 매장"}</p>
                                 <p className="text-xs leading-none text-muted-foreground mt-1">{userEmail || "알 수 없음"}</p>
                             </div>
                             <div className="h-px bg-slate-200 my-2"></div>

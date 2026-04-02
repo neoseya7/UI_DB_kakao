@@ -1,0 +1,29 @@
+[
+  {
+    "id": "2ce5eb34-9323-4ce2-849f-aebaa42c9c61",
+    "pickup_date": "2026-03-31",
+    "customer_nickname": "고구마8130",
+    "is_hidden": false,
+    "customer_memo_1": "",
+    "order_items": [
+      {
+        "products": {
+          "is_hidden": false,
+          "target_date": "2026-03-31",
+          "collect_name": "선쿠션",
+          "is_regular_sale": false
+        },
+        "quantity": 1,
+        "product_id": "db1341c7-867e-423d-814f-a3cdf2d684c2"
+      }
+    ]
+  },
+  {
+    "id": "b4c4b2a6-d4e7-41ac-ba30-07eccafc0ce7",
+    "pickup_date": "2026-04-01",
+    "customer_nickname": "고구마8130",
+    "is_hidden": false,
+    "customer_memo_1": "AI 수집",
+    "order_items": []
+  }
+]

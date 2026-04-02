@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -15,6 +16,12 @@ export default function LoginPage() {
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
+
+    // Password reset state
+    const [resetEmail, setResetEmail] = useState("")
+    const [isResetLoading, setIsResetLoading] = useState(false)
+    const [resetMessage, setResetMessage] = useState("")
+    const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -38,6 +45,25 @@ export default function LoginPage() {
         } else {
             router.push("/")
         }
+    }
+
+    const handlePasswordReset = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setResetMessage("")
+        setIsResetLoading(true)
+
+        const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+            redirectTo: `${window.location.origin}/reset-password`,
+        })
+
+        if (error) {
+            setResetMessage("이메일 발송 실패: " + error.message)
+            setIsResetLoading(false)
+            return
+        }
+
+        setResetMessage("비밀번호 재설정 이메일이 성공적으로 발송되었습니다! 메일함을 확인해주세요.")
+        setIsResetLoading(false)
     }
 
     return (
@@ -70,9 +96,47 @@ export default function LoginPage() {
                         <div className="grid gap-2 text-left">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">비밀번호</Label>
-                                <Link href="#" className="text-sm text-primary hover:underline">
-                                    비밀번호 찾기
-                                </Link>
+                                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <button type="button" className="text-sm text-primary hover:underline">
+                                            비밀번호 찾기
+                                        </button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>비밀번호 찾기</DialogTitle>
+                                            <DialogDescription>
+                                                가입하신 이메일 주소를 입력하시면 비밀번호를 재설정할 수 있는 링크를 보내드립니다.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handlePasswordReset}>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="resetEmail">이메일</Label>
+                                                    <Input
+                                                        id="resetEmail"
+                                                        type="email"
+                                                        placeholder="가입 이메일 주소"
+                                                        value={resetEmail}
+                                                        onChange={(e) => setResetEmail(e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+                                                {resetMessage && (
+                                                    <div className={`p-3 rounded-md text-sm ${resetMessage.includes("실패") ? "bg-red-50 text-red-600 border border-red-200" : "bg-green-50 text-green-700 border border-green-200"}`}>
+                                                        {resetMessage}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="button" variant="outline" onClick={() => setIsResetDialogOpen(false)}>취소</Button>
+                                                <Button type="submit" disabled={isResetLoading}>
+                                                    {isResetLoading ? "발송 중..." : "재설정 링크 받기"}
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                             <Input
                                 id="password"

@@ -9,4 +9,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 앱 전역에서 재사용할 단일 Supabase 클라이언트 인스턴스입니다.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// 관리자 모드에서 다른 매장으로 다중 탭 접속 시 세션이 꼬이지 않도록 독립적인 방(sessionStorage)을 줍니다.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+        storageKey: 'sb-auth-token-isolated'
+    }
+})

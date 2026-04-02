@@ -1,0 +1,5556 @@
+{
+  "rpcData": [
+    {
+      "id": "7d07908b-b33b-46b6-9ff4-9151736b3e37",
+      "customer_nickname": "갱후9137(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        }
+      ]
+    },
+    {
+      "id": "3ecd2da9-8131-4c03-9b48-6390acf3aae3",
+      "customer_nickname": "깨니/7624",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "e3503cf8-1883-46da-8120-cb44366c2c58",
+      "customer_nickname": "깡3681",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "84054a35-67b2-4cc5-8dec-f4c803756e77",
+      "customer_nickname": "캔디9891(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "05905a3e-e7d6-47f6-b441-0524d6b88dfa",
+      "customer_nickname": "굿굿0245",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "1825fe86-175d-4c8c-8421-5e33e5be9849",
+      "customer_nickname": "준7341",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "d0ab0549-aba4-4ac5-81f1-47194ea4a662",
+      "customer_nickname": "라떼1685(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        },
+        {
+          "quantity": 2,
+          "product_id": "8bc95ac7-512d-4eb0-b92a-ef411f68835e"
+        }
+      ]
+    },
+    {
+      "id": "e15cacfc-6b1e-460b-ad98-ca37188d71d2",
+      "customer_nickname": "냠냠0778",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "fd26ae83-202b-4056-b4ec-9fb4e72d411b",
+      "customer_nickname": "크림/2693",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "93e3c573-71ee-4f56-8c28-153127eb458e",
+      "customer_nickname": "과일좋아5243",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "9cdaf3da-0a99-4ba6-b328-9dac1e82ad13",
+      "customer_nickname": "로즈바나나4338",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "b6bdc1d8-5544-4b07-92f3-0ab3dcf2b795",
+      "customer_nickname": "4271",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "6e7d095a-d29c-4ff4-98d0-3157dc1f8e94",
+      "customer_nickname": "신난튜브/9270",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "40e49204-378a-4e93-b9f9-587f5c8e5c97",
+      "customer_nickname": "우서기9253",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "e5080ebe-da80-410d-b094-67e7beb2e175",
+      "customer_nickname": "불네오2878",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "09aef4bf-76cb-45ab-a789-cebf2e20e226",
+      "customer_nickname": "아기새/0367",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "75b642e4-b514-4497-af3b-290c8de7517c",
+      "customer_nickname": "헬리/0511",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f8a3429c-d90c-4df6-8b2e-35f18f58c4ca",
+      "customer_nickname": "쩌니/8786(6시이후수령)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "8b663d27-48cf-411a-8b77-344d4d097a50",
+      "customer_nickname": "쿠루8159",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "edd3e390-d812-4825-8d51-c0322666d956",
+      "customer_nickname": "랄라라랄라/6956",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "6f24b924-7df4-476a-8273-a35a90faf575",
+      "customer_nickname": "오레오3260",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "446b9575-2109-4a9d-b989-28f0c2459548",
+      "customer_nickname": "율맘2281",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "cce390a9-16a5-4950-a4d1-748785be2dae",
+      "customer_nickname": "복슬0916",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "1d6713ce-2281-4c78-80f7-2d3f67d7b071",
+      "customer_nickname": "율맘2281",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "7b3f308e-cf98-4adc-ab18-96b0f95dc10d",
+      "customer_nickname": "달비0457",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "e58de7cb-447d-41c1-b72d-4aa305e051b7",
+      "customer_nickname": "파세6221(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "889397e2-f000-4d01-9a51-287591e23200",
+      "customer_nickname": "앙4484",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "c0684120-71d5-4672-93f8-edc5e2026004",
+      "customer_nickname": "지우하린맘/1571",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "0dd885ce-3624-4b69-840e-072d55d22779",
+      "customer_nickname": "앙4484",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "2987ad4d-7676-4d8d-a024-2b9d1ade2fc3",
+      "customer_nickname": "해해2562",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "5a1d4111-4d4e-4dc1-8a8f-36db82bc7522",
+      "customer_nickname": "식빵/8777",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "ec933352-0a47-477c-92d1-dff7ea939bda",
+      "customer_nickname": "ㅎㅎ2100",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "ae83656b-2eb1-4dfa-ae7e-0ea1be7228d6",
+      "customer_nickname": "해오름1351(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f662a48a-75b9-4213-97d3-76c7ff614961",
+      "customer_nickname": "쑥/8346",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "94e154d9-e415-4603-a6ee-a15aea9732fe",
+      "customer_nickname": "우브로/1230",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "d9bcc612-798e-4f78-b740-4fc0accffe13",
+      "customer_nickname": "파르파르8519",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f223871d-6bea-4073-95f8-69eaf0786627",
+      "customer_nickname": "멜로디/9744",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "be5b7ebe-e6e9-42d2-89fb-97257a030985",
+      "customer_nickname": "까까0400",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "ad7cdffd-091d-4904-b861-0957c58b6110",
+      "customer_nickname": "크림/2693",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "ac4d5a5e-f17b-4af0-84cc-01744b6d6b4d",
+      "customer_nickname": "오레오3260",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "0ba02c99-66e6-4f48-ad43-22ad186dcf18",
+      "customer_nickname": "우서기9253",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "918106d4-cb68-4c77-ada6-4bb672d1157f",
+      "customer_nickname": "김딱딱이8134",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "212d49df-fed6-4f04-9386-8ee6ff82c9ce",
+      "customer_nickname": "키키7989",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "b13d3150-1fff-42f2-bf6c-562afdc20533",
+      "customer_nickname": "율맘2281",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "bbd4ff88-9053-4b85-a90a-ea87cb164100",
+      "customer_nickname": "나9050",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "72a249ac-0e91-49f7-8e87-36b6e635c963",
+      "customer_nickname": "라이언9085(6시이후수령)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "d2e9e252-cc15-40ab-8bb0-55e60c0fd029",
+      "customer_nickname": "꽃순이3868",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "3a4b0294-4d8b-4fd2-a060-b0b2c46113fd",
+      "customer_nickname": "깡3681",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "a5c1390d-b466-4e25-bc43-eac328c3a005",
+      "customer_nickname": "오레오3260",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "a289e6a4-9e8d-4201-a66c-b099ba510731",
+      "customer_nickname": "또리토리4561(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "5ba755a5-dfb3-48c3-a4c5-0a67c7136283",
+      "customer_nickname": "제이지/4151",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f72fc128-d7da-4fea-8be7-44c641026a3a",
+      "customer_nickname": "란5023",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "21c781b2-5f6b-46c0-a7b9-492a496354e5",
+      "customer_nickname": "란5023",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "6feb4866-c3f5-42d2-a059-6cde54c079c1",
+      "customer_nickname": "미소맘/3796",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "36a815d3-4f72-414c-88ea-f7bcef3b1767",
+      "customer_nickname": "운동하는라이언/9546",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "4826cf18-fb53-4cbd-a938-1a60fd330327",
+      "customer_nickname": "로즈마리/8874",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "22e5a002-1bb9-4f3e-8d93-e6946db03c34",
+      "customer_nickname": "지우하린맘/1571",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "64f75519-f743-46c4-a918-72cdd7541986",
+      "customer_nickname": "해오름1351(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "4b6cf4b5-e7bc-45b8-9e2e-a6f8ea030dda",
+      "customer_nickname": "도담4225",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f7a9d6f6-b6fb-428e-9303-d1f1567a53bd",
+      "customer_nickname": "쩡쓰2770",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "3d6d4e3f-6ee6-4e6d-b86a-72dd99bb37e6",
+      "customer_nickname": "헤헤/7754",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f63409c3-e3e2-4dcd-bec0-1a1fd4c28112",
+      "customer_nickname": "튜브/8458(6시이후픽업)",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "419f5e18-6c2b-407c-ac3e-a7f6e874924c",
+      "customer_nickname": "봉봉씨/8901",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "7892f5e4-5139-4545-9e6f-a142c28bf54b",
+      "customer_nickname": "몽상/3398",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f22558d5-3ba4-42df-8c2b-ca589e688b82",
+      "customer_nickname": "4271",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "5cc846b6-9390-43f6-bd21-61f373c15fbc",
+      "customer_nickname": "오레오3260",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "c8c4ba87-ae72-4f1d-8716-da372c0174ea",
+      "customer_nickname": "귀여운라이언8975",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "64de9377-3143-48d4-89ac-b5b4d585b11f",
+      "customer_nickname": "꽃순이3868",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "d923cc61-cc41-4899-9f6f-42cd08606a20",
+      "customer_nickname": "2331",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "3de439e7-598a-4988-824f-c3a9805ff789",
+      "customer_nickname": "으니/5377",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "a93ad0f4-d2bd-47f0-b73b-0203c850d49f",
+      "customer_nickname": "수주니/9181",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "ba37a7a3-991d-466e-940a-4865f76541b1",
+      "customer_nickname": "오레오3260",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "b44150c2-d244-4792-a327-ceb081bd375c",
+      "customer_nickname": "1916",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "f55e974f-dbaa-4867-9047-56ce14ab2cb4",
+      "customer_nickname": "졸린라이언/0002",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "d40d122c-c96f-4f62-ac83-fb64bb233441",
+      "customer_nickname": "해해2562",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "452a0938-3315-438c-86fc-01307c450629",
+      "customer_nickname": "뽀/0426",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "9b4bef56-fe06-439f-aa6e-0fd1cdc184dc",
+      "customer_nickname": "4987",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "5746de25-5a13-4bed-8067-01de5e6edf08",
+      "customer_nickname": "쩡쓰2770",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": []
+    },
+    {
+      "id": "9fe12d22-018d-4c0e-861e-b6b2a76b00a2",
+      "customer_nickname": "루나8852",
+      "customer_memo_1": "관리자 수동 복구",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 3,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        }
+      ]
+    },
+    {
+      "id": "733c8a42-bdfb-4243-abd3-04efbfcaf0cf",
+      "customer_nickname": "무지/5995",
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        }
+      ]
+    },
+    {
+      "id": "5cae1a3d-2bd3-49c1-8c32-c8ce24116d3a",
+      "customer_nickname": "핑크김4475(6시이후픽업)",
+      "customer_memo_1": "관리자 수동 복구",
+      "customer_memo_2": null,
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "88147867-75d5-4157-9ded-2dc443710851"
+        }
+      ]
+    },
+    {
+      "id": "16c8e7e0-c34c-4781-a493-fe6c34b02b9f",
+      "customer_nickname": "뽀/3551",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "015f612d-e8d5-40e6-874a-aaf4d59e1789",
+      "customer_nickname": "ㄱ.김부자/0728",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        }
+      ]
+    },
+    {
+      "id": "f75072ae-ecb5-4753-abbb-94e3c01e6721",
+      "customer_nickname": "튜브/8458(6시이후픽업)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10"
+        },
+        {
+          "quantity": 1,
+          "product_id": "47398c8a-647a-447a-8638-9ee3fcb2b4aa"
+        }
+      ]
+    },
+    {
+      "id": "8b609b18-92e8-4284-978c-ed8e356aa931",
+      "customer_nickname": "영영영/9598",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        }
+      ]
+    },
+    {
+      "id": "9c957c3d-eb7c-40fb-8665-c94f81287b18",
+      "customer_nickname": "고고/3303",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        },
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        }
+      ]
+    },
+    {
+      "id": "48be825b-98c5-44eb-9556-8fb51825b866",
+      "customer_nickname": "럭키비키/5003",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "2bfbbaf0-9368-4804-bb6d-5d7d1c1b9a76",
+      "customer_nickname": "불네오2878",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        },
+        {
+          "quantity": 1,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        },
+        {
+          "quantity": 1,
+          "product_id": "0756120c-44d4-4e55-b585-4100919d1070"
+        }
+      ]
+    },
+    {
+      "id": "12224bc4-464c-4539-a0b8-ced464e7c56c",
+      "customer_nickname": "졸린라이언/0002",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        },
+        {
+          "quantity": 1,
+          "product_id": "47398c8a-647a-447a-8638-9ee3fcb2b4aa"
+        }
+      ]
+    },
+    {
+      "id": "01122824-862c-470c-b4d6-77ff019e79f2",
+      "customer_nickname": "쏭님1158",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "75a9f549-0116-469d-b413-1d325e26ece8",
+      "customer_nickname": "초이1345",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "0756120c-44d4-4e55-b585-4100919d1070"
+        }
+      ]
+    },
+    {
+      "id": "35f1aa63-a71f-4deb-9dfd-84bebde3a3a4",
+      "customer_nickname": "햇살/0140",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        },
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 1,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "64dd00c2-ed4f-443d-b62e-4e4dc82518fc",
+      "customer_nickname": "뿌영5074",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 2,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 3,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "d83dd46c-f038-472a-a66a-6bae7b4f4f61",
+      "customer_nickname": "은츄/0626",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 4,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "f812ff2f-95d8-4f4f-9829-0a8bf8509da4",
+      "customer_nickname": "몽상/3398",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 1,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "df41854d-9c90-42f0-9829-f5740e2a7079",
+      "customer_nickname": "곰곰0233",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "123cb5a0-f310-4982-a1fd-7b5f66fa0325",
+      "customer_nickname": "꾸미/1190",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "c86195d2-e470-4d83-bd08-a76414e9c388",
+      "customer_nickname": "튤리비6272",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 6,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        }
+      ]
+    },
+    {
+      "id": "9b259b33-6f77-4aa3-bf26-dba8e1bfbad2",
+      "customer_nickname": "또용/4436",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "71c20b46-0234-40a6-a6f0-cbd3e611ee46",
+      "customer_nickname": "십가군대8214",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "72701398-b123-43fb-b3b0-fcb715ddcffb"
+        },
+        {
+          "quantity": 2,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        }
+      ]
+    },
+    {
+      "id": "476846a2-1a48-4362-8112-7d9c1282d832",
+      "customer_nickname": "준7341",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "747906d3-9cbd-4cbd-b10d-034b98469c53"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "7415101c-f77b-49f0-9502-3c035cb080f0",
+      "customer_nickname": "자랑하는라이언5545",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "f27bffaf-36a4-48d8-91d7-38b2321e24fd",
+      "customer_nickname": "1916",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "f8853fcb-84c3-431c-a58b-ba313139177b",
+      "customer_nickname": "엘빈/9096",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "de700db3-f0fa-4b2e-8b8c-978078279726",
+      "customer_nickname": "이용/1417",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "f99785cb-a88f-4747-b077-302c2477f69a",
+      "customer_nickname": "미니미니9490",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "c504ab2b-4eb2-4315-872a-956b4adf8324"
+        }
+      ]
+    },
+    {
+      "id": "ffba18e4-6c5b-405e-8d04-f46d0c479f7d",
+      "customer_nickname": "으쑥으쑥/1645",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "c504ab2b-4eb2-4315-872a-956b4adf8324"
+        }
+      ]
+    },
+    {
+      "id": "46b83009-4a05-4809-b151-18bc3a2980f7",
+      "customer_nickname": "미소맘/3796",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "c65775cb-aaac-4810-bb74-15ba19385190",
+      "customer_nickname": "둡스9067",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "8321f4e0-7471-466d-833b-714ec4709c68"
+        },
+        {
+          "quantity": 1,
+          "product_id": "0756120c-44d4-4e55-b585-4100919d1070"
+        }
+      ]
+    },
+    {
+      "id": "347b5081-3609-449a-ba03-a4af309627e0",
+      "customer_nickname": "엄지척0808",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10"
+        },
+        {
+          "quantity": 2,
+          "product_id": "0756120c-44d4-4e55-b585-4100919d1070"
+        }
+      ]
+    },
+    {
+      "id": "1ebffb40-c2a1-4d27-9688-c7da05f02dce",
+      "customer_nickname": "귤0415",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 1,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "e094b334-2a27-45cc-8487-f4988541b88e",
+      "customer_nickname": "토끼둘맘1412",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "31ff4b58-f4a1-45e8-a7fc-44b7bdcb0246",
+      "customer_nickname": "윤슬/4141",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "b16352cc-63d0-48c8-918e-9a8fd4c9091b"
+        }
+      ]
+    },
+    {
+      "id": "14184197-5cac-4244-a79e-419b385cd331",
+      "customer_nickname": "유자7128",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "1a6756ab-2e02-4492-bd11-fe5ac8793dcd",
+      "customer_nickname": "츄르/1633",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "50ab6aab-947e-4b2d-ad1d-0f0f33af80de",
+      "customer_nickname": "지우하린맘/1571",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "ac1df473-4d58-4545-95e0-f3edf92076b2",
+      "customer_nickname": "란5023",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "f8dfa4c7-d054-42d8-8470-c63c6b6aa679",
+      "customer_nickname": "새우버거3154",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "72701398-b123-43fb-b3b0-fcb715ddcffb"
+        }
+      ]
+    },
+    {
+      "id": "ccf50130-ef35-41e3-8235-5d51ee90f48e",
+      "customer_nickname": "제이제이2773",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "1a50da92-0b1e-429d-8e8e-af302f9c2095",
+      "customer_nickname": "애교뿜뿜무지/2837",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "60cc567f-0d5e-474b-a525-04c6b9c1193c",
+      "customer_nickname": "쌈이5109",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "95b4dfd0-e406-4023-8d19-4efa9999a69f"
+        }
+      ]
+    },
+    {
+      "id": "d51d2b7f-6ead-475b-9db0-f34c083cf580",
+      "customer_nickname": "주1004(6364)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "72701398-b123-43fb-b3b0-fcb715ddcffb"
+        }
+      ]
+    },
+    {
+      "id": "335ea6e4-9f72-4f16-92f5-e45933d6e397",
+      "customer_nickname": "신난어피치1468(6시이후픽업)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "95b4dfd0-e406-4023-8d19-4efa9999a69f"
+        }
+      ]
+    },
+    {
+      "id": "7dccac87-9385-47c3-a391-8dc2f7fe5166",
+      "customer_nickname": "클라/0824",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "72701398-b123-43fb-b3b0-fcb715ddcffb"
+        }
+      ]
+    },
+    {
+      "id": "090cf51c-1714-4d31-b326-21d83a66854e",
+      "customer_nickname": "해오름1351(6시이후픽업)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        },
+        {
+          "quantity": 2,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        },
+        {
+          "quantity": 1,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        }
+      ]
+    },
+    {
+      "id": "762b167d-8b4a-4900-9c0c-4794983b6c00",
+      "customer_nickname": "해해2562",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 2,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 2,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 2,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "5fedc944-9ae9-4d55-b381-1ec847c58b4f",
+      "customer_nickname": "아메리/5917",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "dd4ffde2-2ec2-411b-bca0-451e84af8da3",
+      "customer_nickname": "해오름7116(6시이후픽업)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "95b4dfd0-e406-4023-8d19-4efa9999a69f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        },
+        {
+          "quantity": 1,
+          "product_id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10"
+        },
+        {
+          "quantity": 1,
+          "product_id": "47398c8a-647a-447a-8638-9ee3fcb2b4aa"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        },
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "e8e6c8cd-ee0b-4186-9d44-d1d27ca2c0d0",
+      "customer_nickname": "또리3272",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "f7b3343c-9d13-4ab2-8c4b-81c98895331a",
+      "customer_nickname": "꼼꼼0485",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "107951f1-b380-49a2-834f-e40c0959d69f",
+      "customer_nickname": "무지/5995",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "062938fb-a8c4-4683-a37b-f1c4b9344102",
+      "customer_nickname": "허니버터4931",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "c53b8d65-f7a1-4360-b2c9-2169498231e7",
+      "customer_nickname": "냠이4457",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        },
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "5cccd5c9-fe32-4d8b-b142-df90294de36a",
+      "customer_nickname": "라떼1685(6시이후픽업)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "39a7ec6f-a42f-4b6d-8168-f70603bb05ab",
+      "customer_nickname": "대한3545",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "23ac7bf2-9241-475b-9618-5e6ae6d51303",
+      "customer_nickname": "엄지척/2962",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "0c6efb3d-e9c6-4db1-bc2f-42b009442c4b",
+      "customer_nickname": "세계마녀6551",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "68b34723-61c4-48c2-9077-2de2f8ee4e0d",
+      "customer_nickname": "시로맘3885",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "43facee5-d49c-43bd-b5ef-3f6783f9b233"
+        },
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "63dea4bd-c1d2-40d2-a5ee-5b8d88a0b801",
+      "customer_nickname": "크림/2693",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "747906d3-9cbd-4cbd-b10d-034b98469c53"
+        },
+        {
+          "quantity": 2,
+          "product_id": "49116691-6452-4109-b07c-94284a6074b9"
+        }
+      ]
+    },
+    {
+      "id": "b8f2926f-bd68-4cab-b2cf-2fc9a7d7c74a",
+      "customer_nickname": "ㅎㅎ/6418",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "39c9be56-41c8-4590-b33a-de5e0503bca0"
+        }
+      ]
+    },
+    {
+      "id": "03cd32b8-789b-45e0-ab52-0a434a12396c",
+      "customer_nickname": "엘라/9144",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 3,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "b73b43e4-d4c0-4d86-945d-66a2d5bc50d5",
+      "customer_nickname": "태태맘2836",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "ee1d1daf-652c-4d2e-a19e-0f1955007b80"
+        },
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "9fbb59b3-b2ba-4f72-8725-764f86bd1172",
+      "customer_nickname": "버터2378",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "a6bed09c-c48b-4958-af8d-850503d8acd5",
+      "customer_nickname": "헤헤/7754",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "517d589d-1cc6-42f2-9ff9-31adec5f1b9e",
+      "customer_nickname": "뿌미/8728",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "43facee5-d49c-43bd-b5ef-3f6783f9b233"
+        },
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "c47b8400-27b3-4e2d-b697-5fe283513354",
+      "customer_nickname": "라이언9085(6시이후수령)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "ee467527-5cb9-4240-972d-9852df5c4ada",
+      "customer_nickname": "시온맘/1888",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "72701398-b123-43fb-b3b0-fcb715ddcffb"
+        },
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        },
+        {
+          "quantity": 1,
+          "product_id": "135e6258-687e-4e68-9878-06d6d26ecec1"
+        }
+      ]
+    },
+    {
+      "id": "5f5821d7-559d-459d-8020-6dced5487f53",
+      "customer_nickname": "마이크/5317",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3217ae9d-d811-4e86-bc5c-2bb1713afa87"
+        }
+      ]
+    },
+    {
+      "id": "9c4468d4-b494-4979-9c73-024033aa0dc1",
+      "customer_nickname": "어피치/4679",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3217ae9d-d811-4e86-bc5c-2bb1713afa87"
+        }
+      ]
+    },
+    {
+      "id": "9ad8e2a2-2e8b-4eb0-ab48-a72f5c2e8d49",
+      "customer_nickname": "라이언/7193",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "31453ec9-6fb5-4c2b-918b-1b6e46b3ed02",
+      "customer_nickname": "여우/0325",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        },
+        {
+          "quantity": 2,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        }
+      ]
+    },
+    {
+      "id": "4377081b-5a62-4865-a678-cd87e5baeb40",
+      "customer_nickname": "으니1481",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10"
+        }
+      ]
+    },
+    {
+      "id": "19afbe5c-dfc6-46b9-8291-2e2313629ded",
+      "customer_nickname": "용이1821",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 2,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "62b4c091-d30a-4c8c-a6f7-a8a34c3315ca",
+      "customer_nickname": "아라5562",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "4b563c99-8c8e-4f7e-8aff-a80d52f2bf17",
+      "customer_nickname": "꼬꼬3052",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        }
+      ]
+    },
+    {
+      "id": "f71b8d83-b5d3-4980-b913-e399364e6b8e",
+      "customer_nickname": "도담4225",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "3217ae9d-d811-4e86-bc5c-2bb1713afa87"
+        }
+      ]
+    },
+    {
+      "id": "3bb53c8b-bde2-4680-9599-0c5ce27dbdc6",
+      "customer_nickname": "5587",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "49116691-6452-4109-b07c-94284a6074b9"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "ebdd816a-645e-4fdd-8b08-469ac0fe3feb",
+      "customer_nickname": "루키6178",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "43facee5-d49c-43bd-b5ef-3f6783f9b233"
+        }
+      ]
+    },
+    {
+      "id": "f4103f15-e8c5-4a71-800f-259149fc30b3",
+      "customer_nickname": "귀여운라이언/0660",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        },
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "453a8243-9d3e-44c0-8db9-0dad73e87e76",
+      "customer_nickname": "토토로9034",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 5,
+          "product_id": "2531f158-bec1-4347-86f6-6e98cb1c9416"
+        },
+        {
+          "quantity": 5,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        }
+      ]
+    },
+    {
+      "id": "c4b19ee2-aa2a-475c-8472-51d4876f87d8",
+      "customer_nickname": "4271",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "da6b3a5c-e82b-42b2-946a-5cca99563d08"
+        },
+        {
+          "quantity": 2,
+          "product_id": "747906d3-9cbd-4cbd-b10d-034b98469c53"
+        },
+        {
+          "quantity": 2,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ec7a33ea-838f-42c9-a102-f6321c15de95"
+        },
+        {
+          "quantity": 1,
+          "product_id": "b72d3626-f6d8-49cd-94d6-146e047c0eec"
+        }
+      ]
+    },
+    {
+      "id": "9b43d434-6e8f-420b-9c14-7db30d18bf71",
+      "customer_nickname": "네9390",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "f35fac6e-5df1-41c5-801d-efc8bfa2c0f1",
+      "customer_nickname": "날아라미스손9952",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "034ea888-f3da-48aa-ac4e-e9e718652cf6"
+        }
+      ]
+    },
+    {
+      "id": "c9f6aa76-3e01-462b-93f1-d484b885bcb7",
+      "customer_nickname": "다율맘/3407",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 1,
+          "product_id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10"
+        }
+      ]
+    },
+    {
+      "id": "51c62ce0-02eb-488a-b1bb-da7feab0f93d",
+      "customer_nickname": "그렁그렁/8289",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "acfff732-0b6c-40fe-b10d-884a35f0f6b6",
+      "customer_nickname": "울랄라곰7010",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 5,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "1dda13ec-f2f3-433f-a110-da59a94aab17",
+      "customer_nickname": "동동이맘/7062",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "f748e0c2-d4ac-466b-a2f6-08633fac4515",
+      "customer_nickname": "미미/0438",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 3,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 2,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "325ea560-1860-45bd-90ac-65bf61b1304a",
+      "customer_nickname": "3277",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 3,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "e151e9f5-cd32-4a0d-9f12-2af498d7f3c3",
+      "customer_nickname": "쩡쓰2770",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 3,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "4abe6391-fd5d-432a-868b-6927279b774e",
+      "customer_nickname": "4987",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 4,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 2,
+          "product_id": "43facee5-d49c-43bd-b5ef-3f6783f9b233"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ee1d1daf-652c-4d2e-a19e-0f1955007b80"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "2330dcc6-87c0-4717-979e-a297190955de",
+      "customer_nickname": "핑크김4475",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "726a4282-3946-4b94-a325-c91f8c685b09",
+      "customer_nickname": "깡3681",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "ef239075-212e-45a9-af4a-885bbdb47dd6"
+        },
+        {
+          "quantity": 1,
+          "product_id": "43facee5-d49c-43bd-b5ef-3f6783f9b233"
+        },
+        {
+          "quantity": 1,
+          "product_id": "135e6258-687e-4e68-9878-06d6d26ecec1"
+        },
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 3,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        }
+      ]
+    },
+    {
+      "id": "1803cf06-9ade-499d-be61-180ac058be11",
+      "customer_nickname": "티끌모아파산/4044",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        }
+      ]
+    },
+    {
+      "id": "8b2ca1bc-b134-4755-811e-3c6225705538",
+      "customer_nickname": "NY/3135",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "74b406e9-9279-4424-9e75-f69deac8929d",
+      "customer_nickname": "맛있는게좋아3901",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 3,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "5ae19f67-dc80-4f8f-8995-1c157687cb55",
+      "customer_nickname": "스카피1355",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "fd6af912-9a38-4dee-93d6-4596f6d448eb",
+      "customer_nickname": "매니저",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 2,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "b16352cc-63d0-48c8-918e-9a8fd4c9091b"
+        },
+        {
+          "quantity": 2,
+          "product_id": "ee1d1daf-652c-4d2e-a19e-0f1955007b80"
+        },
+        {
+          "quantity": 1,
+          "product_id": "f00caebf-65cc-44bf-9f14-3b661144b5de"
+        },
+        {
+          "quantity": 2,
+          "product_id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de"
+        },
+        {
+          "quantity": 2,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 2,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 2,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "44227c5b-0f85-4cdd-91c2-9266628ba56a",
+      "customer_nickname": "우브로/1230",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "42488869-69da-4fec-aa5a-e361672e0721",
+      "customer_nickname": "승승5752",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "cd11e8b6-90e8-4cc0-9744-fd791279f779",
+      "customer_nickname": "으니/5377",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "5ed19b72-c1da-4569-91e9-4893d565c0b7",
+      "customer_nickname": "맛나2552",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        },
+        {
+          "quantity": 1,
+          "product_id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10"
+        }
+      ]
+    },
+    {
+      "id": "7a64089a-4be0-46f2-a940-c1a321ed1ce5",
+      "customer_nickname": "쭈쭈니7699",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824"
+        },
+        {
+          "quantity": 4,
+          "product_id": "fa184021-63a6-4c27-96d4-2e2131a16e59"
+        },
+        {
+          "quantity": 1,
+          "product_id": "641e952e-21d6-4260-aa2d-3d51626faf26"
+        }
+      ]
+    },
+    {
+      "id": "f480e45f-9013-44e9-a768-ae518d91ce59",
+      "customer_nickname": "오로라/9098",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "3e8d92bf-cedb-45a5-a36e-018867fa9454",
+      "customer_nickname": "제이지/4151",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "c692d1ec-7738-4f9d-a67f-24b8b234ead9",
+      "customer_nickname": "쩌니/8786(6시이후수령)",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "aef17d71-ca41-411b-a835-694d1131351f"
+        }
+      ]
+    },
+    {
+      "id": "469627d1-0d65-450a-a1bd-d21d5a2ac7c4",
+      "customer_nickname": "준/0513",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        },
+        {
+          "quantity": 1,
+          "product_id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019"
+        }
+      ]
+    },
+    {
+      "id": "c9f7a2b9-4a5c-4f88-9c3d-cc95f1e490b5",
+      "customer_nickname": "빵/3795",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    },
+    {
+      "id": "8bddcce4-be6b-47bb-985a-b7e18ff719ca",
+      "customer_nickname": "덕구/7754",
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "is_received": false,
+      "pickup_date": "2026-03-30",
+      "items": [
+        {
+          "quantity": 1,
+          "product_id": "6b024df0-8d94-40a8-b682-22d1ea2a0328"
+        }
+      ]
+    }
+  ],
+  "ordersData": [
+    {
+      "id": "c692d1ec-7738-4f9d-a67f-24b8b234ead9",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쩌니/8786(6시이후수령)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:00.324782+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "3e8d92bf-cedb-45a5-a36e-018867fa9454",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "제이지/4151",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:01.374016+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f480e45f-9013-44e9-a768-ae518d91ce59",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "오로라/9098",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:02.063018+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5ed19b72-c1da-4569-91e9-4893d565c0b7",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "맛나2552",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:04.611092+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "726a4282-3946-4b94-a325-c91f8c685b09",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "깡3681",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:14.820964+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "2330dcc6-87c0-4717-979e-a297190955de",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "핑크김4475",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:17.131249+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "4abe6391-fd5d-432a-868b-6927279b774e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "4987",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:17.841912+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e151e9f5-cd32-4a0d-9f12-2af498d7f3c3",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쩡쓰2770",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:19.656656+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9b43d434-6e8f-420b-9c14-7db30d18bf71",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "네9390",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:27.26798+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c4b19ee2-aa2a-475c-8472-51d4876f87d8",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "4271",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:27.906998+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f71b8d83-b5d3-4980-b913-e399364e6b8e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "도담4225",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:33.791479+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "4b563c99-8c8e-4f7e-8aff-a80d52f2bf17",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "꼬꼬3052",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:34.413741+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "62b4c091-d30a-4c8c-a6f7-a8a34c3315ca",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "아라5562",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:35.057196+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "19afbe5c-dfc6-46b9-8291-2e2313629ded",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "용이1821",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:35.655297+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "31453ec9-6fb5-4c2b-918b-1b6e46b3ed02",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "여우/0325",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:37.396014+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9ad8e2a2-2e8b-4eb0-ab48-a72f5c2e8d49",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "라이언/7193",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:39.103828+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9c4468d4-b494-4979-9c73-024033aa0dc1",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "어피치/4679",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:40.204681+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5f5821d7-559d-459d-8020-6dced5487f53",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "마이크/5317",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:40.780988+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ee467527-5cb9-4240-972d-9852df5c4ada",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "시온맘/1888",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:41.339268+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "a6bed09c-c48b-4958-af8d-850503d8acd5",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "헤헤/7754",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:44.151686+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9fbb59b3-b2ba-4f72-8725-764f86bd1172",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "버터2378",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:44.716187+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "b73b43e4-d4c0-4d86-945d-66a2d5bc50d5",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "태태맘2836",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:45.283989+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "0c6efb3d-e9c6-4db1-bc2f-42b009442c4b",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "세계마녀6551",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:49.232095+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "23ac7bf2-9241-475b-9618-5e6ae6d51303",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "엄지척/2962",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:49.791114+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "39a7ec6f-a42f-4b6d-8168-f70603bb05ab",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "대한3545",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:50.346585+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "cd11e8b6-90e8-4cc0-9744-fd791279f779",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "으니/5377",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:06.133006+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "42488869-69da-4fec-aa5a-e361672e0721",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "승승5752",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:06.835379+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "44227c5b-0f85-4cdd-91c2-9266628ba56a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "우브로/1230",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:07.500241+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5ae19f67-dc80-4f8f-8995-1c157687cb55",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "스카피1355",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:11.096618+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "74b406e9-9279-4424-9e75-f69deac8929d",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "맛있는게좋아3901",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:11.822922+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "8b2ca1bc-b134-4755-811e-3c6225705538",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "NY/3135",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:13.097227+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1803cf06-9ade-499d-be61-180ac058be11",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "티끌모아파산/4044",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:13.778572+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1dda13ec-f2f3-433f-a110-da59a94aab17",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "동동이맘/7062",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:22.402684+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "acfff732-0b6c-40fe-b10d-884a35f0f6b6",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "울랄라곰7010",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:23.06861+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "51c62ce0-02eb-488a-b1bb-da7feab0f93d",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "그렁그렁/8289",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:23.707587+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c9f6aa76-3e01-462b-93f1-d484b885bcb7",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "다율맘/3407",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:24.39034+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f4103f15-e8c5-4a71-800f-259149fc30b3",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "귀여운라이언/0660",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:30.999558+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "4377081b-5a62-4865-a678-cd87e5baeb40",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "으니1481",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:36.464121+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c47b8400-27b3-4e2d-b697-5fe283513354",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "라이언9085(6시이후수령)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:42.651035+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "517d589d-1cc6-42f2-9ff9-31adec5f1b9e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "뿌미/8728",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:43.220532+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "68b34723-61c4-48c2-9077-2de2f8ee4e0d",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "시로맘3885",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:48.311879+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "fd6af912-9a38-4dee-93d6-4596f6d448eb",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "매니저",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:08.359595+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f748e0c2-d4ac-466b-a2f6-08633fac4515",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "미미/0438",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:21.337785+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f35fac6e-5df1-41c5-801d-efc8bfa2c0f1",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "날아라미스손9952",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:25.848954+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "453a8243-9d3e-44c0-8db9-0dad73e87e76",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "토토로9034",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:29.989267+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ebdd816a-645e-4fdd-8b08-469ac0fe3feb",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "루키6178",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:32.385963+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "3bb53c8b-bde2-4680-9599-0c5ce27dbdc6",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "5587",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:33.002316+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "03cd32b8-789b-45e0-ab52-0a434a12396c",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "엘라/9144",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:46.210443+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "b8f2926f-bd68-4cab-b2cf-2fc9a7d7c74a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "ㅎㅎ/6418",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:46.769821+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "63dea4bd-c1d2-40d2-a5ee-5b8d88a0b801",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "크림/2693",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:47.327953+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5cccd5c9-fe32-4d8b-b142-df90294de36a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "라떼1685(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:50.955267+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c53b8d65-f7a1-4360-b2c9-2169498231e7",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "냠이4457",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:51.529584+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "062938fb-a8c4-4683-a37b-f1c4b9344102",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "허니버터4931",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:52.627838+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "107951f1-b380-49a2-834f-e40c0959d69f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "무지/5995",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:53.168596+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f7b3343c-9d13-4ab2-8c4b-81c98895331a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "꼼꼼0485",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:53.729212+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e8e6c8cd-ee0b-4186-9d44-d1d27ca2c0d0",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "또리3272",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:54.282506+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5fedc944-9ae9-4d55-b381-1ec847c58b4f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "아메리/5917",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:57.736597+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "762b167d-8b4a-4900-9c0c-4794983b6c00",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해해2562",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:58.29032+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "090cf51c-1714-4d31-b326-21d83a66854e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해오름1351(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:59.390411+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "7dccac87-9385-47c3-a391-8dc2f7fe5166",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "클라/0824",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:01.357642+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "335ea6e4-9f72-4f16-92f5-e45933d6e397",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "신난어피치1468(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:01.919942+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d51d2b7f-6ead-475b-9db0-f34c083cf580",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "주1004(6364)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:02.497598+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "60cc567f-0d5e-474b-a525-04c6b9c1193c",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쌈이5109",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:03.082593+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1a50da92-0b1e-429d-8e8e-af302f9c2095",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "애교뿜뿜무지/2837",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:03.64822+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ccf50130-ef35-41e3-8235-5d51ee90f48e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "제이제이2773",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:04.585676+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f8dfa4c7-d054-42d8-8470-c63c6b6aa679",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "새우버거3154",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:05.329284+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ac1df473-4d58-4545-95e0-f3edf92076b2",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "란5023",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:05.909397+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "50ab6aab-947e-4b2d-ad1d-0f0f33af80de",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "지우하린맘/1571",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:06.468843+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1a6756ab-2e02-4492-bd11-fe5ac8793dcd",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "츄르/1633",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:07.7549+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "14184197-5cac-4244-a79e-419b385cd331",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "유자7128",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:08.481926+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "31ff4b58-f4a1-45e8-a7fc-44b7bdcb0246",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "윤슬/4141",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:09.419959+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e094b334-2a27-45cc-8487-f4988541b88e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "토끼둘맘1412",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:10.005665+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1ebffb40-c2a1-4d27-9688-c7da05f02dce",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "귤0415",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:10.581717+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "347b5081-3609-449a-ba03-a4af309627e0",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "엄지척0808",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:11.680472+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c65775cb-aaac-4810-bb74-15ba19385190",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "둡스9067",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:12.611631+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "46b83009-4a05-4809-b151-18bc3a2980f7",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "미소맘/3796",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:13.555595+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ffba18e4-6c5b-405e-8d04-f46d0c479f7d",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "으쑥으쑥/1645",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:14.117935+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f99785cb-a88f-4747-b077-302c2477f69a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "미니미니9490",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:14.671828+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "de700db3-f0fa-4b2e-8b8c-978078279726",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "이용/1417",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:15.259692+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f8853fcb-84c3-431c-a58b-ba313139177b",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "엘빈/9096",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:15.637132+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f27bffaf-36a4-48d8-91d7-38b2321e24fd",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "1916",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:16.010361+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "7415101c-f77b-49f0-9502-3c035cb080f0",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "자랑하는라이언5545",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:16.387847+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "476846a2-1a48-4362-8112-7d9c1282d832",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "준7341",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:16.767594+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "71c20b46-0234-40a6-a6f0-cbd3e611ee46",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "십가군대8214",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:17.50916+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9b259b33-6f77-4aa3-bf26-dba8e1bfbad2",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "또용/4436",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:18.436394+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c86195d2-e470-4d83-bd08-a76414e9c388",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "튤리비6272",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:18.818983+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "123cb5a0-f310-4982-a1fd-7b5f66fa0325",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "꾸미/1190",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:19.204231+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "df41854d-9c90-42f0-9829-f5740e2a7079",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "곰곰0233",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:19.756707+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f812ff2f-95d8-4f4f-9829-0a8bf8509da4",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "몽상/3398",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:20.30436+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d83dd46c-f038-472a-a66a-6bae7b4f4f61",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "은츄/0626",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:21.051199+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "64dd00c2-ed4f-443d-b62e-4e4dc82518fc",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "뿌영5074",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:21.596613+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "35f1aa63-a71f-4deb-9dfd-84bebde3a3a4",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "햇살/0140",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:22.342553+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "75a9f549-0116-469d-b413-1d325e26ece8",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "초이1345",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:23.448573+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "01122824-862c-470c-b4d6-77ff019e79f2",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쏭님1158",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:24.01589+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "12224bc4-464c-4539-a0b8-ced464e7c56c",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "졸린라이언/0002",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:24.562498+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "2bfbbaf0-9368-4804-bb6d-5d7d1c1b9a76",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "불네오2878",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:25.52167+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "48be825b-98c5-44eb-9556-8fb51825b866",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "럭키비키/5003",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:26.823642+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9c957c3d-eb7c-40fb-8665-c94f81287b18",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "고고/3303",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:27.385198+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "8b609b18-92e8-4284-978c-ed8e356aa931",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "영영영/9598",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:27.939062+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "015f612d-e8d5-40e6-874a-aaf4d59e1789",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "ㄱ.김부자/0728",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:29.238826+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "16c8e7e0-c34c-4781-a493-fe6c34b02b9f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "뽀/3551",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:29.790397+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5cae1a3d-2bd3-49c1-8c32-c8ce24116d3a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "핑크김4475(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "관리자 수동 복구",
+      "customer_memo_2": null,
+      "created_at": "2026-03-27T17:16:34.076286+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "733c8a42-bdfb-4243-abd3-04efbfcaf0cf",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "무지/5995",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-28T01:18:12.62484+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9fe12d22-018d-4c0e-861e-b6b2a76b00a2",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "루나8852",
+      "is_received": false,
+      "customer_memo_1": "관리자 수동 복구",
+      "customer_memo_2": null,
+      "created_at": "2026-03-28T02:47:23.441249+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f75072ae-ecb5-4753-abbb-94e3c01e6721",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "튜브/8458(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:42:28.32151+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "7a64089a-4be0-46f2-a940-c1a321ed1ce5",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쭈쭈니7699",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:02.744261+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "8bddcce4-be6b-47bb-985a-b7e18ff719ca",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "덕구/7754",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:40:57.932104+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "be5b7ebe-e6e9-42d2-89fb-97257a030985",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "까까0400",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:44:45.364923+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ad7cdffd-091d-4904-b861-0957c58b6110",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "크림/2693",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:44:31.229793+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f223871d-6bea-4073-95f8-69eaf0786627",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "멜로디/9744",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:45:09.80473+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "b13d3150-1fff-42f2-bf6c-562afdc20533",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "율맘2281",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:34:58.47139+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "452a0938-3315-438c-86fc-01307c450629",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "뽀/0426",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:24:54.491713+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d40d122c-c96f-4f62-ac83-fb64bb233441",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해해2562",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:25:12.884605+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f55e974f-dbaa-4867-9047-56ce14ab2cb4",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "졸린라이언/0002",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:25:20.789915+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ba37a7a3-991d-466e-940a-4865f76541b1",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "오레오3260",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:25:55.561813+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5cc846b6-9390-43f6-bd21-61f373c15fbc",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "오레오3260",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:27:37.140349+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "918106d4-cb68-4c77-ada6-4bb672d1157f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "김딱딱이8134",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:35:43.764832+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ec933352-0a47-477c-92d1-dff7ea939bda",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "ㅎㅎ2100",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T11:05:00.41331+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f22558d5-3ba4-42df-8c2b-ca589e688b82",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "4271",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:27:52.748532+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "4b6cf4b5-e7bc-45b8-9e2e-a6f8ea030dda",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "도담4225",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:29:45.548165+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "21c781b2-5f6b-46c0-a7b9-492a496354e5",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "란5023",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:31:08.534896+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5746de25-5a13-4bed-8067-01de5e6edf08",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쩡쓰2770",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:24:10.103219+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "a93ad0f4-d2bd-47f0-b73b-0203c850d49f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "수주니/9181",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:26:30.746314+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c9f7a2b9-4a5c-4f88-9c3d-cc95f1e490b5",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "빵/3795",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:40:58.606912+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9b4bef56-fe06-439f-aa6e-0fd1cdc184dc",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "4987",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:24:33.412389+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "3de439e7-598a-4988-824f-c3a9805ff789",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "으니/5377",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:26:43.916445+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c8c4ba87-ae72-4f1d-8716-da372c0174ea",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "귀여운라이언8975",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:27:27.844144+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "4826cf18-fb53-4cbd-a938-1a60fd330327",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "로즈마리/8874",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:30:25.715654+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "b44150c2-d244-4792-a327-ceb081bd375c",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "1916",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:25:28.938004+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "6feb4866-c3f5-42d2-a059-6cde54c079c1",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "미소맘/3796",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:30:43.404073+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d2e9e252-cc15-40ab-8bb0-55e60c0fd029",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "꽃순이3868",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:33:04.693395+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f7a9d6f6-b6fb-428e-9303-d1f1567a53bd",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쩡쓰2770",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:29:22.179134+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "22e5a002-1bb9-4f3e-8d93-e6946db03c34",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "지우하린맘/1571",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:30:13.649488+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5ba755a5-dfb3-48c3-a4c5-0a67c7136283",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "제이지/4151",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:31:58.585219+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "3a4b0294-4d8b-4fd2-a060-b0b2c46113fd",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "깡3681",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:32:40.816315+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "5a1d4111-4d4e-4dc1-8a8f-36db82bc7522",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "식빵/8777",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T11:05:15.449203+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "a289e6a4-9e8d-4201-a66c-b099ba510731",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "또리토리4561(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:32:17.596431+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "a5c1390d-b466-4e25-bc43-eac328c3a005",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "오레오3260",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:32:29.964731+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f72fc128-d7da-4fea-8be7-44c641026a3a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "란5023",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:31:17.199977+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d923cc61-cc41-4899-9f6f-42cd08606a20",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "2331",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:26:56.460072+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f63409c3-e3e2-4dcd-bec0-1a1fd4c28112",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "튜브/8458(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:28:35.86937+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "64f75519-f743-46c4-a918-72cdd7541986",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해오름1351(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:30:02.185943+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "36a815d3-4f72-414c-88ea-f7bcef3b1767",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "운동하는라이언/9546",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:30:35.644868+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "72a249ac-0e91-49f7-8e87-36b6e635c963",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "라이언9085(6시이후수령)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:34:18.340076+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "2987ad4d-7676-4d8d-a024-2b9d1ade2fc3",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해해2562",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T11:05:25.606279+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "64de9377-3143-48d4-89ac-b5b4d585b11f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "꽃순이3868",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:27:16.534875+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "419f5e18-6c2b-407c-ac3e-a7f6e874924c",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "봉봉씨/8901",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:28:20.042307+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "3d6d4e3f-6ee6-4e6d-b86a-72dd99bb37e6",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "헤헤/7754",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:28:48.497925+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "7892f5e4-5139-4545-9e6f-a142c28bf54b",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "몽상/3398",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:28:02.380809+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f662a48a-75b9-4213-97d3-76c7ff614961",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쑥/8346",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:55:35.428215+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "212d49df-fed6-4f04-9386-8ee6ff82c9ce",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "키키7989",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:35:19.510631+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "bbd4ff88-9053-4b85-a90a-ea87cb164100",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "나9050",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:34:46.273228+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d9bcc612-798e-4f78-b740-4fc0accffe13",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "파르파르8519",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:55:07.357045+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "0ba02c99-66e6-4f48-ad43-22ad186dcf18",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "우서기9253",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:36:14.07381+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "94e154d9-e415-4603-a6ee-a15aea9732fe",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "우브로/1230",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:55:22.577935+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ac4d5a5e-f17b-4af0-84cc-01744b6d6b4d",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "오레오3260",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:36:29.958902+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "ae83656b-2eb1-4dfa-ae7e-0ea1be7228d6",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해오름1351(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T10:55:43.727334+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "dd4ffde2-2ec2-411b-bca0-451e84af8da3",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "해오름7116(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:54.828955+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "0dd885ce-3624-4b69-840e-072d55d22779",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "앙4484",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T11:15:15.091737+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "325ea560-1860-45bd-90ac-65bf61b1304a",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "3277",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:41:20.681754+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "469627d1-0d65-450a-a1bd-d21d5a2ac7c4",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "준/0513",
+      "is_received": false,
+      "customer_memo_1": "",
+      "customer_memo_2": "",
+      "created_at": "2026-03-27T16:40:59.328914+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "6f24b924-7df4-476a-8273-a35a90faf575",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "오레오3260",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:22:30.084835+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "edd3e390-d812-4825-8d51-c0322666d956",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "랄라라랄라/6956",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:22:39.817942+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "c0684120-71d5-4672-93f8-edc5e2026004",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "지우하린맘/1571",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:20:11.946852+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "889397e2-f000-4d01-9a51-287591e23200",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "앙4484",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:20:24.638403+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e58de7cb-447d-41c1-b72d-4aa305e051b7",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "파세6221(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:20:42.583828+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "7b3f308e-cf98-4adc-ab18-96b0f95dc10d",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "달비0457",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:20:56.244288+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1d6713ce-2281-4c78-80f7-2d3f67d7b071",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "율맘2281",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:21:14.682129+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "cce390a9-16a5-4950-a4d1-748785be2dae",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "복슬0916",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:21:33.708635+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "446b9575-2109-4a9d-b989-28f0c2459548",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "율맘2281",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:21:51.16981+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "8b663d27-48cf-411a-8b77-344d4d097a50",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쿠루8159",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:22:57.052793+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "f8a3429c-d90c-4df6-8b2e-35f18f58c4ca",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "쩌니/8786(6시이후수령)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:23:33.109395+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "75b642e4-b514-4497-af3b-290c8de7517c",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "헬리/0511",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:23:49.188636+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "09aef4bf-76cb-45ab-a789-cebf2e20e226",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "아기새/0367",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:24:06.230522+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e5080ebe-da80-410d-b094-67e7beb2e175",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "불네오2878",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:24:24.119363+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "40e49204-378a-4e93-b9f9-587f5c8e5c97",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "우서기9253",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:24:37.979377+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "6e7d095a-d29c-4ff4-98d0-3157dc1f8e94",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "신난튜브/9270",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:25:10.152492+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "b6bdc1d8-5544-4b07-92f3-0ab3dcf2b795",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "4271",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:25:21.383259+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "9cdaf3da-0a99-4ba6-b328-9dac1e82ad13",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "로즈바나나4338",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:25:34.726926+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "93e3c573-71ee-4f56-8c28-153127eb458e",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "과일좋아5243",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-30T14:25:45.910437+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "fd26ae83-202b-4056-b4ec-9fb4e72d411b",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "크림/2693",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:03:50.196398+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e15cacfc-6b1e-460b-ad98-ca37188d71d2",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "냠냠0778",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:03:59.414961+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "d0ab0549-aba4-4ac5-81f1-47194ea4a662",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "라떼1685(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:04:05.996798+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "1825fe86-175d-4c8c-8421-5e33e5be9849",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "준7341",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:04:12.690777+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "05905a3e-e7d6-47f6-b441-0524d6b88dfa",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "굿굿0245",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:04:17.792057+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "84054a35-67b2-4cc5-8dec-f4c803756e77",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "캔디9891(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:04:27.046178+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "e3503cf8-1883-46da-8120-cb44366c2c58",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "깡3681",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T02:44:30.510366+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "3ecd2da9-8131-4c03-9b48-6390acf3aae3",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "깨니/7624",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-03-31T03:24:52.089614+00:00",
+      "is_hidden": false
+    },
+    {
+      "id": "7d07908b-b33b-46b6-9ff4-9151736b3e37",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "pickup_date": "2026-03-30",
+      "customer_nickname": "갱후9137(6시이후픽업)",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-04-01T03:13:10.264959+00:00",
+      "is_hidden": false
+    }
+  ],
+  "productsData": [
+    {
+      "id": "5d4ddb00-5d0d-48da-aef6-7cdef6b2f509",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "왕감자빵",
+      "display_name": "왕감자빵",
+      "price": 6900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [
+        "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/11d603af-ab54-4c2e-9043-319cccdd6b7a/1774918678074_684d22t.png"
+      ],
+      "description": "",
+      "created_at": "2026-04-01T16:23:50.853205+00:00",
+      "incoming_price": 0,
+      "image_url": "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/11d603af-ab54-4c2e-9043-319cccdd6b7a/1774918678074_684d22t.png",
+      "is_visible": true,
+      "is_stocked": false,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "c504ab2b-4eb2-4315-872a-956b4adf8324",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "동결건조곤드레나물",
+      "display_name": "동결건조곤드레나물",
+      "price": 2900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:42:14.29513+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "640fcf25-8db0-41ed-954b-cb97d2be2b88",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "마일드썬림",
+      "display_name": "마일드썬림",
+      "price": 0,
+      "allocated_stock": 500,
+      "deadline_date": "2026-03-31",
+      "deadline_time": "21:16:00",
+      "image_urls": [
+        "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef/1774865802050_1yplgcn.png"
+      ],
+      "description": "",
+      "created_at": "2026-03-30T07:30:04.294218+00:00",
+      "incoming_price": 0,
+      "image_url": "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef/1774865802050_1yplgcn.png",
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "ef239075-212e-45a9-af4a-885bbdb47dd6",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "고구마빵",
+      "display_name": "고구마빵",
+      "price": 5900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:15.365523+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "43facee5-d49c-43bd-b5ef-3f6783f9b233",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "시몬카스테라",
+      "display_name": "시몬카스테라",
+      "price": 4900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:15.74141+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "b16352cc-63d0-48c8-918e-9a8fd4c9091b",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "쇼핑캐리어특대형블랙",
+      "display_name": "쇼핑캐리어특대형블랙",
+      "price": 53900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:08.945621+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "461a6bd2-f8b7-4c02-bf4a-0a2be2e0d824",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "라구파스타",
+      "display_name": "라구파스타",
+      "price": 0,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:03.308511+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "135e6258-687e-4e68-9878-06d6d26ecec1",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "티니핑딸기품은초코",
+      "display_name": "티니핑딸기품은초코",
+      "price": 4390,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:16.106644+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "fa184021-63a6-4c27-96d4-2e2131a16e59",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "까르보나라파스타",
+      "display_name": "까르보나라파스타",
+      "price": 0,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:03.6826+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "641e952e-21d6-4260-aa2d-3d51626faf26",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "투움바파스타",
+      "display_name": "투움바파스타",
+      "price": 0,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:04.106517+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "ee1d1daf-652c-4d2e-a19e-0f1955007b80",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "오뚜기만능볶음밥",
+      "display_name": "오뚜기만능볶음밥",
+      "price": 5900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:09.311052+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "6b024df0-8d94-40a8-b682-22d1ea2a0328",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "왕갈치",
+      "display_name": "왕갈치",
+      "price": 6900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:40:58.121284+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "f00caebf-65cc-44bf-9f14-3b661144b5de",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "오뚜기오리지널핫도그",
+      "display_name": "오뚜기오리지널핫도그",
+      "price": 5900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:09.695712+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "034ea888-f3da-48aa-ac4e-e9e718652cf6",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "한맥불벅",
+      "display_name": "한맥불벅",
+      "price": 4900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:26.826957+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "dbde4fbc-88bb-413c-8a9d-6ae0671c7c10",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "갈현동떡볶이",
+      "display_name": "갈현동떡볶이",
+      "price": 5900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:05.619591+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "49116691-6452-4109-b07c-94284a6074b9",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "케요네즈사라다빵",
+      "display_name": "케요네즈사라다빵",
+      "price": 2900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:33.187799+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "e721cb95-3fe1-4d29-b9ae-2b1d51b22019",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "밤설기",
+      "display_name": "밤설기",
+      "price": 0,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:40:59.897109+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "3e6fcffa-8ebe-4a8f-9377-6850a3b8c3de",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "커피빈카페라떼파우치",
+      "display_name": "커피빈카페라떼파우치",
+      "price": 7900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:10.066102+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "aef17d71-ca41-411b-a835-694d1131351f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "반반가래떡",
+      "display_name": "반반가래떡",
+      "price": 6900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:00.889034+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "ec7a33ea-838f-42c9-a102-f6321c15de95",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "통통김말이",
+      "display_name": "통통김말이",
+      "price": 3900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:29.205594+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "747906d3-9cbd-4cbd-b10d-034b98469c53",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "마산아구찜",
+      "display_name": "마산아구찜",
+      "price": 7900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:28.468193+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "b72d3626-f6d8-49cd-94d6-146e047c0eec",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "통통순대",
+      "display_name": "통통순대",
+      "price": 3900,
+      "allocated_stock": 19,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:29.572386+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "2531f158-bec1-4347-86f6-6e98cb1c9416",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "감자빵",
+      "display_name": "감자빵",
+      "price": 6900,
+      "allocated_stock": 17,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:30.183347+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "3217ae9d-d811-4e86-bc5c-2bb1713afa87",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "배도라지음료",
+      "display_name": "배도라지음료",
+      "price": 9900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:33.969087+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "72701398-b123-43fb-b3b0-fcb715ddcffb",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "카무트현미밥",
+      "display_name": "카무트현미밥",
+      "price": 8900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:42.260344+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "39c9be56-41c8-4590-b33a-de5e0503bca0",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "크림치즈깜빠뉴",
+      "display_name": "크림치즈깜빠뉴",
+      "price": 4900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:46.953319+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "95b4dfd0-e406-4023-8d19-4efa9999a69f",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "젤라또",
+      "display_name": "젤라또",
+      "price": 5900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:55.001674+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "47398c8a-647a-447a-8638-9ee3fcb2b4aa",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "찹쌀치즈볼",
+      "display_name": "찹쌀치즈볼",
+      "price": 5390,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:56.814235+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "0756120c-44d4-4e55-b585-4100919d1070",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "새싹현미",
+      "display_name": "새싹현미",
+      "price": 5900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:42:12.220054+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "8321f4e0-7471-466d-833b-714ec4709c68",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "수수쌀",
+      "display_name": "수수쌀",
+      "price": 3900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:42:12.797029+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "da6b3a5c-e82b-42b2-946a-5cca99563d08",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "쇼핑캐리어대형실버",
+      "display_name": "쇼핑캐리어대형실버",
+      "price": 43900,
+      "allocated_stock": 20,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": null,
+      "created_at": "2026-03-27T16:41:28.093709+00:00",
+      "incoming_price": 0,
+      "image_url": null,
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    },
+    {
+      "id": "88147867-75d5-4157-9ded-2dc443710851",
+      "store_id": "a8d6fa4e-5e7f-44eb-9111-c6d06f8eebef",
+      "target_date": "2026-03-30",
+      "is_regular_sale": false,
+      "collect_name": "팽현숙갈비탕",
+      "display_name": "팽현숙갈비탕",
+      "price": 6900,
+      "allocated_stock": 18,
+      "deadline_date": null,
+      "deadline_time": null,
+      "image_urls": [],
+      "description": "",
+      "created_at": "2026-03-27T17:15:02.500797+00:00",
+      "incoming_price": 5900,
+      "image_url": "",
+      "is_visible": true,
+      "is_stocked": true,
+      "box_quantity": null,
+      "is_hidden": false,
+      "product_memo": "",
+      "tiered_prices": [],
+      "unit_text": ""
+    }
+  ]
+}

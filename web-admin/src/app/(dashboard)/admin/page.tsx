@@ -74,6 +74,7 @@ export default function AdminPage() {
     // Security & Logic states
     const [storeMetadata, setStoreMetadata] = useState<Record<string, any>>({})
     const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
+    const [sortOption, setSortOption] = useState<'newest' | 'name'>('newest')
 
     // Approval Dialog states
     const [approveModalOpen, setApproveModalOpen] = useState(false)
@@ -155,6 +156,10 @@ export default function AdminPage() {
         if (selectedBrandFilter === 'unassigned') return !metaBrand;
         return metaBrand === selectedBrandFilter;
     });
+
+    const displayStores = sortOption === 'name' 
+        ? [...filteredActiveStores].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'))
+        : filteredActiveStores;
 
     // Handlers
     const openApproveModal = (store: any) => {
@@ -253,9 +258,13 @@ export default function AdminPage() {
         if (!confirm(`[${email}] 가맹점 계정으로 즉시 로그인하시겠습니까?\n\n- 이 기능은 비밀번호 없이 해당 매장의 대시보드에 다이렉트로 접속합니다.\n- 접속 후 기존 엑셀 데이터를 자유롭게 업로드(복원)할 수 있습니다.\n- 새 창으로 열립니다.`)) return;
         
         try {
+            const { data: { session } } = await supabase.auth.getSession();
             const res = await fetch('/api/admin/generate-login-link', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
                 body: JSON.stringify({ store_email: email })
             })
             const data = await res.json()
@@ -451,29 +460,47 @@ export default function AdminPage() {
                             <Badge className="bg-emerald-600 rounded-full px-2 shadow-sm font-mono text-base">{filteredActiveStores.length}</Badge>
                         </h3>
 
-                        {/* Brand Filter Row */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            <button
-                                onClick={() => setSelectedBrandFilter('all')}
-                                className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === 'all' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                            >
-                                전체 보기
-                            </button>
-                            {adminConfig?.allowed_brands?.map((brand: string) => (
+                        {/* Brand Filter & Sort Row */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <div className="flex flex-wrap gap-2">
                                 <button
-                                    key={brand}
-                                    onClick={() => setSelectedBrandFilter(brand)}
-                                    className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === brand ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                    onClick={() => setSelectedBrandFilter('all')}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === 'all' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                                 >
-                                    {brand}
+                                    전체 보기
                                 </button>
-                            ))}
-                            <button
-                                onClick={() => setSelectedBrandFilter('unassigned')}
-                                className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === 'unassigned' ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                            >
-                                미분류 (기타)
-                            </button>
+                                {adminConfig?.allowed_brands?.map((brand: string) => (
+                                    <button
+                                        key={brand}
+                                        onClick={() => setSelectedBrandFilter(brand)}
+                                        className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === brand ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                    >
+                                        {brand}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setSelectedBrandFilter('unassigned')}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${selectedBrandFilter === 'unassigned' ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    미분류 (기타)
+                                </button>
+                            </div>
+                            
+                            {/* Sort Toggle */}
+                            <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-inner">
+                                <button
+                                    onClick={() => setSortOption('newest')}
+                                    className={`px-3 py-1.5 rounded-md text-[13px] font-bold transition-all ${sortOption === 'newest' ? 'bg-white text-slate-800 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    최신 등록순
+                                </button>
+                                <button
+                                    onClick={() => setSortOption('name')}
+                                    className={`px-3 py-1.5 rounded-md text-[13px] font-bold transition-all ${sortOption === 'name' ? 'bg-white text-slate-800 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    가나다순 정렬
+                                </button>
+                            </div>
                         </div>
 
                         <div className="bg-white border rounded-xl overflow-x-auto shadow-sm">
@@ -488,8 +515,8 @@ export default function AdminPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/60">
-                                    {filteredActiveStores.length === 0 && (<tr><td colSpan={5} className="p-6 text-center text-muted-foreground">조건에 맞는 운영 중인 매장이 없습니다.</td></tr>)}
-                                    {filteredActiveStores.map((store: any) => {
+                                    {displayStores.length === 0 && (<tr><td colSpan={5} className="p-6 text-center text-muted-foreground">조건에 맞는 운영 중인 매장이 없습니다.</td></tr>)}
+                                    {displayStores.map((store: any) => {
                                         const meta = storeMetadata[store.id] || {}
                                         return (
                                         <tr key={store.id} className="hover:bg-slate-50/50 transition-colors">

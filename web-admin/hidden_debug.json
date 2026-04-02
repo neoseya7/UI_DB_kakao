@@ -1,0 +1,92 @@
+[
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "8f16fd80-bae9-4303-b68b-f409067496d4",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "6841"
+    }
+  },
+  {
+    "quantity": 2,
+    "orders": {
+      "id": "21a1389a-3c4f-4590-8b7b-2e222c6e86b7",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "위버4671"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "61ad18c4-102a-417e-97d0-b4f1f78949dc",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "민트초코5114"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "d6283662-5d93-4494-9373-5da0172149e8",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "춘식6909"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "7b670219-ba99-4798-8aee-a99d3e2f0565",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "춘식6909"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "4797e884-48b9-4199-9785-7994e922146f",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "송주연"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "d4840f4a-775b-4089-82be-82dd2fb3e441",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "위버랑1123"
+    }
+  },
+  {
+    "quantity": 2,
+    "orders": {
+      "id": "c162d922-2004-4e6b-b480-ca72d81e724f",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "사랑0556"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "ef8f8b9e-370f-4bfb-8460-8b833df6b571",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "앙몬드3474"
+    }
+  },
+  {
+    "quantity": 1,
+    "orders": {
+      "id": "873d83d0-752f-49f5-8848-b4270f7d2b9d",
+      "is_hidden": false,
+      "pickup_date": "2026-03-31",
+      "customer_nickname": "벨라3601"
+    }
+  }
+]

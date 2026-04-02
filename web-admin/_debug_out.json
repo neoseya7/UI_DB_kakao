@@ -1,0 +1,30 @@
+[
+  {
+    "id": "3716f947-d042-45a7-93f8-1c6fc2a28f8a",
+    "store_id": "9018fcb3-897d-47f2-8396-1f4ddf5701c9",
+    "collect_date": "2026-04-01",
+    "chat_time": "22:07:00",
+    "nickname": "신뉴스마일",
+    "chat_content": "[신뉴스마일] [오후 10:07] 대저토마토 3",
+    "category": "ORDER",
+    "product_name": "대저토마토",
+    "quantity": 3,
+    "is_processed": true,
+    "created_at": "2026-04-01T13:17:02.40627+00:00",
+    "classification": "분류:주문"
+  },
+  {
+    "id": "d12ace89-79ea-4f20-876a-aff63f2b594f",
+    "store_id": "9018fcb3-897d-47f2-8396-1f4ddf5701c9",
+    "collect_date": "2026-04-01",
+    "chat_time": "22:07:00",
+    "nickname": "뚜뚜",
+    "chat_content": "[뚜뚜] [오후 10:07] 대저토마토1",
+    "category": "UNKNOWN",
+    "product_name": "대저토마토",
+    "quantity": 1,
+    "is_processed": false,
+    "created_at": "2026-04-01T00:33:20.607742+00:00",
+    "classification": "분류:주문, 재고초과주문"
+  }
+]

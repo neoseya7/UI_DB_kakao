@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Save, Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Save, Loader2, Trash2 } from "lucide-react"
 import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function SettingsPage() {
@@ -127,6 +128,23 @@ export default function SettingsPage() {
         if (settings.manager_nicks.includes(newManager)) return alert("이미 등록된 점장 닉네임입니다.")
         setSettings({ ...settings, manager_nicks: [...settings.manager_nicks, newManager.trim()] })
         setNewManager("")
+    }
+
+    const [newCrmNick, setNewCrmNick] = useState("")
+    const [newCrmCat, setNewCrmCat] = useState("노쇼")
+    const [newCrmMemo, setNewCrmMemo] = useState("")
+
+    const addCrmTag = () => {
+        if (!newCrmNick.trim()) return alert("닉네임을 입력해주세요.")
+        if (settings.crm_tags.find(t => t.name === newCrmNick.trim())) return alert("이미 등록된 닉네임입니다.")
+        setSettings({ ...settings, crm_tags: [...settings.crm_tags, { name: newCrmNick.trim(), category: newCrmCat, memo: newCrmMemo.trim() }] })
+        setNewCrmNick("")
+        setNewCrmMemo("")
+    }
+
+    const removeCrmTag = (idx: number) => {
+        if(!confirm("해당 고객의 분류 태그를 삭제하시겠습니까?")) return
+        setSettings({ ...settings, crm_tags: settings.crm_tags.filter((_, i) => i !== idx) })
     }
 
     if (isLoading) {
@@ -338,11 +356,62 @@ export default function SettingsPage() {
                 </Card>
                 </GuideBadge>
 
-                {/* 6. Production Orders Alert */}
+                {/* 6. Customer CRM Tags */}
+                <GuideBadge text="노쇼 고객, 단골 고객 등을 사전 등록하여 오늘의 대화 및 주문관리 창에서 뱃지로 즉각 식별할 수 있습니다." className="block">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>6. 고객 분류 (CRM 태그) 설정</CardTitle>
+                        <CardDescription>특정 닉네임의 고객을 사전에 분류해 두면 대시보드 리스트에서 이름 아래에 아이콘과 메모가 나타납니다.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex flex-col md:flex-row gap-3">
+                            <Input
+                                value={newCrmNick} onChange={e => setNewCrmNick(e.target.value)}
+                                placeholder="고객 닉네임"
+                                className="w-full md:w-[200px] shadow-sm bg-white font-bold"
+                            />
+                            <Select value={newCrmCat} onValueChange={setNewCrmCat}>
+                                <SelectTrigger className="w-full md:w-[150px] shadow-sm bg-white font-bold">
+                                    <SelectValue placeholder="분류 선택" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="노쇼"><span className="text-red-600 font-bold">노쇼/블랙</span></SelectItem>
+                                    <SelectItem value="단골"><span className="text-blue-600 font-bold">단골/VIP</span></SelectItem>
+                                    <SelectItem value="기타"><span className="text-slate-600 font-bold">특이사항(기타)</span></SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Input
+                                value={newCrmMemo} onChange={e => setNewCrmMemo(e.target.value)}
+                                placeholder="간단한 메모 (선택사항, 예: 항상 10분 늦음)"
+                                className="w-full flex-1 shadow-sm bg-white"
+                                onKeyDown={(e) => { if (e.key === 'Enter') addCrmTag() }}
+                            />
+                            <Button onClick={addCrmTag} className="font-semibold shadow-sm w-full md:w-auto shrink-0 bg-emerald-600 hover:bg-emerald-700">추가하기</Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4 pt-4 border-t">
+                            {settings.crm_tags.length === 0 && <span className="text-sm text-muted-foreground w-full col-span-full">현재 등록된 고객 분류 태그가 없습니다.</span>}
+                            {settings.crm_tags.map((tag, idx) => (
+                                <div key={idx} className="flex flex-col gap-1 p-3 border rounded-lg bg-slate-50 relative group">
+                                    <button onClick={() => removeCrmTag(idx)} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                    <div className="flex items-center gap-2 pr-6">
+                                        <Badge variant="outline" className={`shrink-0 ${tag.category === '노쇼' ? 'border-red-200 bg-red-50 text-red-700' : tag.category === '단골' ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-100 text-slate-700'}`}>
+                                            {tag.category === '노쇼' ? '🔴 노쇼' : tag.category === '단골' ? '🔵 단골' : '⚪ 기타'}
+                                        </Badge>
+                                        <span className="font-bold text-sm truncate">{tag.name}</span>
+                                    </div>
+                                    {tag.memo && <div className="text-xs text-slate-500 truncate pl-1 mt-1">- {tag.memo}</div>}
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+                </GuideBadge>
+
+                {/* 7. Production Orders Alert */}
                 <GuideBadge text="상품정보에 발주마감시간을 입력하면 시간에 맞춰 발주마감을 알리는 팝업이 실행됩니다." className="block">
                 <Card className="border-red-100 shadow-sm">
                     <CardHeader className="bg-red-50/50 border-b border-red-100 py-4">
-                        <CardTitle className="text-red-900 flex items-center gap-2">6. 발주시간 안내 팝업 설정</CardTitle>
+                        <CardTitle className="text-red-900 flex items-center gap-2">7. 발주시간 안내 팝업 설정</CardTitle>
                         <CardDescription>각 상품 등록 시 개별 지정된 '발주 마감 시간'이 임박하면 화면 전체에 강제 팝업을 띄웁니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-5 bg-white rounded-b-lg">

@@ -8,12 +8,20 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2 } from "lucide-react"
+import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2, MoreVertical } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
 import { GuideBadge } from "@/components/ui/guide-badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string }
+type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string, tiered_prices?: {qty: number, price: number}[], unit_text?: string }
 type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, originalIndex?: number }
 
 export default function PickupCalendarPage() {
@@ -167,7 +175,7 @@ export default function PickupCalendarPage() {
         if (!storeId || !isTransferModalOpen) return;
         const fetchModalProducts = async () => {
             const date = transferSourceDate || currentDate;
-            const { data } = await supabase.from('products').select('*').eq('store_id', storeId).or(`target_date.eq.${date},is_regular_sale.eq.true`)
+            const { data } = await supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
             if (data) {
                 setTransferAvailableProducts(data.map(p => ({
                     id: p.id,
@@ -177,7 +185,9 @@ export default function PickupCalendarPage() {
                     stock: p.allocated_stock || 0,
                     target_date: p.target_date,
                     is_regular_sale: p.is_regular_sale,
-                    product_memo: p.product_memo || ""
+                    product_memo: p.product_memo || "",
+                    tiered_prices: p.tiered_prices || [],
+                    unit_text: p.unit_text || ""
                 })))
             }
         }
@@ -189,14 +199,14 @@ export default function PickupCalendarPage() {
         setIsLoading(true)
 
         // 0. Fetch available dates for Pill Navigation
-        const { data: dateData } = await supabase.from('products').select('target_date').eq('store_id', storeId).not('target_date', 'is', null)
+        const { data: dateData } = await supabase.from('products').select('target_date').eq('store_id', storeId).eq('is_hidden', false).not('target_date', 'is', null)
         if (dateData) {
             const uniqueDates = Array.from(new Set(dateData.map(p => p.target_date))).sort() as string[]
             setAvailableDates(uniqueDates)
         }
 
         // 1. Fetch active products
-        let pQuery = supabase.from('products').select('*').eq('store_id', storeId)
+        let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
             pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
         }
@@ -210,11 +220,72 @@ export default function PickupCalendarPage() {
             stock: p.allocated_stock || 0,
             target_date: p.target_date,
             is_regular_sale: p.is_regular_sale,
-            product_memo: p.product_memo || ""
+            product_memo: p.product_memo || "",
+            tiered_prices: p.tiered_prices || [],
+            unit_text: p.unit_text || ""
         }))
         setProducts(mappedProducts)
 
-        // 2. Fetch orders
+        // 2. Fetch orders (Try RPC First for Extreme Performance)
+        let pDate = null, startDate = null, endDate = null
+        if (searchScope === "today") pDate = currentDate
+        else if (searchScope === "date_range") {
+            if (customSearchDate && customEndDate) { startDate = customSearchDate; endDate = customEndDate; }
+            else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
+        }
+
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_matrix_orders', {
+            p_store_id: storeId,
+            p_pickup_date: pDate,
+            p_start_date: startDate,
+            p_end_date: endDate
+        })
+
+        // -- RPC SUCCESS PATH --
+        if (!rpcError && rpcData) {
+            const orders = rpcData || []
+
+            if (orders.length === 0) {
+                setRawCustomers([])
+                setIsLoading(false)
+                return
+            }
+
+            // 4.5 Fetch CRM Tags mapping
+            const { data: settingsData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single()
+            const crmTagsList = settingsData?.crm_tags?.filter((t: any) => t.type === 'crm') || []
+            const crmDict = crmTagsList.reduce((acc: any, t: any) => {
+                acc[t.name] = { category: t.category, memo: t.memo }
+                return acc
+            }, {})
+
+            const mappedCustomers = orders.map((o: any, index: number) => {
+                const itemsArray = mappedProducts.map(p => {
+                    // o.items is a jsonb array: [{product_id: uuid, quantity: int}]
+                    const match = o.items.find((oi: any) => oi.product_id === p.id)
+                    return match ? match.quantity : 0
+                })
+
+                return {
+                    id: o.id,
+                    name: o.customer_nickname,
+                    items: itemsArray,
+                    memo1: o.customer_memo_1 || "",
+                    memo2: o.customer_memo_2 || "",
+                    crm: crmDict[o.customer_nickname] || null,
+                    checked: o.is_received || false,
+                    originalIndex: index
+                }
+            })
+
+            setRawCustomers(mappedCustomers)
+            setIsLoading(false)
+            return
+        }
+
+        // -- FALLBACK PATH (Legacy: N+1 Chunked Requests) --
+        /* 기존 로직 무스탑 롤백 보험 코드 */
+        console.warn("RPC fetch failed or function missing, parsing via legacy loop:", rpcError);
         let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
             oQuery = oQuery.eq('pickup_date', currentDate)
@@ -250,7 +321,15 @@ export default function PickupCalendarPage() {
             itemsByOrderId[item.order_id].push(item)
         }
 
-        const mappedCustomers = orders.map((o, index) => {
+        // 4.5 Fetch CRM Tags mapping
+        const { data: settingsData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single()
+        const crmTagsList = settingsData?.crm_tags?.filter((t: any) => t.type === 'crm') || []
+        const crmDict = crmTagsList.reduce((acc: any, t: any) => {
+            acc[t.name] = { category: t.category, memo: t.memo }
+            return acc
+        }, {})
+
+        const mappedCustomersLegacy = orders.map((o, index) => {
             const myItems = itemsByOrderId[o.id] || []
             const itemsArray = mappedProducts.map(p => {
                 const match = myItems.find(oi => oi.product_id === p.id)
@@ -263,12 +342,13 @@ export default function PickupCalendarPage() {
                 items: itemsArray,
                 memo1: o.customer_memo_1 || "",
                 memo2: o.customer_memo_2 || "",
+                crm: crmDict[o.customer_nickname] || null,
                 checked: o.is_received || false,
                 originalIndex: index
             }
         })
 
-        setRawCustomers(mappedCustomers)
+        setRawCustomers(mappedCustomersLegacy)
         setIsLoading(false)
     }
 
@@ -673,6 +753,45 @@ export default function PickupCalendarPage() {
         }
     }
 
+    const handleUnhideDataByDate = async () => {
+        if (!currentDate) return;
+        const confirmMsg = `${currentDate} 일자의 숨겨진 [상품]과 [주문 내역]을 다시 화면에 보이도록 복구 (숨김 해제)하시겠습니까?`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            setIsLoading(true);
+            
+            // 1. Unhide Products for the target_date
+            const { error: pErr } = await supabase
+                .from('products')
+                .update({ is_hidden: false })
+                .eq('store_id', storeId)
+                .eq('target_date', currentDate);
+            
+            if (pErr) throw pErr;
+
+            // 2. Unhide Orders for the pickup_date
+            const { error: oErr } = await supabase
+                .from('orders')
+                .update({ is_hidden: false })
+                .eq('store_id', storeId)
+                .eq('pickup_date', currentDate);
+            
+            if (oErr) throw oErr;
+
+            alert(`${currentDate} 일자의 데이터가 성공적으로 복구(숨김 해제)되었습니다.`);
+            
+            // Re-fetch data
+            await fetchMatrixData();
+            
+        } catch (error: any) {
+            console.error("Bulk unhide by date error:", error);
+            alert("일괄 숨김 해제 중 오류가 발생했습니다: " + error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     const handleDeleteOrder = async (id: string, name: string) => {
         if (!confirm(`[${name}] 고객의 이 주문 내역을 완전히 삭제하시겠습니까?`)) return
 
@@ -753,7 +872,21 @@ export default function PickupCalendarPage() {
     }
 
     const getSummary = (items: number[]) => {
-        return items.map((qty, index) => qty > 0 ? `${products[index]?.name} ${qty}개` : null).filter(Boolean).join(" / ")
+        return items.map((qty, index) => {
+            if (qty <= 0) return null;
+            const p = products[index];
+            let datePrefix = "";
+            if (p?.target_date) {
+                const parts = p.target_date.split('-');
+                if (parts.length === 3) {
+                    datePrefix = `(${parts[1]}월${parts[2]}일) `;
+                }
+            } else if (p?.is_regular_sale) {
+                datePrefix = "(상시) ";
+            }
+            const unitStr = p?.unit_text ? `(${p.unit_text})` : "";
+            return `${datePrefix}${p?.name}${unitStr} ${qty}개`;
+        }).filter(Boolean).join(" / ")
     }
 
     const customers = isMerged
@@ -787,9 +920,32 @@ export default function PickupCalendarPage() {
         return (a.originalIndex || 0) - (b.originalIndex || 0)
     })
 
+    const calculateItemPrice = (product: Product | undefined, qty: number) => {
+        if (!product || qty <= 0) return 0;
+        const tiers = product.tiered_prices;
+        if (!tiers || tiers.length === 0) return qty * (product.price || 0);
+
+        const sortedTiers = [...tiers].sort((a, b) => b.qty - a.qty);
+        let remainingQty = qty;
+        let totalPrice = 0;
+
+        for (const tier of sortedTiers) {
+            if (remainingQty >= tier.qty && tier.qty > 0) {
+                const chunks = Math.floor(remainingQty / tier.qty);
+                totalPrice += chunks * tier.price;
+                remainingQty -= chunks * tier.qty;
+            }
+        }
+        
+        if (remainingQty > 0) {
+            totalPrice += remainingQty * (product.price || 0);
+        }
+        return totalPrice;
+    }
+
     const calculatePosTotal = () => {
         return filteredCustomers.filter(c => selectedPosOrders.includes(c.id)).reduce((total, c) => {
-            return total + c.items.reduce((t, qty, idx) => t + (qty * (products[idx]?.price || 0)), 0)
+            return total + c.items.reduce((t, qty, idx) => t + calculateItemPrice(products[idx], qty), 0)
         }, 0)
     }
 
@@ -966,8 +1122,8 @@ export default function PickupCalendarPage() {
                     </div>
                 </div>
 
-                {/* 2번째 줄: 액션 버튼 그룹 */}
-                <div className="flex flex-col md:flex-row flex-wrap items-center justify-between xl:justify-end gap-3 border-t pt-4 border-slate-200/60 mt-2">
+                {/* 2번째 줄: 핵심 액션 버튼 (수동추가, 삭제, 병합) + 더보기 메뉴 */}
+                <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 border-t pt-4 border-slate-200/60 mt-2">
                     
                     <GuideBadge text="닉네임과 상품명, 수량을 직접 입력할 수 있어요.">
                     <div className="flex flex-col sm:flex-row items-center gap-2 bg-indigo-50/50 p-1.5 rounded-md border border-indigo-100 shadow-sm w-full xl:w-auto xl:mr-auto">
@@ -995,83 +1151,8 @@ export default function PickupCalendarPage() {
                     </div>
                     </GuideBadge>
 
-                    <GuideBadge text="상품의 픽업날짜를 변경할 수 있어요. 상시판매로 이동하면 픽업일이 오래된 상품이 상시판매 제품으로 상품리스트에 전시되요.">
-                    <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="gap-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100 shadow-sm transition-all h-10 w-full sm:w-auto px-3 shrink-0">
-                                <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 변경
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[480px]">
-                            <DialogHeader>
-                                <DialogTitle>픽업일 일괄 변경 및 상시판매 전환</DialogTitle>
-                                <DialogDescription>
-                                    기존 날짜에 속한 상품의 주문들을 다른 날짜로 일괄 이동하거나,<br />물품을 '상시판매' 카테고리로 강제 동기화합니다.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-5 py-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold">1. 기존 날짜 선택 (From)</label>
-                                    <Input type="date" value={transferSourceDate || currentDate} onChange={e => setTransferSourceDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold">2. 대상 상품 선택</label>
-                                    <Select value={transferProductIdx} onValueChange={setTransferProductIdx}>
-                                        <SelectTrigger className="w-full bg-white">
-                                            <SelectValue placeholder="상품 선택" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {transferAvailableProducts.map((p, i) => (
-                                                <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-3 border-t pt-4">
-                                    <label className="text-sm font-semibold text-primary">3. 목적지 (변경 날짜 / 상시판매)</label>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-center gap-2 mb-1 p-2 bg-emerald-50 rounded border border-emerald-100">
-                                            <Checkbox id="regularSaleToggle" checked={isTransferToRegular} onCheckedChange={(val) => setIsTransferToRegular(!!val)} className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600" />
-                                            <label htmlFor="regularSaleToggle" className="text-sm font-semibold text-emerald-800 cursor-pointer">이 상품을 '상시판매' 모드로 전환합니다.</label>
-                                        </div>
-                                        <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} disabled={isTransferToRegular} className="bg-white border-primary/40 focus-visible:ring-primary/50 disabled:opacity-50 disabled:bg-slate-100" />
-                                    </div>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsTransferModalOpen(false)}>취소</Button>
-                                <Button onClick={handleTransferDate} className="bg-amber-600 hover:bg-amber-700 font-bold border-none text-white shadow-sm">이동 적용하기</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                    </GuideBadge>
-
-                    <GuideBadge text="선택된 날짜의 모든 상품과 주문 데이터를 시스템에서 안전하게 숨김(Soft-hide) 처리합니다. 검색에서도 제외됩니다.">
-                        <Button 
-                            variant="outline" 
-                            onClick={handleHideDataByDate}
-                            className="gap-2 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:text-rose-800 shadow-sm h-10 w-full xl:w-auto px-3 shrink-0 font-bold transition-colors"
-                        >
-                            <span className="text-lg leading-none mt-[-2px]">🚫</span> 해당일자삭제
-                        </Button>
-                    </GuideBadge>
-
-                    <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
-
-                    <div className="flex items-center gap-1.5 bg-emerald-50/50 p-1 border border-emerald-100 rounded-md w-full sm:w-auto justify-center">
-                        <Button variant="outline" className="gap-1.5 bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-sm h-8 px-3 transition-colors" onClick={() => fileInputRef.current?.click()}>
-                            <UploadCloud className="h-3.5 w-3.5" /> 엑셀 일괄등록
-                        </Button>
-                        <Button onClick={handleDownloadTemplate} variant="ghost" size="sm" className="h-8 px-2 text-emerald-700/80 hover:text-emerald-900 border border-transparent hover:bg-emerald-100" title="엑셀 등록 양식 다운로드">
-                            <DownloadCloud className="h-3.5 w-3.5" /> 양식받기
-                        </Button>
-                        <div className="w-px h-4 bg-emerald-200 mx-1" />
-                        <Button onClick={handleExportExcel} variant="default" size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm h-8 px-3 transition-colors">
-                            <DownloadCloud className="h-3.5 w-3.5" /> 현재 날짜 추출
-                        </Button>
-                    </div>
-
-                    <div className="flex w-full sm:w-auto gap-2">
+                    {/* 우측 핵심 버튼 그룹 */}
+                    <div className="flex w-full sm:w-auto gap-2 items-center xl:justify-end">
                         <GuideBadge text="버튼을 누르면 주문을 삭제할 수 있는 체크박스가 보여요. 체크박스를 체크한 후 삭제버튼을 클릭하면 주문이 삭제가되요.">
                         <div className="flex gap-2 w-full sm:w-auto">
                         {isDeleteMode ? (
@@ -1082,8 +1163,8 @@ export default function PickupCalendarPage() {
                                 </Button>
                             </>
                         ) : (
-                            <Button variant="outline" onClick={() => setIsDeleteMode(true)} className="gap-2 shadow-sm border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all h-10 w-full sm:w-auto px-3">
-                                <Trash2 className="h-4 w-4" /> 삭제
+                            <Button variant="outline" onClick={() => setIsDeleteMode(true)} className="gap-2 shadow-sm border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all h-10 w-full sm:w-auto px-3 font-semibold">
+                                <Trash2 className="h-4 w-4" /> 삭제 모드
                             </Button>
                         )}
                         </div>
@@ -1091,14 +1172,94 @@ export default function PickupCalendarPage() {
                         <GuideBadge text="1명의 여러상품을 주문했을 때 여러줄이 한줄로 합칠 수 있어요. 물론 다시 분리할수도 있어요.">
                         <Button
                             variant={isMerged ? "default" : "outline"}
-                            className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 ${isMerged ? 'bg-primary' : 'bg-white'}`}
+                            className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 font-semibold ${isMerged ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
                             onClick={() => setIsMerged(!isMerged)}
                         >
                             <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
                         </Button>
                         </GuideBadge>
+
+                        {/* 더보기 (추가 작업) 드롭다운 */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="h-10 px-2 shadow-sm border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shrink-0 outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                    <MoreVertical className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 font-sans">
+                                <DropdownMenuLabel>데이터 관리</DropdownMenuLabel>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); fileInputRef.current?.click(); }} className="gap-2 cursor-pointer font-medium">
+                                    <UploadCloud className="h-4 w-4 text-emerald-600" /> 엑셀 일괄 등록
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleExportExcel(); }} className="gap-2 cursor-pointer font-medium">
+                                    <DownloadCloud className="h-4 w-4 text-emerald-600" /> 현재 날짜 추출 (엑셀)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDownloadTemplate(); }} className="gap-2 cursor-pointer text-slate-500">
+                                    <DownloadCloud className="h-4 w-4" /> 엑셀 양식 다운로드
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>고급 기능</DropdownMenuLabel>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsTransferModalOpen(true); }} className="gap-2 cursor-pointer font-medium text-amber-700 focus:text-amber-800 focus:bg-amber-50">
+                                    <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 일괄 변경
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleHideDataByDate(); }} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700 focus:bg-rose-50">
+                                    <Trash2 className="h-4 w-4" /> 해당 일자 전체 숨김
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleUnhideDataByDate(); }} className="gap-2 cursor-pointer font-medium text-indigo-600 focus:text-indigo-700 focus:bg-indigo-50">
+                                    <ListCollapse className="h-4 w-4" /> 해당 일자 전체 숨김 해제 (복구)
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
+
+                {/* 숨겨진 픽업일 변경 모달 (Trigger 없이 수동 제어) */}
+                <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
+                    <DialogContent className="sm:max-w-[480px]">
+                        <DialogHeader>
+                            <DialogTitle>픽업일 일괄 변경 및 상시판매 전환</DialogTitle>
+                            <DialogDescription>
+                                기존 날짜에 속한 상품의 주문들을 다른 날짜로 일괄 이동하거나,<br />물품을 '상시판매' 카테고리로 강제 동기화합니다.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-5 py-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">1. 기존 날짜 선택 (From)</label>
+                                <Input type="date" value={transferSourceDate || currentDate} onChange={e => setTransferSourceDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">2. 대상 상품 선택</label>
+                                <Select value={transferProductIdx} onValueChange={setTransferProductIdx}>
+                                    <SelectTrigger className="w-full bg-white">
+                                        <SelectValue placeholder="상품 선택" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {transferAvailableProducts.map((p, i) => (
+                                            <SelectItem key={i} value={i.toString()}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-3 border-t pt-4">
+                                <label className="text-sm font-semibold text-primary">3. 목적지 (변경 날짜 / 상시판매)</label>
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 mb-1 p-2 bg-emerald-50 rounded border border-emerald-100">
+                                        <Checkbox id="regularSaleToggle" checked={isTransferToRegular} onCheckedChange={(val) => setIsTransferToRegular(!!val)} className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600" />
+                                        <label htmlFor="regularSaleToggle" className="text-sm font-semibold text-emerald-800 cursor-pointer">이 상품을 '상시판매' 모드로 전환합니다.</label>
+                                    </div>
+                                    <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} disabled={isTransferToRegular} className="bg-white border-primary/40 focus-visible:ring-primary/50 disabled:opacity-50 disabled:bg-slate-100" />
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsTransferModalOpen(false)}>취소</Button>
+                            <Button onClick={handleTransferDate} className="bg-amber-600 hover:bg-amber-700 font-bold border-none text-white shadow-sm">이동 적용하기</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
             </div>
 
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
@@ -1139,7 +1300,6 @@ export default function PickupCalendarPage() {
                                     <th key={p.id || i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
                                         <div className="flex flex-col items-center justify-center gap-0.5">
                                             <span>{p.name}</span>
-                                            <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-100/50 px-1.5 py-0.5 rounded shadow-sm border border-indigo-100">{p.is_regular_sale ? "상시판매" : (p.target_date ? p.target_date.substring(5).replace('-', '/') : "날짜없음")}</span>
                                         </div>
                                         <div className="flex items-center justify-center gap-1 mt-1.5">
                                             <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-6 w-[70px] text-[12px] font-mono text-center px-1 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
@@ -1222,17 +1382,25 @@ export default function PickupCalendarPage() {
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>
-                                        <td className={`border-b border-r p-2 sm:p-3 text-xs sm:text-sm font-semibold whitespace-nowrap truncate ${getStickyClasses('name').td}`}>
-                                            <div className="flex items-center gap-2">
-                                                {posSyncEnabled && (
-                                                    <Checkbox 
-                                                        disabled={c.checked || isMerged} 
-                                                        checked={selectedPosOrders.includes(c.id)} 
-                                                        onCheckedChange={() => togglePosSelect(c.id)} 
-                                                        className="h-4 w-4 shrink-0 border-indigo-300 data-[state=checked]:bg-indigo-600 cursor-pointer disabled:opacity-30" 
-                                                    />
+                                        <td className={`border-b border-r p-2 sm:p-3 text-xs sm:text-sm font-semibold whitespace-nowrap ${getStickyClasses('name').td}`}>
+                                            <div className="flex flex-col items-start gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    {posSyncEnabled && (
+                                                        <Checkbox 
+                                                            disabled={c.checked || isMerged} 
+                                                            checked={selectedPosOrders.includes(c.id)} 
+                                                            onCheckedChange={() => togglePosSelect(c.id)} 
+                                                            className="h-4 w-4 shrink-0 border-indigo-300 data-[state=checked]:bg-indigo-600 cursor-pointer disabled:opacity-30" 
+                                                        />
+                                                    )}
+                                                    {c.checked ? <span className="line-through text-muted-foreground truncate max-w-[120px]">{c.name}</span> : <span className="truncate max-w-[120px]">{c.name}</span>}
+                                                </div>
+                                                {c.crm && (
+                                                    <Badge variant="outline" className={`font-medium whitespace-nowrap text-[10px] px-1.5 py-0 shadow-sm ${c.crm.category === '노쇼' ? 'border-red-200 text-red-700 bg-red-50' : c.crm.category === '단골' ? 'border-blue-200 text-blue-700 bg-blue-50' : 'border-slate-200 text-slate-700 bg-slate-50'}`} title={c.crm.memo || c.crm.category}>
+                                                        {c.crm.category === '노쇼' ? '🔴 노쇼' : c.crm.category === '단골' ? '🔵 단골' : `⚪ ${c.crm.category}`}
+                                                        {c.crm.memo ? ` : ${c.crm.memo}` : ''}
+                                                    </Badge>
                                                 )}
-                                                {c.checked ? <span className="line-through text-muted-foreground truncate">{c.name}</span> : <span className="truncate">{c.name}</span>}
                                             </div>
                                         </td>
                                         <td className={`border-b border-r px-1 sm:px-2 py-1 ${getStickyClasses('receive').td}`}>
@@ -1260,7 +1428,7 @@ export default function PickupCalendarPage() {
                                             <span className="text-sm font-medium text-slate-800">{getSummary(c.items)}</span>
                                         </td>
                                         <td className={`border-b border-r px-3 py-2 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
-                                            {c.items.reduce((total: number, qty: number, idx: number) => total + (qty * (products[idx]?.price || 0)), 0).toLocaleString()}원
+                                            {c.items.reduce((total: number, qty: number, idx: number) => total + calculateItemPrice(products[idx], qty), 0).toLocaleString()}원
                                         </td>
                                         <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
                                             <div className="flex flex-col gap-1 w-full relative">

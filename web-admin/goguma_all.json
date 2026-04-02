@@ -1,0 +1,28 @@
+[
+  {
+    "id": "2ce5eb34-9323-4ce2-849f-aebaa42c9c61",
+    "customer_nickname": "고구마8130",
+    "pickup_date": "2026-03-31",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "선쿠션"
+        },
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "5fb26459-8888-416f-9f1e-4897a464599c",
+    "customer_nickname": "고구마춘식이8093",
+    "pickup_date": "2026-03-31",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "팽이버섯"
+        },
+        "quantity": 1
+      }
+    ]
+  }
+]

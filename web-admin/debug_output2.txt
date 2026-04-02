@@ -1,0 +1,27 @@
+--- Fetching Products ---
+[
+  {
+    "id": "afbc42ec-5218-4481-9e00-751751bd1d83",
+    "collect_name": "다라딸기",
+    "display_name": "다라딸기",
+    "target_date": "2026-04-01"
+  },
+  {
+    "id": "eeba9a64-73fc-4dda-83bf-88179c39e894",
+    "collect_name": "다라딸기 금실",
+    "display_name": "다라딸기 금실",
+    "target_date": "2026-03-31"
+  }
+]
+
+--- Orders for Product: 다라딸기 (ID: afbc42ec-5218-4481-9e00-751751bd1d83) ---
+{
+  "2026-04-01": 15
+}
+Total items across all dates: 15
+
+--- Orders for Product: 다라딸기 금실 (ID: eeba9a64-73fc-4dda-83bf-88179c39e894) ---
+{
+  "2026-03-31": 12
+}
+Total items across all dates: 12

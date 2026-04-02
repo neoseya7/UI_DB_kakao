@@ -49,7 +49,9 @@ export default function ProductsPage() {
         image_urls: [] as string[],
         is_visible: true,
         is_stocked: false,
-        box_quantity: ""
+        box_quantity: "",
+        unit_text: "",
+        tiered_prices: [] as {qty: number, price: number}[]
     })
     const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([])
     const [isSaving, setIsSaving] = useState(false)
@@ -194,8 +196,10 @@ export default function ProductsPage() {
             is_regular_sale: !formData.target_date,
             collect_name: formData.collect_name,
             display_name: formData.display_name || formData.collect_name,
+            unit_text: formData.unit_text || "",
             price: parseInt(formData.price) || 0,
             incoming_price: parseInt(formData.incoming_price) || 0,
+            tiered_prices: formData.tiered_prices,
             allocated_stock: finalStock,
             box_quantity: finalBoxQty,
             deadline_date: formData.deadline_date || null,
@@ -252,7 +256,7 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
+                    collect_name: "", display_name: "", unit_text: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
                 })
                 setSelectedImageFiles([])
                 fetchProducts(storeId)
@@ -267,7 +271,7 @@ export default function ProductsPage() {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false
+            collect_name: "", display_name: "", unit_text: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
         })
         setSelectedImageFiles([])
         setIsDialogOpen(true)
@@ -287,8 +291,10 @@ export default function ProductsPage() {
             target_date: product.target_date || "",
             collect_name: product.collect_name || "",
             display_name: product.display_name || "",
+            unit_text: product.unit_text || "",
             price: product.price?.toString() || "",
             incoming_price: product.incoming_price?.toString() || "",
+            tiered_prices: product.tiered_prices || [],
             allocated_stock: product.allocated_stock?.toString() || "0",
             deadline_date: product.deadline_date || "",
             deadline_time: product.deadline_time || "",
@@ -352,6 +358,7 @@ export default function ProductsPage() {
             store_id: storeId,
             collect_name: prod.collect_name,
             display_name: prod.display_name,
+            unit_text: prod.unit_text || "",
             price: prod.price,
             incoming_price: prod.incoming_price,
             allocated_stock: null, // Reset stock logic on clone
@@ -360,6 +367,7 @@ export default function ProductsPage() {
             description: prod.description,
             image_url: prod.image_url,
             image_urls: prod.image_urls || (prod.image_url ? [prod.image_url] : []),
+            tiered_prices: prod.tiered_prices || [],
             is_visible: true,
             is_regular_sale: prod.is_regular_sale,
             box_quantity: prod.box_quantity || null,
@@ -575,6 +583,16 @@ export default function ProductsPage() {
                                     value={formData.display_name}
                                     onChange={e => setFormData({ ...formData, display_name: e.target.value })}
                                 />
+                                <div className="mt-3">
+                                    <Label htmlFor="unit_text">포장/구성 단위 (<span className="font-normal text-muted-foreground">선택사항</span>)</Label>
+                                    <Input
+                                        id="unit_text"
+                                        placeholder="설정 시 주문 요약에 괄호로 표기됩니다. 예: 2팩 세트, 1박스"
+                                        value={formData.unit_text}
+                                        onChange={e => setFormData({ ...formData, unit_text: e.target.value })}
+                                    />
+                                    <p className="text-[11px] text-indigo-700/80 mt-1 font-medium bg-indigo-50/50 p-1.5 rounded-sm border border-indigo-100 italic">설정 시 주문 현황표에 자동으로 <b>{formData.collect_name ? formData.collect_name : "상품명"}({formData.unit_text ? formData.unit_text : "단위"})</b> 형태로 조립되어 표기됩니다.</p>
+                                </div>
                                 {isDuplicate && duplicateProduct && (
                                     <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[13px] font-medium animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
                                         ⚠️ <strong>{duplicateProduct.target_date}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
@@ -585,7 +603,7 @@ export default function ProductsPage() {
 
                             <div className="grid grid-cols-2 gap-4 mt-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="price">최종 판매 가격</Label>
+                                    <Label htmlFor="price">1개 낱개 기준 기본 단가</Label>
                                     <Input id="price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="예: 15000" />
                                 </div>
                                 <div className="space-y-2">
@@ -593,6 +611,55 @@ export default function ProductsPage() {
                                     <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" />
                                 </div>
                             </div>
+
+                            {/* 수량별 묶음 할인(Tiered Pricing) */}
+                            <div className="space-y-2 mt-2 bg-indigo-50/50 p-3.5 rounded-md border border-indigo-100 shadow-sm">
+                                <div className="flex items-center justify-between pb-1">
+                                    <div>
+                                        <Label className="text-indigo-900 font-extrabold text-[14px]">수량별 묶음 할인 책정</Label>
+                                        <p className="text-[11px] text-indigo-800/70 mt-0.5 leading-snug">고객이 여러 개를 샀을 때, 가장 이득인 큰 묶음부터 자동 계산됩니다.</p>
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        size="sm" 
+                                        variant="outline" 
+                                        className="h-8 text-xs font-bold text-indigo-700 border-indigo-200 bg-white hover:bg-indigo-50 shadow-sm"
+                                        onClick={() => setFormData({...formData, tiered_prices: [...formData.tiered_prices, {qty: 2, price: 0}]})}
+                                    >
+                                        + 묶음 가격 구간 추가
+                                    </Button>
+                                </div>
+                                {formData.tiered_prices.length === 0 && (
+                                    <div className="text-[12px] text-indigo-800/80 bg-white/60 p-2 rounded border border-indigo-50 text-center font-medium mt-1">할인 구간 없이 [1개 기본 단가]로 항상 정가 계산됩니다.</div>
+                                )}
+                                <div className="space-y-2 mt-2">
+                                    {formData.tiered_prices.map((tier, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-md border shadow-sm">
+                                            <span className="text-sm font-semibold text-slate-700 pl-1 whitespace-nowrap">수량이</span>
+                                            <Input type="number" value={tier.qty || ''} onChange={e => {
+                                                const newTiers = [...formData.tiered_prices];
+                                                newTiers[idx].qty = parseInt(e.target.value) || 0;
+                                                setFormData({...formData, tiered_prices: newTiers});
+                                            }} className="w-16 h-8 font-bold text-center px-1" placeholder="수량" />
+                                            <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">개일 때, 모두 합쳐서 👉</span>
+                                            <Input type="number" value={tier.price || ''} onChange={e => {
+                                                const newTiers = [...formData.tiered_prices];
+                                                newTiers[idx].price = parseInt(e.target.value) || 0;
+                                                setFormData({...formData, tiered_prices: newTiers});
+                                            }} className="flex-1 h-8 font-bold text-indigo-700" placeholder="결제 총액 (예: 2800)" />
+                                            <span className="text-sm font-semibold text-slate-700 whitespace-nowrap mr-1">원</span>
+                                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => {
+                                                const newTiers = [...formData.tiered_prices];
+                                                newTiers.splice(idx, 1);
+                                                setFormData({...formData, tiered_prices: newTiers});
+                                            }}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
