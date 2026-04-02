@@ -49,6 +49,7 @@ export async function GET(request: Request, context: { params: Promise<{ store_i
             .select('id, collect_name, display_name, price, allocated_stock, target_date, is_regular_sale, deadline_date, deadline_time, image_urls, image_url, description, is_stocked')
             .eq('store_id', storeId)
             .eq('is_visible', true)
+            .eq('is_hidden', false)
             .order('created_at', { ascending: false })
 
         // 4. Dynamically compute 'Remaining Stock' by aggregating historical order items using native RPC
