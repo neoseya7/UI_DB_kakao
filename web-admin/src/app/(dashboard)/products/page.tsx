@@ -951,7 +951,7 @@ export default function ProductsPage() {
                                                                 handleUpdateStock(product.id, parseInt(e.target.value) || 0)
                                                             }
                                                         }}
-                                                        className={`w-full h-full text-[15px] text-center font-bold px-0 py-0 shadow-none border-none bg-transparent focus-visible:ring-0 ${product.allocated_stock === 0 ? 'text-red-700' : ''}`}
+                                                        className={`w-full h-full text-[15px] text-center font-bold px-0 py-0 shadow-none border-none bg-transparent focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${product.allocated_stock === 0 ? 'text-red-700' : ''}`}
                                                         title="수정하려면 클릭하세요"
                                                     />
                                                 </div>
