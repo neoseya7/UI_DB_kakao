@@ -218,15 +218,23 @@ export default function Dashboard() {
 
         // Third pass: Time Jump(시간 역행) 감지 (과거 대화 끌올 감지)
         let maxContextTime = 0;
+        let lastDateContext = "";
+        
         // self는 created_at 역순(최신이 0번 인덱스)이므로 제일 뒤(가장 오래된 수집)부터 앞으로 오면서 스트림 검사
         for (let i = finalMappedLogs.length - 1; i >= 0; i--) {
             const row = finalMappedLogs[i];
             if (row.date !== "-" && row.time !== "-") {
+                // 날짜가 바뀔 경우 maxContextTime 초기화 (미래 날짜 오염 방지)
+                if (row.date !== lastDateContext) {
+                    maxContextTime = 0;
+                    lastDateContext = row.date;
+                }
+                
                 // 시간 문자열 파싱
                 const parsedTime = new Date(`${row.date}T${row.time}:00`).getTime();
                 if (!isNaN(parsedTime)) {
-                    // 현재 대화가 "지금까지 스크래핑된 가장 최신 대화시간"보다 1시간(60분) 이상 과거로 튄다면?
-                    if (parsedTime < maxContextTime - (60 * 60 * 1000)) {
+                    // 현재 대화가 "같은 날짜 안에서 가장 최신 대화시간"보다 1시간(60분) 이상 과거로 튄다면?
+                    if (maxContextTime > 0 && parsedTime < maxContextTime - (60 * 60 * 1000)) {
                         row.isSuspectedDuplicate = true; // 중복의심과 동일하게 붉은색 UI 사용
                         row.classification = row.classification ? row.classification + ", [⏰과거대화의심]" : "[⏰과거대화의심]";
                     } else if (parsedTime > maxContextTime) {
