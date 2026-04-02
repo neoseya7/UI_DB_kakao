@@ -143,9 +143,9 @@ export default function Dashboard() {
             }
 
             const matchedProd = 
-              (assignedDate ? currentProducts.find((p: any) => (p.collect_name === rawName || p.display_name === rawName) && p.target_date === assignedDate) : null)
-              || currentProducts.find((p: any) => (p.collect_name === rawName || p.display_name === rawName) && (p.allocated_stock === null || p.allocated_stock >= itemQty))
-              || currentProducts.find((p: any) => p.collect_name === rawName || p.display_name === rawName);
+              (assignedDate ? currentProducts.find((p: any) => p.collect_name === rawName && p.target_date === assignedDate) : null)
+              || currentProducts.find((p: any) => p.collect_name === rawName && (p.allocated_stock === null || p.allocated_stock >= itemQty))
+              || currentProducts.find((p: any) => p.collect_name === rawName);
             
             if (matchedProd) {
               const badgeName = matchedProd.unit_text ? `${rawName}(${matchedProd.unit_text})` : rawName;
