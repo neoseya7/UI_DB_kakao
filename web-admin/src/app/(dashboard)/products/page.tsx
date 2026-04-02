@@ -623,11 +623,11 @@ export default function ProductsPage() {
                             <div className="grid grid-cols-2 gap-4 mt-3">
                                 <div className="space-y-2">
                                     <Label htmlFor="price">1개 낱개 기준 기본 단가</Label>
-                                    <Input id="price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="예: 15000" />
+                                    <Input id="price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="예: 15000" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="incoming_price">입고가 (원가)</Label>
-                                    <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" />
+                                    <Input id="incoming_price" type="number" value={formData.incoming_price} onChange={e => setFormData({ ...formData, incoming_price: e.target.value })} placeholder="예: 10000" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                                 </div>
                             </div>
 
@@ -659,13 +659,13 @@ export default function ProductsPage() {
                                                 const newTiers = [...formData.tiered_prices];
                                                 newTiers[idx].qty = parseInt(e.target.value) || 0;
                                                 setFormData({...formData, tiered_prices: newTiers});
-                                            }} className="w-16 h-8 font-bold text-center px-1" placeholder="수량" />
+                                            }} className="w-16 h-8 font-bold text-center px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="수량" />
                                             <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">개일 때, 모두 합쳐서 👉</span>
                                             <Input type="number" value={tier.price || ''} onChange={e => {
                                                 const newTiers = [...formData.tiered_prices];
                                                 newTiers[idx].price = parseInt(e.target.value) || 0;
                                                 setFormData({...formData, tiered_prices: newTiers});
-                                            }} className="flex-1 h-8 font-bold text-indigo-700" placeholder="결제 총액 (예: 2800)" />
+                                            }} className="flex-1 h-8 font-bold text-indigo-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="결제 총액 (예: 2800)" />
                                             <span className="text-sm font-semibold text-slate-700 whitespace-nowrap mr-1">원</span>
                                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => {
                                                 const newTiers = [...formData.tiered_prices];
@@ -923,6 +923,7 @@ export default function ProductsPage() {
                                     <CardHeader className="pb-1 pt-3 flex flex-row items-start justify-between gap-1.5 px-3">
                                         <div className="flex flex-col gap-1 w-full">
                                             <CardTitle className="text-[14px] leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>
+                                                {product.remainingStock === 0 && <span className="inline-flex items-center bg-red-600 text-white border border-red-700 px-1.5 py-0.5 rounded-sm text-[11px] font-extrabold mr-1 shadow-sm leading-tight tracking-widest align-middle animate-in fade-in zoom-in duration-300">🚨마감</span>}
                                                 {product.is_visible === false && <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0 rounded-sm text-[9px] font-bold mr-1 align-middle shadow-sm"><EyeOff className="w-2.5 h-2.5" />숨김</span>}
                                                 {product.is_stocked && <span className="inline-flex items-center gap-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 px-1 py-0 rounded-sm text-[10px] font-extrabold mr-1 align-middle shadow-sm tracking-tight">입고🟢</span>}
                                                 {product.collect_name}
@@ -938,35 +939,37 @@ export default function ProductsPage() {
                                         {product.allocated_stock === 0 && <Badge variant="destructive" className="shadow-sm shrink-0 whitespace-nowrap text-[10px] px-1.5 py-0">품절</Badge>}
                                     </CardHeader>
                                     <CardContent className="mt-auto px-3 pb-3 pt-0">
-                                        <div className={`flex w-full items-center justify-between p-1 px-1.5 rounded-md border ${product.remainingStock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-slate-50 border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex flex-col items-center">
-                                                <span className={`text-[9px] font-bold whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>발주</span>
-                                                <Input
-                                                    type="number"
-                                                    defaultValue={product.allocated_stock}
-                                                    onBlur={(e) => {
-                                                        if (e.target.value !== String(product.allocated_stock)) {
-                                                            handleUpdateStock(product.id, parseInt(e.target.value) || 0)
-                                                        }
-                                                    }}
-                                                    className={`w-[42px] h-5 text-[10px] text-center font-bold px-0 py-0 shadow-none border-b border-transparent hover:border-slate-300 bg-transparent focus:bg-white transition-colors ${product.allocated_stock === 0 ? 'text-red-700' : ''}`}
-                                                    title="수정하려면 클릭하세요"
-                                                />
+                                        <div className={`flex w-full items-center justify-between p-2 rounded-md border ${product.remainingStock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-slate-50 border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex flex-row items-center gap-1.5">
+                                                <span className={`text-[13px] font-bold whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>발주</span>
+                                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm flex items-center justify-center h-7 px-1 w-[54px] hover:border-slate-300 transition-colors">
+                                                    <Input
+                                                        type="number"
+                                                        defaultValue={product.allocated_stock}
+                                                        onBlur={(e) => {
+                                                            if (e.target.value !== String(product.allocated_stock)) {
+                                                                handleUpdateStock(product.id, parseInt(e.target.value) || 0)
+                                                            }
+                                                        }}
+                                                        className={`w-full h-full text-[15px] text-center font-bold px-0 py-0 shadow-none border-none bg-transparent focus-visible:ring-0 ${product.allocated_stock === 0 ? 'text-red-700' : ''}`}
+                                                        title="수정하려면 클릭하세요"
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="w-[1px] h-6 bg-slate-200"></div>
-                                            <div className="flex flex-col items-center pt-0.5">
-                                                <span className="text-[9px] text-slate-500 font-bold whitespace-nowrap">주문</span>
-                                                <div className="flex items-baseline gap-0.5 h-5">
-                                                    <span className="text-[11px] font-bold text-slate-800">{product.orderSum || 0}</span>
+                                            <div className="flex flex-row items-center gap-1.5">
+                                                <span className="text-[13px] text-slate-500 font-bold whitespace-nowrap">주문</span>
+                                                <div className="flex items-baseline gap-0.5">
+                                                    <span className="text-[16px] font-bold text-slate-800">{product.orderSum || 0}</span>
                                                     {product.box_quantity && product.box_quantity > 0 && (product.orderSum || 0) > 0 && (
-                                                        <span className="text-[10px] text-indigo-600 font-bold tracking-tighter">({((product.orderSum || 0) / product.box_quantity).toFixed(1).replace('.0', '')}bx)</span>
+                                                        <span className="text-[12px] text-indigo-600 font-bold tracking-tighter">({((product.orderSum || 0) / product.box_quantity).toFixed(1).replace('.0', '')}bx)</span>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="w-[1px] h-6 bg-slate-200"></div>
-                                            <div className="flex flex-col items-center pt-0.5 pr-1">
-                                                <span className="text-[9px] text-slate-500 font-bold whitespace-nowrap items-center gap-0.5">잔여</span>
-                                                <span className={`text-[11px] font-bold h-5 leading-5 tracking-tight ${product.remainingStock === 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                            <div className="flex flex-row items-center gap-1.5 pr-1">
+                                                <span className="text-[13px] text-slate-500 font-bold whitespace-nowrap items-center gap-0.5">잔여</span>
+                                                <span className={`text-[16px] font-extrabold tracking-tight ${product.remainingStock === 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                                                     {product.remainingStock ?? '-'}
                                                 </span>
                                             </div>
