@@ -52,22 +52,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, error: error?.message || "Failed to generate link" })
         }
 
-        // Ensure dynamic host replacement if Supabase is still defaulting to localhost
+        // 1) Extract the actual origin from the request headers
+        const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
+        const protocol = req.headers.get('x-forwarded-proto') || 'http';
+        const realOrigin = `${protocol}://${hostHeader}`;
+        
         let actionLink = data.properties.action_link;
-        
-        // Reconstruct the actual current domain (Vercel or local)
-        const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host');
-        
-        if (actionLink.includes('localhost') || actionLink.includes('127.0.0.1')) {
-            if (hostHeader && !hostHeader.includes('localhost') && !hostHeader.includes('127.0.0.1')) {
-                const protocol = req.headers.get('x-forwarded-proto') || 'https';
-                const realOrigin = `${protocol}://${hostHeader}`;
+
+        // 2) If we are on localhost, forcibly override the Vercel base URL to localhost 
+        // to prevent redirecting the developer to production during local testing.
+        if (realOrigin.includes('localhost') || realOrigin.includes('127.0.0.1')) {
+            actionLink = actionLink.replace(/https:\/\/ui-db-kakao\.vercel\.app/gi, realOrigin);
+            // Additionally fix the redirect_to parameter if it exists
+            actionLink = actionLink.replace(/redirect_to=https%3A%2F%2Fui-db-kakao\.vercel\.app/gi, `redirect_to=${encodeURIComponent(realOrigin)}`);
+            actionLink = actionLink.replace(/redirect_to=https:\/\/ui-db-kakao\.vercel\.app/gi, `redirect_to=${realOrigin}`);
+        } else {
+            // Production fallback block
+            if (actionLink.includes('localhost') || actionLink.includes('127.0.0.1')) {
                 actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/gi, realOrigin);
                 actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/gi, realOrigin);
-            } else {
-                // Hard Regex Fallback if all else fails
-                actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/gi, 'https://ui-db-kakao.vercel.app');
-                actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/gi, 'https://ui-db-kakao.vercel.app');
             }
         }
 

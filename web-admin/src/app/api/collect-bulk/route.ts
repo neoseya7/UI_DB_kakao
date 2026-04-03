@@ -386,31 +386,12 @@ export async function POST(request: Request) {
                                 targetDateStr = collect_date;
                             }
 
-                            // --- SECURITY OVERRIDE: Check if the entire target date is currently hidden by the admin ---
-                            let isTargetDateHidden = false;
-                            try {
-                                const { data: hiddenProductsCheck } = await supabase
-                                    .from('products')
-                                    .select('id')
-                                    .eq('store_id', store_id)
-                                    .eq('target_date', targetDateStr)
-                                    .eq('is_regular_sale', false)
-                                    .eq('is_hidden', true)
-                                    .limit(1);
-                                
-                                if (hiddenProductsCheck && hiddenProductsCheck.length > 0) {
-                                    isTargetDateHidden = true;
-                                }
-                            } catch (e) {
-                                console.error("Hidden lock check failed:", e);
-                            }
-
                             const { data: orderData } = await supabase.from('orders').insert({
                                 store_id,
                                 pickup_date: targetDateStr,
                                 customer_nickname: nickname,
                                 is_received: false,
-                                is_hidden: isTargetDateHidden,
+                                is_hidden: false,
                                 customer_memo_1: isCancellation ? "자동 취소반영" : (isDuplicate ? "중복 접수됨" : "AI 수집")
                             }).select().single();
 
