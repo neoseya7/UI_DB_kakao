@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Search, CalendarDays, ImageIcon, Eye, EyeOff, Trash2 } from "lucide-react"
 import { GuideBadge } from "@/components/ui/guide-badge"
+import imageCompression from 'browser-image-compression'
 
 export default function ProductsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -162,9 +163,23 @@ export default function ProductsPage() {
                 const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`
                 const filePath = `${storeId}/${fileName}`
 
+                let fileToUpload = file;
+                try {
+                    const options = {
+                        maxSizeMB: 0.3,          // Max size 300KB
+                        maxWidthOrHeight: 1024,  // Good max resolution for dashboard
+                        useWebWorker: true,
+                        initialQuality: 0.85
+                    }
+                    fileToUpload = await imageCompression(file, options)
+                    console.log(`compressed img size: ${fileToUpload.size / 1024 / 1024} MB`)
+                } catch (err) {
+                    console.warn('Image compression failed, uploading original:', err)
+                }
+
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('product-images')
-                    .upload(filePath, file)
+                    .upload(filePath, fileToUpload)
 
                 if (uploadError) {
                     alert(`이미지 업로드 실패 (${file.name}): ` + uploadError.message)
