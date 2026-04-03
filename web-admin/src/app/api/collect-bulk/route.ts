@@ -248,8 +248,13 @@ export async function POST(request: Request) {
                     extractedItems = newItems;
                 }
 
-                const firstItem = extractedItems[0]
-                let promptCat = firstItem?.category || "기타";
+                let promptCat = extractedItems[0]?.category || "기타";
+
+                if (["픽업고지", "상품후기", "기타", "문의", "픽업문의", "상품문의"].some(c => promptCat.includes(c))) {
+                    extractedItems = [];
+                }
+
+                const firstItem = extractedItems[0];
 
                 let classifications: string[] = [`분류:${promptCat}`]
                 const crmMatches = settings?.crm_tags?.filter((t: any) => t.type === 'crm' && (chat_content.includes(t.name) || nickname.includes(t.name))) || []
@@ -406,7 +411,7 @@ export async function POST(request: Request) {
                 if (extractedItems.length === 0) {
                     await supabase.from('chat_logs').update({
                         is_processed: shouldSaveToOrders,
-                        product_name: "-",
+                        product_name: "X",
                         classification: classificationStr
                     }).eq('id', logId);
                 } else {

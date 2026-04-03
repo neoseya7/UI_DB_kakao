@@ -136,7 +136,7 @@ export default function Dashboard() {
           const matchBadges: { name: string, isMatched: boolean, dateText: string }[] = []
           let finalClassification = otherClassifications.join(", ")
 
-          const isOrderType = displayCat === "픽업고지" || row.category === "ORDER" || displayCat.includes("주문");
+          const isOrderType = displayCat !== "픽업고지" && (row.category === "ORDER" || displayCat.includes("주문"));
           let finalProductName = row.product_name || "-";
 
           if (isOrderType && row.product_name && row.product_name !== "-") {

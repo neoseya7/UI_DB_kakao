@@ -241,8 +241,14 @@ export async function POST(request: Request) {
             extractedItems = [{ category: "AI분석오류", product: "프롬프트 파싱 실패", quantity: "0" }]
         }
 
-        const firstItem = extractedItems[0]
-        let promptCat = firstItem?.category || "기타";
+        let promptCat = extractedItems[0]?.category || "기타";
+
+        // --- FEATURE: Clear hallucinated extractions for non-order types to avoid 'unregistered product' failures ---
+        if (["픽업고지", "상품후기", "기타", "문의", "픽업문의", "상품문의"].some(c => promptCat.includes(c))) {
+            extractedItems = [];
+        }
+
+        const firstItem = extractedItems[0];
 
         // 5. Verification and Duplicates
         let classifications: string[] = []
@@ -414,7 +420,7 @@ export async function POST(request: Request) {
         if (extractedItems.length === 0) {
             await supabase.from('chat_logs').update({
                 is_processed: isActualOrder,
-                product_name: "-",
+                product_name: "X",
                 classification: classificationStr
             }).eq('id', logId);
         } else {
