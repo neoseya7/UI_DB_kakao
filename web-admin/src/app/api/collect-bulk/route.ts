@@ -254,54 +254,98 @@ export async function POST(request: Request) {
                     extractedItems = [];
                 }
 
-                const firstItem = extractedItems[0];
-
-                let classifications: string[] = [`분류:${promptCat}`]
+                const isCancellationGlobal = promptCat.includes("취소") || promptCat === "주문취소";
+                
+                let generalClassifications: string[] = []
                 const crmMatches = settings?.crm_tags?.filter((t: any) => t.type === 'crm' && (chat_content.includes(t.name) || nickname.includes(t.name))) || []
-                if (crmMatches.length > 0) classifications.push(crmMatches[0].name)
+                if (crmMatches.length > 0) generalClassifications.push(crmMatches[0].name)
 
-                let isDuplicate = false
-
-                if (extractedItems.length > 0 && products) {
-                    for (const item of extractedItems) {
-                        let fixedProductName = item.product;
-                        const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
-                        fixedProductName = await matchProductWithAI(item.product, availableCandidates);
-
-                        if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
-                            const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
-                            if (soldoutCandidates.length > 0) {
-                                fixedProductName = await matchProductWithAI(item.product, soldoutCandidates);
-                            }
-                        }
-
-                        item.product = fixedProductName;
+                if (extractedItems.length === 0) {
+                    let classifications = [...generalClassifications, `분류:${promptCat}`];
+                    const classificationStr = classifications.join(", ") || null;
+                    const finalIntent = isCancellationGlobal ? "COMPLAINT" : promptCat === "픽업고지" ? "픽업고지" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
+                    
+                    await supabase.from('chat_logs').update({
+                        is_processed: false,
+                        product_name: "X",
+                        category: finalIntent,
+                        classification: classificationStr
+                    }).eq('id', logId);
+                } else {
+                    for (let i = 0; i < extractedItems.length; i++) {
+                        const item = extractedItems[i];
+                        let classifications = [...generalClassifications, `분류:${promptCat}`];
+                        let isDuplicate = false;
                         
-                        const qty = parseInt(item.quantity, 10) || 1;
-                        const matchedProduct = 
-                            products.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
-                            || products.find(p => p.collect_name === fixedProductName);
+                        let fixedProductName = item.product;
 
-                        if (matchedProduct) {
-                            const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
+                        if (products) {
+                            const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
+                            fixedProductName = await matchProductWithAI(item.product, availableCandidates);
 
-                            if (!isOutOfStock && matchedProduct.remaining_stock !== null) {
-                                matchedProduct.remaining_stock -= qty;
+                            if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
+                                const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
+                                if (soldoutCandidates.length > 0) {
+                                    fixedProductName = await matchProductWithAI(item.product, soldoutCandidates);
+                                }
                             }
 
-                            if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") {
-                                if (matchedProduct.target_date) firstItem.pickup_date = matchedProduct.target_date;
-                                else if (!isOutOfStock && !classifications.includes("날짜미지정")) classifications.push("날짜미지정");
-                            }
+                            item.product = fixedProductName;
+                            
+                            const qty = parseInt(item.quantity, 10) || 1;
+                            const matchedProduct = 
+                                products.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
+                                || products.find(p => p.collect_name === fixedProductName);
 
-                            if (isOutOfStock && !classifications.includes("재고초과주문")) classifications.push("재고초과주문")
+                            if (matchedProduct) {
+                                const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
 
-                            if (!isDuplicate) {
+                                if (!isOutOfStock && matchedProduct.remaining_stock !== null) {
+                                    matchedProduct.remaining_stock -= qty;
+                                }
+
+                                let finalDateStr = collect_date;
+                                if (matchedProduct.target_date) {
+                                    finalDateStr = matchedProduct.target_date;
+                                } else if (item.pickup_date && item.pickup_date !== "날짜미지정") {
+                                    if (item.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                        finalDateStr = item.pickup_date;
+                                    } else {
+                                        const year = collect_date.split('-')[0]
+                                        const mmdd = item.pickup_date.replace('/', '-')
+                                        if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
+                                            const parts = mmdd.split('-')
+                                            finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+                                        }
+                                    }
+                                } else if (extractedItems[0].pickup_date && extractedItems[0].pickup_date !== "날짜미지정") {
+                                    const firstPD = extractedItems[0].pickup_date;
+                                    if (firstPD.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                        finalDateStr = firstPD;
+                                    } else {
+                                        const year = collect_date.split('-')[0]
+                                        const mmdd = firstPD.replace('/', '-')
+                                        if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
+                                            const parts = mmdd.split('-')
+                                            finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+                                        }
+                                    }
+                                }
+                                item.finalDateStr = finalDateStr;
+
+                                if (!item.pickup_date || item.pickup_date === "날짜미지정" || item.pickup_date.trim() === "") {
+                                    if (!matchedProduct.target_date) {
+                                        if (!isOutOfStock) classifications.push("날짜미지정");
+                                    }
+                                }
+
+                                if (isOutOfStock) classifications.push("재고초과주문");
+
                                 const { data: existingOrders } = await supabase.from('orders')
                                     .select('id, order_items(product_id)')
                                     .eq('store_id', store_id)
-                                    .eq('pickup_date', collect_date)
-                                    .eq('customer_nickname', nickname)
+                                    .eq('pickup_date', finalDateStr)
+                                    .eq('customer_nickname', nickname);
                                 
                                 if (existingOrders && existingOrders.length > 0) {
                                     for (const eo of existingOrders) {
@@ -310,135 +354,78 @@ export async function POST(request: Request) {
                                         }
                                     }
                                 }
-                            }
-                        } else {
-                            if (!classifications.includes("상품미등록")) classifications.push("상품미등록");
-                        }
-                    }
-                } else if (extractedItems.length > 0 && !products) {
-                    if (!firstItem.pickup_date || firstItem.pickup_date === "날짜미지정" || firstItem.pickup_date.trim() === "") classifications.push("날짜미지정");
-                }
-
-                // Verify ALL items exist in products database before allowing insertion
-                if (extractedItems.length > 0 && products) {
-                    for (const item of extractedItems) {
-                        if (!products.find(p => p.collect_name === item.product)) {
-                            if (!classifications.includes("상품미등록")) classifications.push("상품미등록");
-                        }
-                    }
-                }
-
-                if (isDuplicate) classifications.push("중복주의")
-
-                const isCancellation = promptCat.includes("취소") || promptCat === "주문취소";
-
-                const isActualOrder = (promptCat === "픽업고지" || promptCat.includes("주문") || promptCat.includes("예약"))
-                    && !isCancellation && !promptCat.includes("문의")
-                    && !classifications.includes("재고초과주문")
-                    && !classifications.includes("상품미등록");
-
-                const shouldSaveToOrders = isActualOrder || (isCancellation && !classifications.includes("상품미등록"));
-
-                const finalIntent = isActualOrder ? "ORDER" : (classifications.includes("재고초과주문") || classifications.includes("상품미등록")) ? "UNKNOWN" : isCancellation ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
-                await supabase.from('chat_logs').update({ category: finalIntent }).eq('id', logId)
-
-                // Save to Orders DB (1 Order per Product Item)
-                if (extractedItems.length > 0 && shouldSaveToOrders) {
-                    for (const item of extractedItems) {
-                        const matchedProduct = products?.find(p => p.collect_name === item.product)
-                        
-                        // Determine the pickup date for this specific item
-                        let finalDateStr = collect_date;
-                        
-                        // 1. Priortize the Product's default target_date if it's set
-                        if (matchedProduct && matchedProduct.target_date) {
-                            finalDateStr = matchedProduct.target_date;
-                        } 
-                        // 2. Otherwise fall back to AI extracted date
-                        else if (item.pickup_date && item.pickup_date !== "날짜미지정") {
-                            if (item.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                finalDateStr = item.pickup_date;
+                                item.matchedProduct = matchedProduct;
+                                
                             } else {
-                                const year = collect_date.split('-')[0]
-                                const mmdd = item.pickup_date.replace('/', '-')
-                                if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                                    const parts = mmdd.split('-')
-                                    finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+                                classifications.push("상품미등록");
+                                if (!item.pickup_date || item.pickup_date === "날짜미지정" || item.pickup_date.trim() === "") {
+                                    classifications.push("날짜미지정");
                                 }
                             }
-                        } else if (extractedItems[0].pickup_date && extractedItems[0].pickup_date !== "날짜미지정") {
-                             // Fallback to the first item's date if current item has no specific date extracted
-                             const firstPD = extractedItems[0].pickup_date;
-                             if (firstPD.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                 finalDateStr = firstPD;
-                             } else {
-                                 const year = collect_date.split('-')[0]
-                                 const mmdd = firstPD.replace('/', '-')
-                                 if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                                     const parts = mmdd.split('-')
-                                     finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
-                                 }
-                             }
+                        } else {
+                            classifications.push("상품미등록");
                         }
 
-                        const targetDate = new Date(finalDateStr)
-                        
-                        if (matchedProduct) {
+                        if (isDuplicate) classifications.push("중복주의");
+
+                        const classificationStr = classifications.join(", ") || null;
+                        const isCancellation = promptCat.includes("취소") || promptCat === "주문취소";
+                        const isActualOrder = (promptCat === "픽업고지" || promptCat.includes("주문") || promptCat.includes("예약"))
+                            && !isCancellation && !promptCat.includes("문의")
+                            && !classifications.includes("재고초과주문")
+                            && !classifications.includes("상품미등록");
+
+                        const shouldSaveToOrders = isActualOrder || (isCancellation && !classifications.includes("상품미등록"));
+                        const finalIntent = isActualOrder ? "ORDER" : (classifications.includes("재고초과주문") || classifications.includes("상품미등록")) ? "UNKNOWN" : isCancellation ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
+
+                        // Save to Orders DB
+                        if (shouldSaveToOrders && item.matchedProduct) {
+                            const targetDate = new Date(item.finalDateStr);
                             const { data: orderData } = await supabase.from('orders').insert({
                                 store_id,
                                 pickup_date: targetDate.toISOString().split('T')[0],
                                 customer_nickname: nickname,
                                 is_received: false,
                                 customer_memo_1: isCancellation ? "자동 취소반영" : (isDuplicate ? "중복 접수됨" : "AI 수집")
-                            }).select().single()
+                            }).select().single();
 
                             if (orderData) {
-                                let itemQty = parseInt(item.quantity, 10) || 1
-                                if (isCancellation) itemQty = -Math.abs(itemQty)
+                                let itemQty = parseInt(item.quantity, 10) || 1;
+                                if (isCancellation) itemQty = -Math.abs(itemQty);
 
                                 await supabase.from('order_items').insert({
                                     order_id: orderData.id,
-                                    product_id: matchedProduct.id,
+                                    product_id: item.matchedProduct.id,
                                     quantity: itemQty
-                                })
+                                });
                             }
                         }
-                    }
-                }
 
-                const classificationStr = classifications.join(", ") || null;
-
-                if (extractedItems.length === 0) {
-                    await supabase.from('chat_logs').update({
-                        is_processed: shouldSaveToOrders,
-                        product_name: "X",
-                        classification: classificationStr
-                    }).eq('id', logId);
-                } else {
-                    for (let i = 0; i < extractedItems.length; i++) {
-                        const item = extractedItems[i];
+                        // Update or Insert chat log
                         let q = parseInt(item.quantity, 10);
                         if (!isNaN(q) && q > 0 && isCancellation) q = -Math.abs(q);
                         
-                        const pName = item.product;
-
                         if (i === 0) {
-                            await supabase.from('chat_logs').update({
+                            const { error: finalUpdateError } = await supabase.from('chat_logs').update({
                                 is_processed: shouldSaveToOrders,
-                                product_name: pName,
+                                product_name: fixedProductName,
                                 quantity: isNaN(q) ? null : q,
+                                category: finalIntent,
+                                collect_date: item.finalDateStr || collect_date,
                                 classification: classificationStr
                             }).eq('id', logId);
+                            
+                            if (finalUpdateError) console.error("Update Error:", finalUpdateError)
                         } else {
                             await supabase.from('chat_logs').insert({
                                 store_id,
                                 nickname,
                                 chat_content,
                                 chat_time: parsedTime,
-                                collect_date,
+                                collect_date: item.finalDateStr || collect_date,
                                 category: finalIntent,
                                 is_processed: shouldSaveToOrders,
-                                product_name: pName,
+                                product_name: fixedProductName,
                                 quantity: isNaN(q) ? null : q,
                                 classification: classificationStr
                             });
