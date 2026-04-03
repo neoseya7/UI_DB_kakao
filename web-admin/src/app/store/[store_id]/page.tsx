@@ -42,22 +42,23 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                     setSettings(data.settings)
                     setProducts(data.products || [])
                     
-                    // Auto-select the first available date if no regular products exist
+                    // Auto-select today's date or earliest future date by default
                     if (data.products && data.products.length > 0) {
+                        const dates = Array.from(new Set(data.products.map((p: any) => p.target_date).filter(Boolean))).sort() as string[]
                         const hasRegular = data.products.some((p: any) => p.is_regular_sale)
-                        if (!hasRegular) {
-                            const dates = Array.from(new Set(data.products.map((p: any) => p.target_date).filter(Boolean))).sort() as string[]
-                            if (dates.length > 0) {
-                                const today = new Date()
-                                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-                                
-                                if (dates.includes(todayStr)) {
-                                    setActiveFilter(todayStr)
-                                } else {
-                                    const futureDates = dates.filter(d => d >= todayStr)
-                                    setActiveFilter(futureDates.length > 0 ? futureDates[0] : dates[0])
-                                }
+                        
+                        if (dates.length > 0) {
+                            const today = new Date()
+                            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+                            
+                            if (dates.includes(todayStr)) {
+                                setActiveFilter(todayStr)
+                            } else {
+                                const futureDates = dates.filter(d => d >= todayStr)
+                                setActiveFilter(futureDates.length > 0 ? futureDates[0] : dates[0])
                             }
+                        } else if (hasRegular) {
+                            setActiveFilter('regular')
                         }
                     }
                 } else {
