@@ -388,20 +388,22 @@ export async function POST(request: Request) {
 
                 const targetDate = new Date(finalDateStr)
 
-                const { data: orderData } = await supabase.from('orders').insert({
-                    store_id,
-                    pickup_date: targetDate.toISOString().split('T')[0],
-                    customer_nickname: nickname,
-                    is_received: false,
-                    customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
-                }).select().single()
+                if (matchedProduct) {
+                    const { data: orderData } = await supabase.from('orders').insert({
+                        store_id,
+                        pickup_date: targetDate.toISOString().split('T')[0],
+                        customer_nickname: nickname,
+                        is_received: false,
+                        customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
+                    }).select().single()
 
-                if (orderData && matchedProduct) {
-                    await supabase.from('order_items').insert({
-                        order_id: orderData.id,
-                        product_id: matchedProduct.id,
-                        quantity: item.quantity || 1
-                    })
+                    if (orderData) {
+                        await supabase.from('order_items').insert({
+                            order_id: orderData.id,
+                            product_id: matchedProduct.id,
+                            quantity: item.quantity || 1
+                        })
+                    }
                 }
             }
         }
