@@ -216,29 +216,44 @@ export default function Dashboard() {
           return row
         })
 
-        // Third pass: Time Jump(시간 역행) 감지 (과거 대화 끌올 감지)
-        let maxContextTime = 0;
-        let lastDateContext = "";
+        // Third pass: Time Jump(시간 역행) 감지 (닉네임 변경으로 인한 과거 대화 끌올 감지)
+        let maxMinuteTime = -1;
         
-        // self는 created_at 역순(최신이 0번 인덱스)이므로 제일 뒤(가장 오래된 수집)부터 앞으로 오면서 스트림 검사
+        // self는 created_at 역순(최신이 0번 인덱스)이므로 제일 뒤(가장 오래된 데이터)부터 앞으로 오면서 흐름 검사
         for (let i = finalMappedLogs.length - 1; i >= 0; i--) {
             const row = finalMappedLogs[i];
-            if (row.date !== "-" && row.time !== "-") {
-                // 날짜가 바뀔 경우 maxContextTime 초기화 (미래 날짜 오염 방지)
-                if (row.date !== lastDateContext) {
-                    maxContextTime = 0;
-                    lastDateContext = row.date;
-                }
-                
-                // 시간 문자열 파싱
-                const parsedTime = new Date(`${row.date}T${row.time}:00`).getTime();
-                if (!isNaN(parsedTime)) {
-                    // 현재 대화가 "같은 날짜 안에서 가장 최신 대화시간"보다 1시간(60분) 이상 과거로 튄다면?
-                    if (maxContextTime > 0 && parsedTime < maxContextTime - (60 * 60 * 1000)) {
-                        row.isSuspectedDuplicate = true; // 중복의심과 동일하게 붉은색 UI 사용
-                        row.classification = row.classification ? row.classification + ", [⏰과거대화의심]" : "[⏰과거대화의심]";
-                    } else if (parsedTime > maxContextTime) {
-                        maxContextTime = parsedTime; // 정상적인 시간의 흐름이면 Max Time 갱신
+            
+            if (row.time && row.time !== "-") {
+                const parts = row.time.split(':');
+                if (parts.length === 2) {
+                    const currentMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                    
+                    if (maxMinuteTime !== -1) {
+                        let isBackward = false;
+                        
+                        if (currentMinutes < maxMinuteTime) {
+                            // 시간 역행인지, 아니면 단순히 밤 12시(자정)를 넘겨서 00시로 리셋된건지 구분
+                            // maxMinuteTime이 22:00(1320) 이후이고 currentMinutes가 04:00(240) 이전이라면 자정 넘김으로 인정
+                            const isMidnightCrossing = maxMinuteTime >= 1320 && currentMinutes <= 240;
+                            
+                            if (!isMidnightCrossing) {
+                                // 파서 통신 지연을 고려해 10분 정도의 오차는 정상 흐름으로 허용
+                                if (maxMinuteTime - currentMinutes > 10) {
+                                    isBackward = true;
+                                }
+                            }
+                        }
+
+                        if (isBackward) {
+                            row.isSuspectedDuplicate = true; // 중복의심 UI 속성(붉은색) 재사용
+                            row.classification = row.classification ? row.classification + ", [🚨닉네임변경의심]" : "[🚨닉네임변경의심]";
+                        } else {
+                            // 정상 흐름일 경우에만 기준 시간 갱신 (자정 넘겼다면 작은 수로 새로 리셋됨)
+                            maxMinuteTime = currentMinutes;
+                        }
+                    } else {
+                        // 최초 1회 기준 시간 셋팅
+                        maxMinuteTime = currentMinutes;
                     }
                 }
             }
