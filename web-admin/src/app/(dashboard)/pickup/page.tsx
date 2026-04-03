@@ -73,8 +73,9 @@ export default function PickupCalendarPage() {
 
     const [availableDates, setAvailableDates] = useState<string[]>([])
     const [products, setProducts] = useState<Product[]>([])
+    const [manualOrderProducts, setManualOrderProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
-
+    
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false)
 
     useEffect(() => {
@@ -194,6 +195,35 @@ export default function PickupCalendarPage() {
         }
         fetchModalProducts()
     }, [storeId, isTransferModalOpen, transferSourceDate, currentDate])
+
+    // Update manual order products when activeDate changes
+    useEffect(() => {
+        if (!storeId) return;
+        const activeDate = newDate || currentDate;
+        const fetchManualProducts = async () => {
+            const { data } = await supabase.from('products')
+                .select('*')
+                .eq('store_id', storeId)
+                .eq('is_hidden', false)
+                .or(`target_date.eq.${activeDate},is_regular_sale.eq.true`)
+            
+            if (data) {
+                setManualOrderProducts(data.map(p => ({
+                    id: p.id,
+                    name: p.collect_name,
+                    price: p.price || 0,
+                    required: p.allocated_stock || 0,
+                    stock: p.allocated_stock || 0,
+                    target_date: p.target_date,
+                    is_regular_sale: p.is_regular_sale,
+                    product_memo: p.product_memo || "",
+                    tiered_prices: p.tiered_prices || [],
+                    unit_text: p.unit_text || ""
+                })))
+            }
+        }
+        fetchManualProducts()
+    }, [storeId, newDate, currentDate])
 
     const fetchMatrixData = async () => {
         if (!storeId) return
@@ -1168,9 +1198,23 @@ export default function PickupCalendarPage() {
                                     <SelectValue placeholder="상품명" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {products.filter(p => p.is_regular_sale || p.target_date === (newDate || currentDate)).map((p) => (
-                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                    ))}
+                                    {manualOrderProducts
+                                        .sort((a, b) => {
+                                            const active = newDate || currentDate;
+                                            const aIsTarget = a.target_date === active;
+                                            const bIsTarget = b.target_date === active;
+                                            if (aIsTarget && !bIsTarget) return -1;
+                                            if (!aIsTarget && bIsTarget) return 1;
+                                            return a.name.localeCompare(b.name, 'ko-KR');
+                                        })
+                                        .map((p) => {
+                                            const active = newDate || currentDate;
+                                            const isTarget = p.target_date === active;
+                                            const label = isTarget ? `[해당일] ${p.name}` : `[상시] ${p.name}`;
+                                            return (
+                                                <SelectItem key={p.id} value={p.id}>{label}</SelectItem>
+                                            );
+                                        })}
                                 </SelectContent>
                             </Select>
                             <Input type="number" placeholder="수량" value={newQty} onChange={e => setNewQty(e.target.value)} className="w-[60px] h-9 bg-white shadow-sm shrink-0 px-2" min="1" />

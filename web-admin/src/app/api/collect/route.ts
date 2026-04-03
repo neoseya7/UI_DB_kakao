@@ -387,12 +387,38 @@ export async function POST(request: Request) {
 
                 // Save to Orders DB
                 if (isActualOrder && item.matchedProduct) {
-                    const targetDate = new Date(item.finalDateStr);
+                    let targetDateStr = item.finalDateStr || collect_date;
+                    if (targetDateStr === "날짜미지정") targetDateStr = collect_date;
+                    if (!targetDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        targetDateStr = collect_date;
+                    }
+
+                    // --- SECURITY OVERRIDE: Check if the entire target date is currently hidden by the admin ---
+                    // Even if the user bought a "regular product", if the date is globally hidden, the new order must sync to hidden so it doesn't leak.
+                    let isTargetDateHidden = false;
+                    try {
+                        const { data: hiddenProductsCheck } = await supabase
+                            .from('products')
+                            .select('id')
+                            .eq('store_id', store_id)
+                            .eq('target_date', targetDateStr)
+                            .eq('is_regular_sale', false) // Target items indicate the date's lock status
+                            .eq('is_hidden', true)
+                            .limit(1);
+                        
+                        if (hiddenProductsCheck && hiddenProductsCheck.length > 0) {
+                            isTargetDateHidden = true;
+                        }
+                    } catch (e) {
+                        console.error("Hidden lock check failed:", e);
+                    }
+
                     const { data: orderData } = await supabase.from('orders').insert({
                         store_id,
-                        pickup_date: targetDate.toISOString().split('T')[0],
+                        pickup_date: targetDateStr,
                         customer_nickname: nickname,
                         is_received: false,
+                        is_hidden: isTargetDateHidden,
                         customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
                     }).select().single();
 
@@ -413,24 +439,25 @@ export async function POST(request: Request) {
                         is_processed: isActualOrder,
                         product_name: fixedProductName,
                         quantity: isNaN(q) ? null : q,
-                        collect_date: item.finalDateStr || collect_date,
+                        collect_date: collect_date,
                         classification: classificationStr
                     }).eq('id', logId);
                     
                     if (finalUpdateError) console.error("Update Error:", finalUpdateError)
                 } else {
-                    await supabase.from('chat_logs').insert({
+                    const { error: splitInsertErr } = await supabase.from('chat_logs').insert({
                         store_id,
                         nickname,
                         chat_content,
                         chat_time: parsedTime,
-                        collect_date: item.finalDateStr || collect_date,
+                        collect_date: collect_date,
                         category: finalIntent,
                         is_processed: isActualOrder,
                         product_name: fixedProductName,
                         quantity: isNaN(q) ? null : q,
                         classification: classificationStr
                     });
+                    if (splitInsertErr) console.error("SPLIT INSERT ERR:", splitInsertErr);
                 }
             }
         }

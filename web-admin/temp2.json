@@ -1,0 +1,92 @@
+[
+  {
+    "nickname": "이편한7660",
+    "chat_content": "[이편한7660] [오후 10:17] 쉐이크 (말차2.곡물2)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:17:00",
+    "created_at": "2026-04-03T13:20:36.763219+00:00",
+    "product_name": "곡물쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "이편한7660",
+    "chat_content": "[이편한7660] [오후 10:17] 쉐이크 (말차2.곡물2)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:17:00",
+    "created_at": "2026-04-03T13:20:13.09724+00:00",
+    "product_name": "말차쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "미아랑22",
+    "chat_content": "[미아랑22] [오후 10:12] 바지오1 금욜에 같이 수령할게요",
+    "collect_date": "2026-04-03",
+    "chat_time": "22:12:00",
+    "created_at": "2026-04-03T13:20:06.42308+00:00",
+    "product_name": null,
+    "category": "UNKNOWN"
+  },
+  {
+    "nickname": "요술램프1785",
+    "chat_content": "[요술램프1785] [오후 10:12] 바지오 쉐이크 (말차2 초코3 곡물3)",
+    "collect_date": "2026-04-03",
+    "chat_time": "22:12:00",
+    "created_at": "2026-04-03T13:20:05.241124+00:00",
+    "product_name": "바지오 쉐이크 곡물",
+    "category": "UNKNOWN"
+  },
+  {
+    "nickname": "요술램프1785",
+    "chat_content": "[요술램프1785] [오후 10:12] 바지오 쉐이크 (말차2 초코3 곡물3)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:12:00",
+    "created_at": "2026-04-03T13:19:45.841667+00:00",
+    "product_name": "초코쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "요술램프1785",
+    "chat_content": "[요술램프1785] [오후 10:12] 바지오 쉐이크 (말차2 초코3 곡물3)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:12:00",
+    "created_at": "2026-04-03T13:19:32.727618+00:00",
+    "product_name": "말차쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "우씨스터9579",
+    "chat_content": "[우씨스터9579] [오후 10:10] 쉐이크2세트(곡물4 말차2 초코2)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:10:00",
+    "created_at": "2026-04-03T13:19:32.088085+00:00",
+    "product_name": "초코쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "우씨스터9579",
+    "chat_content": "[우씨스터9579] [오후 10:10] 쉐이크2세트(곡물4 말차2 초코2)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:10:00",
+    "created_at": "2026-04-03T13:19:24.614461+00:00",
+    "product_name": "말차쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "우씨스터9579",
+    "chat_content": "[우씨스터9579] [오후 10:10] 쉐이크2세트(곡물4 말차2 초코2)",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:10:00",
+    "created_at": "2026-04-03T13:19:07.183766+00:00",
+    "product_name": "곡물쉐이크",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "제시",
+    "chat_content": "[제시] [오후 10:10] 바지오 쉐이크 말차2 곡물2",
+    "collect_date": "2026-04-07",
+    "chat_time": "22:10:00",
+    "created_at": "2026-04-03T13:19:06.504535+00:00",
+    "product_name": "곡물쉐이크",
+    "category": "ORDER"
+  }
+]

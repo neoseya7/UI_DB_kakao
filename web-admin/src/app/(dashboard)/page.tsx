@@ -192,72 +192,9 @@ export default function Dashboard() {
         })
 
         // Second pass: Cross-reference to detect suspected duplicates 
-        // 1. Same date, same nickname, same product, DIFFERENT quantity (수동 수정이나 오입력 가능성)
-        let finalMappedLogs = mappedLogs.map((row, index, self) => {
-          let isSuspectedDuplicate = false
+        // Removed all suspected duplicate logic
+        let finalMappedLogs = mappedLogs;
 
-          for (let i = 0; i < self.length; i++) {
-            if (i === index) continue
-            const other = self[i]
-
-            // 닉네임만 다르고 동일한 내용은 삭제 (우연히 같은 주문일 수 있음)
-            // 기존 Condition 1 삭제됨
-            
-            // Condition 2: 닉네임&상품이 같은데 수량이 다른 경우 (기존 중복의심 로직 보존)
-            if (row.date === other.date && row.nickname === other.nickname && row.product === other.product && row.quantity !== other.quantity) {
-              isSuspectedDuplicate = true; break;
-            }
-          }
-
-          if (isSuspectedDuplicate) {
-            const newClassification = row.classification ? row.classification + ", [중복의심]" : "[중복의심]"
-            return { ...row, isSuspectedDuplicate: true, classification: newClassification }
-          }
-          return row
-        })
-
-        // Third pass: Time Jump(시간 역행) 감지 (닉네임 변경으로 인한 과거 대화 끌올 감지)
-        let maxMinuteTime = -1;
-        
-        // self는 created_at 역순(최신이 0번 인덱스)이므로 제일 뒤(가장 오래된 데이터)부터 앞으로 오면서 흐름 검사
-        for (let i = finalMappedLogs.length - 1; i >= 0; i--) {
-            const row = finalMappedLogs[i];
-            
-            if (row.time && row.time !== "-") {
-                const parts = row.time.split(':');
-                if (parts.length === 2) {
-                    const currentMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-                    
-                    if (maxMinuteTime !== -1) {
-                        let isBackward = false;
-                        
-                        if (currentMinutes < maxMinuteTime) {
-                            // 시간 역행인지, 아니면 단순히 밤 12시(자정)를 넘겨서 00시로 리셋된건지 구분
-                            // maxMinuteTime이 22:00(1320) 이후이고 currentMinutes가 04:00(240) 이전이라면 자정 넘김으로 인정
-                            const isMidnightCrossing = maxMinuteTime >= 1320 && currentMinutes <= 240;
-                            
-                            if (!isMidnightCrossing) {
-                                // 파서 통신 지연을 고려해 10분 정도의 오차는 정상 흐름으로 허용
-                                if (maxMinuteTime - currentMinutes > 10) {
-                                    isBackward = true;
-                                }
-                            }
-                        }
-
-                        if (isBackward) {
-                            row.isSuspectedDuplicate = true; // 중복의심 UI 속성(붉은색) 재사용
-                            row.classification = row.classification ? row.classification + ", [🚨닉네임변경의심]" : "[🚨닉네임변경의심]";
-                        } else {
-                            // 정상 흐름일 경우에만 기준 시간 갱신 (자정 넘겼다면 작은 수로 새로 리셋됨)
-                            maxMinuteTime = currentMinutes;
-                        }
-                    } else {
-                        // 최초 1회 기준 시간 셋팅
-                        maxMinuteTime = currentMinutes;
-                    }
-                }
-            }
-        }
 
         setLogs(finalMappedLogs)
       }
@@ -687,8 +624,8 @@ export default function Dashboard() {
                             <Checkbox className={`mx-auto border-slate-300 ${isSelected ? 'border-primary' : ''}`} checked={isSelected} onCheckedChange={() => toggleRow(log.id)} />
                           </td>
                           <td className="px-2 py-3 text-slate-600 font-medium tracking-tighter truncate text-xs" title={log.date}>{log.date}</td>
-                          <td className={`px-2 py-3 font-medium tracking-tighter truncate text-xs ${log.isSuspectedDuplicate ? 'text-rose-600 font-bold' : ''}`} title={log.time}>{log.time}</td>
-                          <td className={`px-4 py-3 break-words whitespace-normal ${log.isSuspectedDuplicate ? 'text-rose-600 font-medium' : 'text-slate-900'}`}>
+                          <td className="px-2 py-3 font-medium tracking-tighter truncate text-xs" title={log.time}>{log.time}</td>
+                          <td className="px-4 py-3 break-words whitespace-normal text-slate-900">
                             <span className="line-clamp-2" title={log.message}>{log.message}</span>
                           </td>
                           <td className="px-4 py-3">
@@ -696,7 +633,7 @@ export default function Dashboard() {
                               {log.raw_category || "기타"}
                             </Badge>
                           </td>
-                          <td className={`px-4 py-3 font-semibold ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-slate-800 group-hover:text-primary'}`} title={log.nickname}>
+                          <td className="px-4 py-3 font-semibold text-slate-800 group-hover:text-primary" title={log.nickname}>
                             <div className="flex flex-col items-start gap-1">
                               <span className="truncate w-full block">{log.nickname}</span>
                               {crmDict[log.nickname] && (
@@ -707,8 +644,8 @@ export default function Dashboard() {
                               )}
                             </div>
                           </td>
-                          <td className={`px-4 py-3 font-semibold break-words whitespace-normal leading-tight ${log.isSuspectedDuplicate ? 'text-rose-600' : 'text-primary/90'}`} title={log.product}>{log.product}</td>
-                          <td className={`px-4 py-3 text-center font-bold ${log.isSuspectedDuplicate ? 'text-rose-600' : ''}`}>{log.quantity > 0 ? log.quantity : "-"}</td>
+                          <td className="px-4 py-3 font-semibold break-words whitespace-normal leading-tight text-primary/90" title={log.product}>{log.product}</td>
+                          <td className="px-4 py-3 text-center font-bold">{log.quantity > 0 ? log.quantity : "-"}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex flex-col gap-1 items-center justify-center">
                               {log.matchBadges && log.matchBadges.length > 0 && (

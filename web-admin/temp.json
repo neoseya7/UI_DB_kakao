@@ -1,0 +1,47 @@
+[
+  {
+    "nickname": "라떼1172",
+    "chat_content": "[라떼 1172] [오후 6:38] 미니컵 2",
+    "collect_date": "2026-04-07",
+    "chat_time": "18:38:00",
+    "created_at": "2026-04-03T09:39:34.641848+00:00",
+    "product_name": "미니컵아이스크림",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "삐약이9377",
+    "chat_content": "[삐약이9377] [오후 6:31] 미니컵1",
+    "collect_date": "2026-04-07",
+    "chat_time": "18:31:00",
+    "created_at": "2026-04-03T09:39:29.452662+00:00",
+    "product_name": "미니컵아이스크림",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "조이6242",
+    "chat_content": "[조이6242] [오후 6:29] 미니컵2",
+    "collect_date": "2026-04-07",
+    "chat_time": "18:29:00",
+    "created_at": "2026-04-03T09:39:24.673038+00:00",
+    "product_name": "미니컵아이스크림",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "휴가즐기는어피치0920",
+    "chat_content": "[휴가 즐기는 어피치0920] [오후 6:24] 미니컵1",
+    "collect_date": "2026-04-07",
+    "chat_time": "18:24:00",
+    "created_at": "2026-04-03T09:29:14.431376+00:00",
+    "product_name": "미니컵아이스크림",
+    "category": "ORDER"
+  },
+  {
+    "nickname": "조이6242",
+    "chat_content": "[조이6242] [오후 6:10] 롱바게트2",
+    "collect_date": "2026-04-06",
+    "chat_time": "18:10:00",
+    "created_at": "2026-04-03T09:19:04.16492+00:00",
+    "product_name": "롱바게트",
+    "category": "ORDER"
+  }
+]

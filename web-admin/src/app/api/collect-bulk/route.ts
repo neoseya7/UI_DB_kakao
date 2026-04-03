@@ -380,12 +380,37 @@ export async function POST(request: Request) {
 
                         // Save to Orders DB
                         if (shouldSaveToOrders && item.matchedProduct) {
-                            const targetDate = new Date(item.finalDateStr);
+                            let targetDateStr = item.finalDateStr || collect_date;
+                            if (targetDateStr === "날짜미지정") targetDateStr = collect_date;
+                            if (!targetDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                targetDateStr = collect_date;
+                            }
+
+                            // --- SECURITY OVERRIDE: Check if the entire target date is currently hidden by the admin ---
+                            let isTargetDateHidden = false;
+                            try {
+                                const { data: hiddenProductsCheck } = await supabase
+                                    .from('products')
+                                    .select('id')
+                                    .eq('store_id', store_id)
+                                    .eq('target_date', targetDateStr)
+                                    .eq('is_regular_sale', false)
+                                    .eq('is_hidden', true)
+                                    .limit(1);
+                                
+                                if (hiddenProductsCheck && hiddenProductsCheck.length > 0) {
+                                    isTargetDateHidden = true;
+                                }
+                            } catch (e) {
+                                console.error("Hidden lock check failed:", e);
+                            }
+
                             const { data: orderData } = await supabase.from('orders').insert({
                                 store_id,
-                                pickup_date: targetDate.toISOString().split('T')[0],
+                                pickup_date: targetDateStr,
                                 customer_nickname: nickname,
                                 is_received: false,
+                                is_hidden: isTargetDateHidden,
                                 customer_memo_1: isCancellation ? "자동 취소반영" : (isDuplicate ? "중복 접수됨" : "AI 수집")
                             }).select().single();
 
@@ -411,7 +436,7 @@ export async function POST(request: Request) {
                                 product_name: fixedProductName,
                                 quantity: isNaN(q) ? null : q,
                                 category: finalIntent,
-                                collect_date: item.finalDateStr || collect_date,
+                                collect_date: collect_date,
                                 classification: classificationStr
                             }).eq('id', logId);
                             
@@ -422,7 +447,7 @@ export async function POST(request: Request) {
                                 nickname,
                                 chat_content,
                                 chat_time: parsedTime,
-                                collect_date: item.finalDateStr || collect_date,
+                                collect_date: collect_date,
                                 category: finalIntent,
                                 is_processed: shouldSaveToOrders,
                                 product_name: fixedProductName,
