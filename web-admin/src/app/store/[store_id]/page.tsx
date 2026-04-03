@@ -127,7 +127,18 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
             }
         })
         const sortedDates = Array.from(dates).sort()
-        sortedDates.forEach(date => tabs.push({ id: date, label: date }))
+        sortedDates.forEach(date => {
+            let formattedDate = date;
+            if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const [_, m, d] = date.split('-');
+                const dObj = new Date(date);
+                if (!isNaN(dObj.getTime())) {
+                    const days = ['일', '월', '화', '수', '목', '금', '토'];
+                    formattedDate = `${m}-${d}(${days[dObj.getDay()]})`;
+                }
+            }
+            tabs.push({ id: date, label: formattedDate })
+        })
         return tabs
     }, [products])
 
