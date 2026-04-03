@@ -375,44 +375,27 @@ export default function Dashboard() {
             }
           }
 
-          // 1. Try to find existing order for the NEW target date
-          const { data: existingTargetOrders } = await supabase.from('orders').select('id').eq('store_id', user.id).eq('pickup_date', targetDate).eq('customer_nickname', log.nickname).limit(1)
-          
-          if (existingTargetOrders && existingTargetOrders.length > 0) {
-            orderId = existingTargetOrders[0].id
-          } else {
-            // 2. Create new order if it doesn't exist
-            const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
-              store_id: user.id,
-              pickup_date: targetDate,
-              customer_nickname: log.nickname,
-              is_received: false,
-              customer_memo_1: '관리자 수동 복구'
-            }).select().single()
+          // --- FIX: Always create a completely NEW independent orders row (1:1 mapping rule) ---
+          const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
+            store_id: user.id,
+            pickup_date: targetDate,
+            customer_nickname: log.nickname,
+            is_received: false,
+            customer_memo_1: '관리자 수동 지정'
+          }).select().single()
 
-            if (newOrder) orderId = newOrder.id
-            if (orderErr) {
-              console.error("New order generation failed:", orderErr)
-              continue
-            }
+          if (orderErr || !newOrder) {
+            console.error("New order generation failed:", orderErr)
+            continue
           }
 
-          if (orderId) {
-            const { data: existingItems } = await supabase.from('order_items')
-              .select('id, quantity')
-              .eq('order_id', orderId)
-              .eq('product_id', prod.id)
+          orderId = newOrder.id
 
-            if (existingItems && existingItems.length > 0) {
-              await supabase.from('order_items').update({ quantity: finalQty }).eq('id', existingItems[0].id)
-            } else {
-              await supabase.from('order_items').insert({
-                order_id: orderId,
-                product_id: prod.id,
-                quantity: finalQty
-              })
-            }
-          }
+          await supabase.from('order_items').insert({
+            order_id: orderId,
+            product_id: prod.id,
+            quantity: finalQty
+          })
         }
       }
 
