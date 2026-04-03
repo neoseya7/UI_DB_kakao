@@ -1083,9 +1083,9 @@ export default function PickupCalendarPage() {
             </div>
 
             <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
-                {/* 1번째 줄: 날짜 선택과 검색 영역 */}
-                <div className="flex flex-col xl:flex-row items-center justify-between gap-4 w-full">
-                    <div className="flex items-center gap-2 sm:gap-4 w-full xl:w-auto overflow-x-auto pb-2 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+                {/* 1번째 줄: 날짜 선택과 검색 영역 (상하 2줄 분리) */}
+                <div className="flex flex-col gap-4 w-full">
+                    <div className="flex items-center gap-2 sm:gap-4 w-full overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
                         <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block shrink-0" />
                         <div className="flex flex-nowrap gap-2 items-center w-max">
                             {availableDates.map(date => (
@@ -1115,7 +1115,7 @@ export default function PickupCalendarPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto bg-muted/30 p-1.5 rounded-md border shrink-0">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full bg-muted/30 p-1.5 rounded-md border shrink-0">
                         <div className="flex gap-2">
                             <Select value={searchScope} onValueChange={setSearchScope}>
                                 <SelectTrigger className="w-full sm:w-[130px] h-10 bg-white border-muted shadow-sm font-medium shrink-0">
