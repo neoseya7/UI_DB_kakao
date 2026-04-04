@@ -672,42 +672,45 @@ export default function PickupCalendarPage() {
         const idx = parseInt(transferProductIdx)
         const targetProduct = transferAvailableProducts[idx]
         const sourceDate = transferSourceDate || currentDate
+        const newDate_tf = isTransferToRegular ? null : transferNewDate
+        const newPickup = isTransferToRegular ? '1900-01-01' : transferNewDate
 
-        if (!confirm(`[${targetProduct.name}] 상품 속성과 대상 주문들을 일괄 반영하시겠습니까?`)) return
+        if (!confirm(`[${targetProduct.name}] 상품을 ${isTransferToRegular ? '상시판매로 전환' : sourceDate + ' → ' + transferNewDate + '로 이동'}하시겠습니까?`)) return
 
         setIsLoading(true)
+        const errors: string[] = []
 
-        // Find orders on the specified sourceDate
-        const { data: oData } = await supabase.from('orders').select('id').eq('store_id', storeId).eq('pickup_date', sourceDate)
+        // 1. 상품 속성 변경
+        const { error: pErr } = await supabase.from('products').update({
+            target_date: newDate_tf,
+            is_regular_sale: isTransferToRegular
+        }).eq('id', targetProduct.id)
+        if (pErr) errors.push(`상품 변경 실패: ${pErr.message}`)
+
+        // 2. 해당 날짜의 주문 중 이 상품이 포함된 주문의 pickup_date 일괄 변경
+        const { data: oData, error: oErr } = await supabase.from('orders').select('id').eq('store_id', storeId).eq('pickup_date', sourceDate)
+        if (oErr) errors.push(`주문 조회 실패: ${oErr.message}`)
+
         if (oData && oData.length > 0) {
             const orderIds = oData.map((o: any) => o.id)
-            const { data: oiData } = await supabase.from('order_items').select('order_id').eq('product_id', targetProduct.id).in('order_id', orderIds)
+            const { data: oiData, error: oiErr } = await supabase.from('order_items').select('order_id').eq('product_id', targetProduct.id).in('order_id', orderIds)
+            if (oiErr) errors.push(`주문항목 조회 실패: ${oiErr.message}`)
 
             if (oiData && oiData.length > 0) {
                 const affectedOrderIds = oiData.map((oi: any) => oi.order_id)
-                if (isTransferToRegular) {
-                    await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
-                    for (const oId of affectedOrderIds) {
-                        await supabase.from('orders').update({ pickup_date: '1900-01-01' }).eq('id', oId)
-                    }
-                } else {
-                    for (const oId of affectedOrderIds) {
-                        await supabase.from('orders').update({ pickup_date: transferNewDate }).eq('id', oId)
-                    }
-                    await supabase.from('products').update({ target_date: transferNewDate, is_regular_sale: false }).eq('id', targetProduct.id)
+                for (const oId of affectedOrderIds) {
+                    const { error: uErr } = await supabase.from('orders').update({ pickup_date: newPickup }).eq('id', oId)
+                    if (uErr) errors.push(`주문 ${oId.slice(0,8)} 변경 실패: ${uErr.message}`)
                 }
-            } else {
-                // Product has no orders but we update it anyway
-                if (isTransferToRegular) await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
-                else await supabase.from('products').update({ target_date: transferNewDate, is_regular_sale: false }).eq('id', targetProduct.id)
             }
-        } else {
-            // No orders exist on source date, just update the Product itself
-            if (isTransferToRegular) await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
-            else await supabase.from('products').update({ target_date: transferNewDate, is_regular_sale: false }).eq('id', targetProduct.id)
         }
 
-        alert("✅ 이관 및 상품 동기화 반영이 완료되었습니다.")
+        if (errors.length > 0) {
+            alert(`⚠️ 일부 오류 발생:\n${errors.join('\n')}`)
+            console.error("Transfer errors:", errors)
+        } else {
+            alert("✅ 이관 및 상품 동기화 반영이 완료되었습니다.")
+        }
         setIsTransferModalOpen(false)
         fetchMatrixData()
     }
