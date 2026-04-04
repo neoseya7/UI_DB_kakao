@@ -30,12 +30,12 @@ export async function GET(request: Request) {
         const callerUser = users.find(u => u.id === callerStoreId)
         const callerBrandName = callerUser?.user_metadata?.brand_name
 
-        if (!callerBrandName) {
+        if (!callerBrandName || callerBrandName === '브랜드없음') {
             return NextResponse.json({
                 success: true,
                 products: [],
-                message: 'No brand_name found in caller metadata. Legacy store detected.',
-                brand_name: null
+                message: callerBrandName === '브랜드없음' ? 'Independent store — no product sharing.' : 'No brand_name found in caller metadata. Legacy store detected.',
+                brand_name: callerBrandName || null
             })
         }
 
