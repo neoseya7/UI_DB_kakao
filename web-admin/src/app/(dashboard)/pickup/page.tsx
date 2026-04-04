@@ -229,15 +229,7 @@ export default function PickupCalendarPage() {
         if (!storeId) return
         setIsLoading(true)
 
-        // 0. Fetch available dates for Pill Navigation
-        const { data: dateData } = await supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false)
-        if (dateData) {
-            const uniqueDates = Array.from(new Set(dateData.filter(p => !p.is_regular_sale).map(p => p.target_date))).filter(Boolean).sort() as string[]
-            if (dateData.some(p => p.is_regular_sale)) uniqueDates.push("상시판매")
-            setAvailableDates(uniqueDates)
-        }
-
-        // 1. Fetch orders FIRST (Try RPC First for Extreme Performance)
+        // === 1단계: 날짜 목록 + 주문 조회를 병렬 실행 ===
         let pDate = null, startDate = null, endDate = null
         if (searchScope === "today") pDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
         else if (searchScope === "date_range") {
@@ -245,23 +237,31 @@ export default function PickupCalendarPage() {
             else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
         }
 
-        let rpcData: any = null, rpcError: any = null;
-        {
-             const res = await supabase.rpc('get_matrix_orders', {
-                 p_store_id: storeId,
-                 p_pickup_date: pDate,
-                 p_start_date: startDate,
-                 p_end_date: endDate
-             }).limit(5000)
-             rpcData = res.data;
-             rpcError = res.error;
+        const [dateResult, rpcResult] = await Promise.all([
+            supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false),
+            supabase.rpc('get_matrix_orders', {
+                p_store_id: storeId,
+                p_pickup_date: pDate,
+                p_start_date: startDate,
+                p_end_date: endDate
+            }).limit(5000)
+        ])
+
+        // 날짜 목록 처리
+        if (dateResult.data) {
+            const uniqueDates = Array.from(new Set(dateResult.data.filter(p => !p.is_regular_sale).map(p => p.target_date))).filter(Boolean).sort() as string[]
+            if (dateResult.data.some(p => p.is_regular_sale)) uniqueDates.push("상시판매")
+            setAvailableDates(uniqueDates)
         }
+
+        const rpcData = rpcResult.data
+        const rpcError = rpcResult.error
 
         let orders: any[] = []
         if (!rpcError && rpcData) {
             orders = rpcData || []
         } else {
-            console.warn("RPC fetch failed or function missing, parsing via legacy loop:", rpcError);
+            console.warn("RPC fetch failed, falling back to legacy:", rpcError);
             let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
             if (searchScope === "today") {
                 oQuery = oQuery.eq('pickup_date', currentDate)
@@ -274,14 +274,13 @@ export default function PickupCalendarPage() {
             orders = oData || []
         }
 
-        // Extract all product IDs that appear in the fetched orders
+        // 주문에서 product_id 추출
         const orderedProductIds = new Set<string>()
         if (!rpcError && rpcData) {
             orders.forEach((o: any) => {
                 if (o.items) o.items.forEach((oi: any) => orderedProductIds.add(oi.product_id))
             })
         } else {
-            // legacy fallback parsing
             for (let chunkFilter = 0; chunkFilter < orders.length; chunkFilter += 30) {
                const chunkIds = orders.slice(chunkFilter, chunkFilter + 30).map((o: any) => o.id)
                const { data: itemData } = await supabase.from('order_items').select('product_id').in('order_id', chunkIds)
@@ -290,30 +289,24 @@ export default function PickupCalendarPage() {
         }
         const strIdList = Array.from(orderedProductIds).join(',')
 
-        // 2. Fetch active products (including ANY products found in the current orders)
+        // === 2단계: 상품 조회 + CRM 태그를 병렬 실행 ===
         let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
             if (currentDate === "상시판매") {
-                if (strIdList.length > 0) {
-                    pQuery = pQuery.or(`is_regular_sale.eq.true,id.in.(${strIdList})`)
-                } else {
-                    pQuery = pQuery.eq('is_regular_sale', true)
-                }
+                pQuery = strIdList.length > 0 ? pQuery.or(`is_regular_sale.eq.true,id.in.(${strIdList})`) : pQuery.eq('is_regular_sale', true)
             } else {
-                if (strIdList.length > 0) {
-                    pQuery = pQuery.or(`target_date.eq.${currentDate},id.in.(${strIdList})`)
-                } else {
-                    pQuery = pQuery.eq('target_date', currentDate)
-                }
+                pQuery = strIdList.length > 0 ? pQuery.or(`target_date.eq.${currentDate},id.in.(${strIdList})`) : pQuery.eq('target_date', currentDate)
             }
         } else if (searchScope === "date_range") {
-            if (strIdList.length > 0) {
-                pQuery = pQuery.or(`id.in.(${strIdList}),is_regular_sale.eq.true`)
-            }
+            if (strIdList.length > 0) pQuery = pQuery.or(`id.in.(${strIdList}),is_regular_sale.eq.true`)
         }
-        const { data: pData } = await pQuery.limit(5000)
 
-        const mappedProducts = (pData || []).map(p => ({
+        const [pResult, settingsResult] = await Promise.all([
+            pQuery.limit(5000),
+            supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single()
+        ])
+
+        const mappedProducts = (pResult.data || []).map(p => ({
             id: p.id,
             name: p.collect_name || p.name || "(이름없음)",
             price: p.price || 0,
@@ -327,30 +320,33 @@ export default function PickupCalendarPage() {
         }))
         setProducts(mappedProducts)
 
-        // -- RPC SUCCESS PATH --
+        // CRM 태그 처리
+        const crmTagsList = settingsResult.data?.crm_tags?.filter((t: any) => t.type === 'crm') || []
+        const crmDict = crmTagsList.reduce((acc: any, t: any) => {
+            acc[t.name] = { category: t.category, memo: t.memo }
+            return acc
+        }, {})
+
+        if (orders.length === 0) {
+            setRawCustomers([])
+            setIsLoading(false)
+            return
+        }
+
+        // === 3단계: 주문-상품 매핑 (O(1) HashMap) ===
         if (!rpcError && rpcData) {
-
-            if (orders.length === 0) {
-                setRawCustomers([])
-                setIsLoading(false)
-                return
-            }
-
-            // 4.5 Fetch CRM Tags mapping
-            const { data: settingsData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single()
-            const crmTagsList = settingsData?.crm_tags?.filter((t: any) => t.type === 'crm') || []
-            const crmDict = crmTagsList.reduce((acc: any, t: any) => {
-                acc[t.name] = { category: t.category, memo: t.memo }
-                return acc
-            }, {})
+            // 상품 ID → 인덱스 Map (O(1) 조회)
+            const productIdxMap = new Map<string, number>()
+            mappedProducts.forEach((p, i) => productIdxMap.set(p.id, i))
 
             const mappedCustomers = orders.map((o: any, index: number) => {
-                const itemsArray = mappedProducts.map(p => {
-                    // o.items is a jsonb array: [{product_id: uuid, quantity: int}]
-                    const match = o.items.find((oi: any) => oi.product_id === p.id)
-                    return match ? match.quantity : 0
-                })
-
+                const itemsArray = new Array(mappedProducts.length).fill(0)
+                if (o.items) {
+                    for (const oi of o.items) {
+                        const idx = productIdxMap.get(oi.product_id)
+                        if (idx !== undefined) itemsArray[idx] = oi.quantity
+                    }
+                }
                 return {
                     id: o.id,
                     name: o.customer_nickname,
@@ -368,48 +364,32 @@ export default function PickupCalendarPage() {
             return
         }
 
-        // -- FALLBACK PATH (Legacy: N+1 Chunked Requests) --
-        /* 기존 로직 무스탑 롤백 보험 코드 */
-
-        if (orders.length === 0) {
-            setRawCustomers([])
-            setIsLoading(false)
-            return
-        }
-
+        // -- FALLBACK PATH (Legacy) --
         const orderIds = orders.map(o => o.id)
-
-        // 3. Fetch order items
         let orderItems: any[] = []
-        const CHUNK_SIZE = 30 // Reduced from 250 to 30 to prevent Supabase 414 URI Too Long error in GET queries!
+        const CHUNK_SIZE = 30
         for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
             const chunk = orderIds.slice(i, i + CHUNK_SIZE)
             const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk)
             if (chunkData) orderItems = orderItems.concat(chunkData)
         }
 
-        // 4. Transform into matrix rows utilizing O(N) Hash Map bypass
         const itemsByOrderId: { [key: string]: any[] } = {}
         for(const item of orderItems) {
             if(!itemsByOrderId[item.order_id]) itemsByOrderId[item.order_id] = []
             itemsByOrderId[item.order_id].push(item)
         }
 
-        // 4.5 Fetch CRM Tags mapping
-        const { data: settingsData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single()
-        const crmTagsList = settingsData?.crm_tags?.filter((t: any) => t.type === 'crm') || []
-        const crmDict = crmTagsList.reduce((acc: any, t: any) => {
-            acc[t.name] = { category: t.category, memo: t.memo }
-            return acc
-        }, {})
+        const productIdxMap = new Map<string, number>()
+        mappedProducts.forEach((p, i) => productIdxMap.set(p.id, i))
 
         const mappedCustomersLegacy = orders.map((o, index) => {
             const myItems = itemsByOrderId[o.id] || []
-            const itemsArray = mappedProducts.map(p => {
-                const match = myItems.find(oi => oi.product_id === p.id)
-                return match ? match.quantity : 0
-            })
-
+            const itemsArray = new Array(mappedProducts.length).fill(0)
+            for (const oi of myItems) {
+                const idx = productIdxMap.get(oi.product_id)
+                if (idx !== undefined) itemsArray[idx] = oi.quantity
+            }
             return {
                 id: o.id,
                 name: o.customer_nickname,
