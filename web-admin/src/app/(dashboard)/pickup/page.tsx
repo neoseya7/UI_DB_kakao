@@ -950,37 +950,6 @@ export default function PickupCalendarPage() {
         }).filter(Boolean).join(" / ")
     }
 
-    const customers = isMerged
-        ? rawCustomers.reduce((acc, current) => {
-            const existing = acc.find(item => item.name === current.name)
-            if (existing) {
-                const mergedItems = existing.items.map((qty, idx) => qty + current.items[idx])
-                const mergedMemo1 = Array.from(new Set([existing.memo1, current.memo1].filter(Boolean))).join(", ")
-                const mergedMemo2 = Array.from(new Set([existing.memo2, current.memo2].filter(Boolean))).join(", ")
-                return acc.map(item => item.name === current.name ? {
-                    ...item, items: mergedItems, memo1: mergedMemo1, memo2: mergedMemo2, checked: existing.checked && current.checked
-                } : item)
-            } else {
-                return [...acc, { ...current }]
-            }
-        }, [] as Order[])
-        : rawCustomers
-
-    const filteredCustomers = customers.filter(c => {
-        const lowerTerm = (searchTerm || "").toLowerCase()
-        const custName = (c.name || "").toLowerCase()
-        const summaryText = getDisplaySummary(c.items).toLowerCase()
-        const memo1 = (c.memo1 || "").toLowerCase()
-        const memo2 = (c.memo2 || "").toLowerCase()
-
-        const matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
-        const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
-        return matchSearch && matchReceipt
-    }).sort((a, b) => {
-        if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
-        return (a.originalIndex || 0) - (b.originalIndex || 0)
-    })
-
     // 주문이 1건이라도 있는 상품만 표시 (렌더링 최적화)
     const activeProductIndices = useMemo(() => {
         return products.map((_, i) => i).filter(i =>
@@ -1011,6 +980,37 @@ export default function PickupCalendarPage() {
             return `${datePrefix}${p?.name || "(이름없음)"}${unitStr} ${qty}개`
         }).filter(Boolean).join(" / ")
     }
+
+    const customers = isMerged
+        ? rawCustomers.reduce((acc, current) => {
+            const existing = acc.find(item => item.name === current.name)
+            if (existing) {
+                const mergedItems = existing.items.map((qty, idx) => qty + current.items[idx])
+                const mergedMemo1 = Array.from(new Set([existing.memo1, current.memo1].filter(Boolean))).join(", ")
+                const mergedMemo2 = Array.from(new Set([existing.memo2, current.memo2].filter(Boolean))).join(", ")
+                return acc.map(item => item.name === current.name ? {
+                    ...item, items: mergedItems, memo1: mergedMemo1, memo2: mergedMemo2, checked: existing.checked && current.checked
+                } : item)
+            } else {
+                return [...acc, { ...current }]
+            }
+        }, [] as Order[])
+        : rawCustomers
+
+    const filteredCustomers = customers.filter(c => {
+        const lowerTerm = (searchTerm || "").toLowerCase()
+        const custName = (c.name || "").toLowerCase()
+        const summaryText = getDisplaySummary(c.items).toLowerCase()
+        const memo1 = (c.memo1 || "").toLowerCase()
+        const memo2 = (c.memo2 || "").toLowerCase()
+
+        const matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+        const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
+        return matchSearch && matchReceipt
+    }).sort((a, b) => {
+        if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
+        return (a.originalIndex || 0) - (b.originalIndex || 0)
+    })
 
     const calculateItemPrice = (product: Product | undefined, qty: number) => {
         if (!product || qty <= 0) return 0;
