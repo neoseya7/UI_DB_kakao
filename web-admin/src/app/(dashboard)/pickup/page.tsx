@@ -229,6 +229,9 @@ export default function PickupCalendarPage() {
         if (!storeId) return
         setIsLoading(true)
 
+        // 세션 토큰을 미리 갱신하여 병렬 호출 시 토큰 충돌 방지
+        await supabase.auth.getSession()
+
         // === 1단계: 날짜 목록 + 주문 조회를 병렬 실행 ===
         let pDate = null, startDate = null, endDate = null
         if (searchScope === "today") pDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
