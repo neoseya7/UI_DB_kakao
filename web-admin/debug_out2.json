@@ -1,0 +1,32 @@
+[
+  {
+    "id": "39bc3a5e-9f04-44c1-9417-ed1d339796c7",
+    "store_id": "f075b2f6-5458-41b3-bb02-978b7a1145fc",
+    "target_date": "2026-04-06",
+    "is_regular_sale": false,
+    "collect_name": "후루룩국물떡볶이",
+    "display_name": "후루룩국물떡볶이",
+    "price": 4900,
+    "allocated_stock": 29,
+    "deadline_date": null,
+    "deadline_time": null,
+    "image_urls": [
+      "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/f075b2f6-5458-41b3-bb02-978b7a1145fc/1775265361338_1poninj.png",
+      "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/f075b2f6-5458-41b3-bb02-978b7a1145fc/1775265364334_dallrar.jpg",
+      "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/f075b2f6-5458-41b3-bb02-978b7a1145fc/1775265365689_cq8o12q.jpg",
+      "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/f075b2f6-5458-41b3-bb02-978b7a1145fc/1775265366541_mxujao4.jpg",
+      "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/f075b2f6-5458-41b3-bb02-978b7a1145fc/1775265367248_zy1kcf2.jpg"
+    ],
+    "description": "",
+    "created_at": "2026-04-04T01:16:08.312135+00:00",
+    "incoming_price": 0,
+    "image_url": "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/f075b2f6-5458-41b3-bb02-978b7a1145fc/1775265361338_1poninj.png",
+    "is_visible": true,
+    "is_stocked": false,
+    "box_quantity": null,
+    "is_hidden": false,
+    "product_memo": "",
+    "tiered_prices": [],
+    "unit_text": ""
+  }
+]

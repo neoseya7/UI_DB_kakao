@@ -245,12 +245,26 @@ export default function PickupCalendarPage() {
             else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
         }
 
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_matrix_orders', {
-            p_store_id: storeId,
-            p_pickup_date: pDate,
-            p_start_date: startDate,
-            p_end_date: endDate
-        })
+        let rpcData: any = null, rpcError: any = null;
+        if (searchScope === "today" || (searchScope === "date_range" && customSearchDate && !customEndDate)) {
+             // Use RPC for single date selection (matches our current 'get_matrix_orders' DB function signature)
+             let rpcSort = "time_desc";
+             if (typeof sortOrder !== "undefined") {
+                 if (sortOrder === "name") rpcSort = "name_asc"
+                 else rpcSort = "time_desc"
+             }
+
+             const res = await supabase.rpc('get_matrix_orders', {
+                 p_store_id: storeId,
+                 p_date: pDate,
+                 p_sort_option: rpcSort
+             })
+             rpcData = res.data;
+             rpcError = res.error;
+        } else {
+             // date_range with start & end requires fallback loop (since current DB RPC only supports single p_date)
+             rpcError = new Error("Multi-date range RPC not supported yet, falling back to legacy loop.");
+        }
 
         let orders: any[] = []
         if (!rpcError && rpcData) {
@@ -276,9 +290,9 @@ export default function PickupCalendarPage() {
                 if (o.items) o.items.forEach((oi: any) => orderedProductIds.add(oi.product_id))
             })
         } else {
-            // legacy fallback parsing (if we used oData items directly, but we skip it here and just fetch items below)
-            for (let chunkFilter = 0; chunkFilter < orders.length; chunkFilter += 100) {
-               const chunkIds = orders.slice(chunkFilter, chunkFilter + 100).map((o: any) => o.id)
+            // legacy fallback parsing
+            for (let chunkFilter = 0; chunkFilter < orders.length; chunkFilter += 30) {
+               const chunkIds = orders.slice(chunkFilter, chunkFilter + 30).map((o: any) => o.id)
                const { data: itemData } = await supabase.from('order_items').select('product_id').in('order_id', chunkIds)
                if (itemData) itemData.forEach(oi => orderedProductIds.add(oi.product_id))
             }
@@ -376,7 +390,7 @@ export default function PickupCalendarPage() {
 
         // 3. Fetch order items
         let orderItems: any[] = []
-        const CHUNK_SIZE = 250
+        const CHUNK_SIZE = 30 // Reduced from 250 to 30 to prevent Supabase 414 URI Too Long error in GET queries!
         for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
             const chunk = orderIds.slice(i, i + CHUNK_SIZE)
             const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk)
