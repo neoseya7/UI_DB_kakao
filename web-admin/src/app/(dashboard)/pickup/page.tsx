@@ -230,15 +230,16 @@ export default function PickupCalendarPage() {
         setIsLoading(true)
 
         // 0. Fetch available dates for Pill Navigation
-        const { data: dateData } = await supabase.from('products').select('target_date').eq('store_id', storeId).eq('is_hidden', false).not('target_date', 'is', null)
+        const { data: dateData } = await supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false)
         if (dateData) {
-            const uniqueDates = Array.from(new Set(dateData.map(p => p.target_date))).sort() as string[]
+            const uniqueDates = Array.from(new Set(dateData.filter(p => !p.is_regular_sale).map(p => p.target_date))).filter(Boolean).sort() as string[]
+            if (dateData.some(p => p.is_regular_sale)) uniqueDates.push("상시판매")
             setAvailableDates(uniqueDates)
         }
 
         // 1. Fetch orders FIRST (Try RPC First for Extreme Performance)
         let pDate = null, startDate = null, endDate = null
-        if (searchScope === "today") pDate = currentDate
+        if (searchScope === "today") pDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
         else if (searchScope === "date_range") {
             if (customSearchDate && customEndDate) { startDate = customSearchDate; endDate = customEndDate; }
             else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
@@ -287,10 +288,18 @@ export default function PickupCalendarPage() {
         // 2. Fetch active products (including ANY products found in the current orders)
         let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
-            if (strIdList.length > 0) {
-                pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true,id.in.(${strIdList})`)
+            if (currentDate === "상시판매") {
+                if (strIdList.length > 0) {
+                    pQuery = pQuery.or(`is_regular_sale.eq.true,id.in.(${strIdList})`)
+                } else {
+                    pQuery = pQuery.eq('is_regular_sale', true)
+                }
             } else {
-                pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+                if (strIdList.length > 0) {
+                    pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true,id.in.(${strIdList})`)
+                } else {
+                    pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+                }
             }
         } else if (searchScope === "date_range") {
             if (strIdList.length > 0) {
@@ -690,6 +699,9 @@ export default function PickupCalendarPage() {
                 const affectedOrderIds = oiData.map((oi: any) => oi.order_id)
                 if (isTransferToRegular) {
                     await supabase.from('products').update({ is_regular_sale: true, target_date: null }).eq('id', targetProduct.id)
+                    for (const oId of affectedOrderIds) {
+                        await supabase.from('orders').update({ pickup_date: '1900-01-01' }).eq('id', oId)
+                    }
                 } else {
                     for (const oId of affectedOrderIds) {
                         await supabase.from('orders').update({ pickup_date: transferNewDate }).eq('id', oId)
@@ -722,10 +734,11 @@ export default function PickupCalendarPage() {
         const qty = parseInt(newQty)
         const pId = newProductId
         const actualDate = newDate || currentDate
+        const dbDate = actualDate === "상시판매" ? "1900-01-01" : actualDate
 
         const { data: oData, error: oErr } = await supabase.from('orders').insert({
             store_id: storeId,
-            pickup_date: actualDate,
+            pickup_date: dbDate,
             customer_nickname: newNick,
             is_received: false
         }).select().single()
@@ -1088,7 +1101,13 @@ export default function PickupCalendarPage() {
                     <div className="flex items-center gap-2 sm:gap-4 w-full overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
                         <CalendarIcon className="h-5 w-5 text-muted-foreground hidden sm:block shrink-0" />
                         <div className="flex flex-nowrap gap-2 items-center w-max">
-                            {availableDates.map(date => (
+                            {availableDates.map(date => {
+                                let label = date;
+                                if (date !== "상시판매") {
+                                    const d = new Date(date);
+                                    if (!isNaN(d.getTime())) label = `${date} (${d.toLocaleDateString('ko-KR', { weekday: 'short' })})`;
+                                }
+                                return (
                                 <Button
                                     key={date}
                                     variant={currentDate === date ? "default" : "outline"}
@@ -1099,9 +1118,10 @@ export default function PickupCalendarPage() {
                                     }}
                                     className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${currentDate === date ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
                                 >
-                                    {date} ({new Date(date).toLocaleDateString('ko-KR', { weekday: 'short' })})
+                                    {label}
                                 </Button>
-                            ))}
+                                )
+                            })}
                             <Input
                                 type="date"
                                 className="w-[140px] h-10 font-bold bg-white border-slate-200 rounded-full shadow-sm text-center text-slate-600 focus-visible:ring-indigo-500 transition-colors cursor-pointer shrink-0"
