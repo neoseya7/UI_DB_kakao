@@ -52,7 +52,7 @@ export default function PickupCalendarPage() {
     const [searchScope, setSearchScope] = useState("today")
     const [customSearchDate, setCustomSearchDate] = useState("")
     const [customEndDate, setCustomEndDate] = useState("")
-    const [receiptFilter, setReceiptFilter] = useState("all")
+    const [receiptFilter, setReceiptFilter] = useState("unreceived")
 
     const [newNick, setNewNick] = useState("")
     const [newDate, setNewDate] = useState("")
