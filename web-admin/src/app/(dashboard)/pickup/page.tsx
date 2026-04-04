@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -311,11 +311,11 @@ export default function PickupCalendarPage() {
                 pQuery = pQuery.or(`id.in.(${strIdList}),is_regular_sale.eq.true`)
             }
         }
-        const { data: pData } = await pQuery
+        const { data: pData } = await pQuery.limit(5000)
 
         const mappedProducts = (pData || []).map(p => ({
             id: p.id,
-            name: p.collect_name,
+            name: p.collect_name || p.name || "(이름없음)",
             price: p.price || 0,
             required: p.allocated_stock || 0,
             stock: p.allocated_stock || 0,
@@ -963,7 +963,7 @@ export default function PickupCalendarPage() {
                 datePrefix = "(상시) ";
             }
             const unitStr = p?.unit_text ? `(${p.unit_text})` : "";
-            return `${datePrefix}${p?.name}${unitStr} ${qty}개`;
+            return `${datePrefix}${p?.name || "(이름없음)"}${unitStr} ${qty}개`;
         }).filter(Boolean).join(" / ")
     }
 
@@ -986,7 +986,7 @@ export default function PickupCalendarPage() {
     const filteredCustomers = customers.filter(c => {
         const lowerTerm = (searchTerm || "").toLowerCase()
         const custName = (c.name || "").toLowerCase()
-        const summaryText = getSummary(c.items).toLowerCase()
+        const summaryText = getDisplaySummary(c.items).toLowerCase()
         const memo1 = (c.memo1 || "").toLowerCase()
         const memo2 = (c.memo2 || "").toLowerCase()
 
@@ -997,6 +997,37 @@ export default function PickupCalendarPage() {
         if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
         return (a.originalIndex || 0) - (b.originalIndex || 0)
     })
+
+    // 주문이 1건이라도 있는 상품만 표시 (렌더링 최적화)
+    const activeProductIndices = useMemo(() => {
+        return products.map((_, i) => i).filter(i =>
+            rawCustomers.some(c => c.items[i] > 0)
+        )
+    }, [products, rawCustomers])
+
+    const displayProducts = useMemo(() =>
+        activeProductIndices.map(i => products[i]),
+        [activeProductIndices, products]
+    )
+
+    const toDisplayItems = (items: number[]) => activeProductIndices.map(i => items[i] || 0)
+
+    const getDisplaySummary = (items: number[]) => {
+        return activeProductIndices.map(di => {
+            const qty = items[di] || 0
+            if (qty <= 0) return null
+            const p = products[di]
+            let datePrefix = ""
+            if (p?.target_date) {
+                const parts = p.target_date.split('-')
+                if (parts.length === 3) datePrefix = `(${parts[1]}월${parts[2]}일) `
+            } else if (p?.is_regular_sale) {
+                datePrefix = "(상시) "
+            }
+            const unitStr = p?.unit_text ? `(${p.unit_text})` : ""
+            return `${datePrefix}${p?.name || "(이름없음)"}${unitStr} ${qty}개`
+        }).filter(Boolean).join(" / ")
+    }
 
     const calculateItemPrice = (product: Product | undefined, qty: number) => {
         if (!product || qty <= 0) return 0;
@@ -1023,7 +1054,7 @@ export default function PickupCalendarPage() {
 
     const calculatePosTotal = () => {
         return filteredCustomers.filter(c => selectedPosOrders.includes(c.id)).reduce((total, c) => {
-            return total + c.items.reduce((t, qty, idx) => t + calculateItemPrice(products[idx], qty), 0)
+            return total + activeProductIndices.reduce((t, oi) => t + calculateItemPrice(products[oi], c.items[oi] || 0), 0)
         }, 0)
     }
 
@@ -1043,13 +1074,14 @@ export default function PickupCalendarPage() {
             const row: any = {
                 "고객명": c.name,
                 "수령확인": c.checked ? "O" : "X",
-                "주문 요약": getSummary(c.items),
-                "결제 금액": c.items.reduce((total: number, qty: number, idx: number) => total + (qty * (products[idx]?.price || 0)), 0),
+                "주문 요약": getDisplaySummary(c.items),
+                "결제 금액": activeProductIndices.reduce((total, oi) => total + ((c.items[oi] || 0) * (products[oi]?.price || 0)), 0),
                 "비고 1": c.memo1,
                 "비고 2": c.memo2
             }
-            products.forEach((p, i) => {
-                row[p.name] = c.items[i] > 0 ? c.items[i] : ""
+            displayProducts.forEach((p, di) => {
+                const oi = activeProductIndices[di]
+                row[p.name] = (c.items[oi] || 0) > 0 ? c.items[oi] : ""
             })
             return row
         })
@@ -1058,12 +1090,13 @@ export default function PickupCalendarPage() {
             "고객명": "총 합계",
             "수령확인": "",
             "주문 요약": "",
-            "결제 금액": rawCustomers.reduce((globalTotal, c) => globalTotal + c.items.reduce((t: number, q: number, idx: number) => t + (q * (products[idx]?.price || 0)), 0), 0),
+            "결제 금액": rawCustomers.reduce((globalTotal, c) => globalTotal + activeProductIndices.reduce((t, oi) => t + ((c.items[oi] || 0) * (products[oi]?.price || 0)), 0), 0),
             "비고 1": "",
             "비고 2": ""
         }
-        products.forEach((p, i) => {
-            const sum = rawCustomers.reduce((acc, curr) => acc + (curr.items[i] || 0), 0)
+        displayProducts.forEach((p, di) => {
+            const oi = activeProductIndices[di]
+            const sum = rawCustomers.reduce((acc, curr) => acc + (curr.items[oi] || 0), 0)
             totalRow[p.name] = sum > 0 ? sum : ""
         })
         dataRows.push(totalRow)
@@ -1392,10 +1425,10 @@ export default function PickupCalendarPage() {
                                         </div>
                                     </GuideBadge>
                                 </th>
-                                {products.map((p, i) => <th key={p.id || i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors" /></th>)}
+                                {displayProducts.map((p, i) => <th key={p.id || i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors" /></th>)}
                             </tr>
                             <tr>
-                                {products.map((p, i) => (
+                                {displayProducts.map((p, i) => (
                                     <th key={p.id || i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
                                         <div className="flex flex-col items-center justify-center gap-0.5">
                                             <span>{p.name}</span>
@@ -1409,24 +1442,24 @@ export default function PickupCalendarPage() {
                             </tr>
                             <tr>
                                 <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-blue-900 bg-white ${getStickyClasses('price').th}`}>
-                                    {products.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}
+                                    {displayProducts.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}
                                 </th>
                                 <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-blue-900 tracking-tight bg-blue-100/95 ${getStickyClasses('memo').th}`}>발주수량</th>
-                                {products.map((p, i) => (
-                                    <th key={p.id || i} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
+                                {displayProducts.map((p, di) => (
+                                    <th key={p.id || di} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
                                         <Input type="number" defaultValue={p.stock} onBlur={(e) => handleUpdateProductField(p.id, 'allocated_stock', e.target.value)} className="h-6 w-[50px] text-[13px] font-bold text-center px-1 py-0 mx-auto border-blue-200 bg-white text-blue-800 shadow-sm" title="수량을 수정하고 바깥을 클릭하면 저장됩니다" />
                                     </th>
                                 ))}
                             </tr>
                             <tr>
                                 <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-slate-800 bg-white ${getStickyClasses('price').th}`}>
-                                    {products.reduce((acc, _, i) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0), 0).toLocaleString()}
+                                    {activeProductIndices.reduce((acc, oi) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0), 0).toLocaleString()}
                                 </th>
                                 <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-slate-800 tracking-tight bg-slate-200/95 ${getStickyClasses('memo').th}`}>합계수량</th>
-                                {products.map((p, i) => {
-                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                {activeProductIndices.map((oi, di) => {
+                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                     return (
-                                        <th key={i} className="border-b border-r py-2 px-1 bg-slate-50/80 text-[13px] font-semibold text-slate-700">
+                                        <th key={di} className="border-b border-r py-2 px-1 bg-slate-50/80 text-[13px] font-semibold text-slate-700">
                                             {orderSum}
                                         </th>
                                     )
@@ -1434,14 +1467,14 @@ export default function PickupCalendarPage() {
                             </tr>
                             <tr>
                                 <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-amber-900 bg-white ${getStickyClasses('price').th}`}>
-                                    {products.reduce((acc, p, i) => acc + (p.stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0)), 0).toLocaleString()}
+                                    {activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0).toLocaleString()}
                                 </th>
                                 <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-amber-900 tracking-tight bg-amber-100/95 ${getStickyClasses('memo').th}`}>남은수량</th>
-                                {products.map((p, i) => {
-                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
-                                    const remaining = p.stock - orderSum;
+                                {activeProductIndices.map((oi, di) => {
+                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
+                                    const remaining = products[oi].stock - orderSum;
                                     return (
-                                        <th key={i} className="border-b border-r py-2 px-1 bg-amber-50/40 text-[13px] font-bold text-amber-700">
+                                        <th key={di} className="border-b border-r py-2 px-1 bg-amber-50/40 text-[13px] font-bold text-amber-700">
                                             {remaining}
                                         </th>
                                     )
@@ -1449,21 +1482,21 @@ export default function PickupCalendarPage() {
                             </tr>
                             <tr>
                                 <th className={`border-b border-r py-2 px-1 text-[14px] font-extrabold text-emerald-900 bg-white ${getStickyClasses('price').th}`}>
-                                    {products.reduce((acc, p, i) => {
-                                        const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0);
-                                        const remaining = p.stock - orderSum;
-                                        const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[i] || 0), 0);
+                                    {activeProductIndices.reduce((acc, oi) => {
+                                        const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
+                                        const remaining = products[oi].stock - orderSum;
+                                        const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
                                         return acc + (remaining + unreceivedSum);
                                     }, 0).toLocaleString()}
                                 </th>
                                 <th className={`border-b border-r py-2 px-1 text-[11px] font-bold text-emerald-900 tracking-tighter leading-tight bg-emerald-100/95 ${getStickyClasses('memo').th}`}>남은+미체크</th>
-                                {products.map((p, i) => {
-                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[i] || 0), 0);
-                                    const remaining = p.stock - orderSum;
-                                    const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[i] || 0), 0);
+                                {activeProductIndices.map((oi, di) => {
+                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
+                                    const remaining = products[oi].stock - orderSum;
+                                    const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                     const physicalTarget = remaining + unreceivedSum;
                                     return (
-                                        <th key={i} className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[14px] font-extrabold text-emerald-800 shadow-inner">
+                                        <th key={di} className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[14px] font-extrabold text-emerald-800 shadow-inner">
                                             {physicalTarget}
                                         </th>
                                     )
@@ -1472,12 +1505,12 @@ export default function PickupCalendarPage() {
                         </thead>
 
                         <tbody>
-                            <tr><td colSpan={products.length + (isDeleteMode ? 7 : 6)} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
+                            <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
 
                             {isLoading ? (
-                                <tr><td colSpan={products.length + (isDeleteMode ? 7 : 6)} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
+                                <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
                             ) : filteredCustomers.length === 0 ? (
-                                <tr><td colSpan={products.length + (isDeleteMode ? 7 : 6)} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
+                                <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>
@@ -1524,10 +1557,10 @@ export default function PickupCalendarPage() {
                                             </td>
                                         )}
                                         <td className={`border-b border-r px-3 py-2 ${getStickyClasses('summary').td}`}>
-                                            <span className="text-sm font-medium text-slate-800">{getSummary(c.items)}</span>
+                                            <span className="text-sm font-medium text-slate-800">{getDisplaySummary(c.items)}</span>
                                         </td>
                                         <td className={`border-b border-r px-3 py-2 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
-                                            {c.items.reduce((total: number, qty: number, idx: number) => total + calculateItemPrice(products[idx], qty), 0).toLocaleString()}원
+                                            {activeProductIndices.reduce((total, oi) => total + calculateItemPrice(products[oi], c.items[oi] || 0), 0).toLocaleString()}원
                                         </td>
                                         <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
                                             <div className="flex flex-col gap-1 w-full relative">
@@ -1548,15 +1581,16 @@ export default function PickupCalendarPage() {
                                                 )}
                                             </div>
                                         </td>
-                                        {c.items.map((qty, j) => {
-                                            const isEditing = editingQty?.orderId === c.id && editingQty?.productIdx === j;
+                                        {activeProductIndices.map((oi, di) => {
+                                            const qty = c.items[oi] || 0;
+                                            const isEditing = editingQty?.orderId === c.id && editingQty?.productIdx === oi;
                                             return (
-                                                <td 
-                                                    key={j} 
+                                                <td
+                                                    key={di}
                                                     className={`border-b border-r p-2 sm:p-3 text-lg font-bold transition-colors cursor-pointer ${qty > 0 ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-slate-50'}`}
                                                     onClick={() => {
                                                         if (!isEditing && !isMerged) {
-                                                            setEditingQty({ orderId: c.id, productIdx: j });
+                                                            setEditingQty({ orderId: c.id, productIdx: oi });
                                                             setTempQty(qty > 0 ? qty.toString() : "");
                                                         }
                                                     }}
@@ -1570,10 +1604,10 @@ export default function PickupCalendarPage() {
                                                             value={tempQty}
                                                             onChange={(e) => setTempQty(e.target.value)}
                                                             onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') handleUpdateQuantity(c.id, j, tempQty)
+                                                                if (e.key === 'Enter') handleUpdateQuantity(c.id, oi, tempQty)
                                                                 if (e.key === 'Escape') setEditingQty(null)
                                                             }}
-                                                            onBlur={() => handleUpdateQuantity(c.id, j, tempQty)}
+                                                            onBlur={() => handleUpdateQuantity(c.id, oi, tempQty)}
                                                         />
                                                     ) : (
                                                         qty > 0 ? <span className="text-primary">{qty}</span> : <span className="text-muted-foreground/20 font-normal">-</span>
