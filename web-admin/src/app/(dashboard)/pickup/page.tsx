@@ -246,25 +246,15 @@ export default function PickupCalendarPage() {
         }
 
         let rpcData: any = null, rpcError: any = null;
-        if (searchScope === "today" || (searchScope === "date_range" && customSearchDate && !customEndDate)) {
-             // Use RPC for single date selection (matches our current 'get_matrix_orders' DB function signature)
-             let rpcSort = "time_desc";
-             if (typeof sortOrder !== "undefined") {
-                 if (sortOrder === "name") rpcSort = "name_asc"
-                 else rpcSort = "time_desc"
-             }
-
+        {
              const res = await supabase.rpc('get_matrix_orders', {
                  p_store_id: storeId,
                  p_pickup_date: pDate,
-                 p_start_date: null,
-                 p_end_date: null
+                 p_start_date: startDate,
+                 p_end_date: endDate
              })
              rpcData = res.data;
              rpcError = res.error;
-        } else {
-             // date_range with start & end requires fallback loop (since current DB RPC only supports single p_date)
-             rpcError = new Error("Multi-date range RPC not supported yet, falling back to legacy loop.");
         }
 
         let orders: any[] = []
