@@ -59,9 +59,11 @@ export default function ProductsPage() {
     const [isSaving, setIsSaving] = useState(false)
 
     // Search and filter UX (Duplicate detection logic)
-    const isDuplicate = formData.collect_name.length > 0 && products.some(p => p.collect_name === formData.collect_name && p.target_date !== formData.target_date)
-    const duplicateProduct = products.find(p => p.collect_name === formData.collect_name && p.target_date !== formData.target_date)
-    const isSameDateDuplicate = formData.collect_name.length > 0 && !editingProductId && products.some(p => p.collect_name === formData.collect_name && p.target_date === formData.target_date)
+    const formDateKey = formData.target_date || null
+    const getDateKey = (p: any) => p.target_date || null
+    const isDuplicate = formData.collect_name.length > 0 && products.some(p => p.collect_name === formData.collect_name && getDateKey(p) !== formDateKey && p.id !== editingProductId)
+    const duplicateProduct = products.find(p => p.collect_name === formData.collect_name && getDateKey(p) !== formDateKey && p.id !== editingProductId)
+    const isSameDateDuplicate = formData.collect_name.length > 0 && !editingProductId && products.some(p => p.collect_name === formData.collect_name && getDateKey(p) === formDateKey)
 
     useEffect(() => {
         let channel: any = null;
@@ -647,7 +649,7 @@ export default function ProductsPage() {
                                 )}
                                 {isDuplicate && duplicateProduct && !isSameDateDuplicate && (
                                     <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[13px] font-medium animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
-                                        <strong>{duplicateProduct.target_date}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
+                                        <strong>{duplicateProduct.target_date || '상시판매'}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
                                         재고 혼선을 막기 위해, 즉시 자동 이관(기존 재고 0 처리) 로직이 트리거됩니다.
                                     </div>
                                 )}
