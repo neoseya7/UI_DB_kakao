@@ -256,9 +256,8 @@ export default function PickupCalendarPage() {
 
              const res = await supabase.rpc('get_matrix_orders', {
                  p_store_id: storeId,
-                 p_pickup_date: pDate,
-                 p_start_date: null,
-                 p_end_date: null
+                 p_date: pDate,
+                 p_sort_option: rpcSort
              })
              rpcData = res.data;
              rpcError = res.error;
