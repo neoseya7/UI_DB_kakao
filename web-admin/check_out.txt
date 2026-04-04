@@ -1,0 +1,5 @@
+[dotenv@17.3.1] injecting env (3) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+orderedProductIds length: 24
+strIdList length: 887
+Fetched products length: 24
+통통순대, 김말이, 부산어묵, 순대국, 뚝배기불고기, 블루베리퓨레, 미니파프리카, 해산물믹스, 옷걸이, 롱바게트, 양념쭈꾸미, 탈취제1병, 탈취제1팩, 치아바타, 국물떡볶이, 순살볼락, 캠핑의자1개, 캠핑의자1세트, 감자사라다빵, 순살삼치, 순살가자미, 순살고등어, 얼갈이, 핸드브러쉬

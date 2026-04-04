@@ -30,7 +30,10 @@ export default function SettingsPage() {
         manager_nicks: [] as string[], // Extra local combined to CRM tags or just separate for UI
         order_alert_enabled: true,
         alert_minutes_before: 5,
-        pos_sync_enabled: false
+        pos_sync_enabled: false,
+        deadline_alert_enabled: false,
+        chat_alert_enabled: false,
+        chat_threshold_min: 30
     })
 
     useEffect(() => {
@@ -52,7 +55,10 @@ export default function SettingsPage() {
                         manager_nicks: data.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || ["강남1점장"],
                         order_alert_enabled: data.order_alert_enabled ?? true,
                         alert_minutes_before: data.alert_minutes_before || 5,
-                        pos_sync_enabled: data.crm_tags?.find((t: any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false
+                        pos_sync_enabled: data.crm_tags?.find((t: any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false,
+                        deadline_alert_enabled: data.popup_settings?.deadline_enabled ?? false,
+                        chat_alert_enabled: data.popup_settings?.chat_enabled ?? false,
+                        chat_threshold_min: data.popup_settings?.chat_threshold_min ?? 30
                     })
                 }
             }
@@ -82,7 +88,12 @@ export default function SettingsPage() {
             badge_stock_level: settings.badge_stock_level,
             crm_tags: combinedTags,
             order_alert_enabled: settings.order_alert_enabled,
-            alert_minutes_before: settings.alert_minutes_before
+            alert_minutes_before: settings.alert_minutes_before,
+            popup_settings: {
+                deadline_enabled: settings.deadline_alert_enabled,
+                chat_enabled: settings.chat_alert_enabled,
+                chat_threshold_min: settings.chat_threshold_min
+            }
         }
 
         // Use the secure API to handle possible missing store records (Foreign Key constraints)
@@ -173,7 +184,7 @@ export default function SettingsPage() {
                 {/* 1. POS Sync Settings */}
                 <GuideBadge text="포스와 연동해 주문정보를 한번에 결제까지 이어집니다. 연동을 켠 뒤 설정값 저장 후 주문관리에서 주문앞 체크박스를 체크해보세요. pos로 가는 팝업이 활성화됩니다." className="block">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="text-left text-left">
                         <CardTitle className="flex items-center gap-2">
                             <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md text-sm">1</span> 
                             포스와 연동
@@ -200,7 +211,7 @@ export default function SettingsPage() {
                 {/* 2. Global View Toggles */}
                 <GuideBadge text="고객이 보는 주문검색페이지의 주문정보 내용의 노출 여부를 선택합니다." className="block">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="text-left text-left">
                         <CardTitle>2. 주문 검색 페이지 표시 설정</CardTitle>
                         <CardDescription>고객이 조회/검색할 때 노출되는 기본 정보를 제어합니다.</CardDescription>
                     </CardHeader>
@@ -234,7 +245,7 @@ export default function SettingsPage() {
                 {/* 3. Notice Texts Array */}
                 <GuideBadge text="주문검색페이지 상단의 공지사항 정보를 입력할 수 있습니다." className="block">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="text-left text-left">
                         <CardTitle>3. 공지사항 추가</CardTitle>
                         <CardDescription>고객 메인 페이지 상단에 띄울 필독 공지사항입니다. 최대 10줄까지 등록할 수 있습니다.</CardDescription>
                     </CardHeader>
@@ -261,7 +272,7 @@ export default function SettingsPage() {
                 {/* 4. Product Guide Page Configuration */}
                 <GuideBadge text="노출되는 상품의 이미지, 상세정보, 재고배지의 노출 여부를 선택할 수 있습니다. 마감 임박 버튼의 수량을 설정할 수 있습니다." className="block">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="text-left text-left">
                         <CardTitle>4. 상품리스트 페이지 설정</CardTitle>
                         <CardDescription>고객에게 노출되는 개별 상품 페이지의 디자인 요소 활성화 및 재고 배지 임계값을 설정합니다.</CardDescription>
                     </CardHeader>
@@ -329,7 +340,7 @@ export default function SettingsPage() {
                 {/* 5. Manager Nicknames Set */}
                 <GuideBadge text="점장님의 닉네임이나 지인의 닉네임을 등록하면 주문 형식의 대화도 주문으로 분류되지 않습니다." className="block">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="text-left text-left">
                         <CardTitle>5. 주문제외 닉네임 설정</CardTitle>
                         <CardDescription>고객 채팅이 아닌 '점장 명령'으로 강제 분류되어 스킵될 카카오 인증 닉네임 리스트입니다.</CardDescription>
                     </CardHeader>
@@ -359,7 +370,7 @@ export default function SettingsPage() {
                 {/* 6. Customer CRM Tags */}
                 <GuideBadge text="노쇼 고객, 단골 고객 등을 사전 등록하여 오늘의 대화 및 주문관리 창에서 뱃지로 즉각 식별할 수 있습니다." className="block">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="text-left text-left">
                         <CardTitle>6. 고객 분류 (CRM 태그) 설정</CardTitle>
                         <CardDescription>특정 닉네임의 고객을 사전에 분류해 두면 대시보드 리스트에서 이름 아래에 아이콘과 메모가 나타납니다.</CardDescription>
                     </CardHeader>
@@ -407,18 +418,67 @@ export default function SettingsPage() {
                 </Card>
                 </GuideBadge>
 
-                {/* 7. Production Orders Alert */}
-                <GuideBadge text="상품정보에 발주마감시간을 입력하면 시간에 맞춰 발주마감을 알리는 팝업이 실행됩니다." className="block">
+                {/* 7. Popup Settings */}
+                <GuideBadge text="발주마감시간 알림, 상품 재고 마감 알림, 오늘의 대화 수집 지연 알림 등 전역 팝업 설정을 관리합니다." className="block">
                 <Card className="border-red-100 shadow-sm">
-                    <CardHeader className="bg-red-50/50 border-b border-red-100 py-4">
-                        <CardTitle className="text-red-900 flex items-center gap-2">7. 발주시간 안내 팝업 설정</CardTitle>
-                        <CardDescription>각 상품 등록 시 개별 지정된 '발주 마감 시간'이 임박하면 화면 전체에 강제 팝업을 띄웁니다.</CardDescription>
+                    <CardHeader className="text-left text-left bg-red-50/50 border-b border-red-100 py-4">
+                        <CardTitle className="text-red-900 flex items-center gap-2">7. 팝업 설정</CardTitle>
+                        <CardDescription>재고 마감, 카카오톡 주문 수집 지연, 발주 마감 등에 대한 전체 알림창을 강력 통제합니다.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-5 bg-white rounded-b-lg">
+                        
+                        {/* 7-1. 상품 마감 알림 */}
                         <div className="flex items-center justify-between">
+                            <Label htmlFor="deadline-alert-enable" className="flex flex-col gap-1 cursor-pointer">
+                                <span className="text-base font-bold text-slate-800">상품마감 알림 여부 (실시간)</span>
+                                <span className="font-normal text-sm text-muted-foreground">상품의 잔여 재고가 0이 되는 즉시 화면에 [OOOO상품 마감되었습니다] 전체 팝업을 띄웁니다.</span>
+                            </Label>
+                            <Switch
+                                id="deadline-alert-enable"
+                                checked={settings.deadline_alert_enabled}
+                                onCheckedChange={v => setSettings({ ...settings, deadline_alert_enabled: v })}
+                                className="data-[state=checked]:bg-red-500"
+                            />
+                        </div>
+
+                        {/* 7-2. 카카오톡 수집 딜레이 알림 */}
+                        <div className="flex items-center justify-between pt-5 border-t border-slate-100">
+                            <Label htmlFor="chat-alert-enable" className="flex flex-col gap-1 cursor-pointer">
+                                <span className="text-base font-bold text-slate-800">오늘의대화 업데이트 알림 여부</span>
+                                <span className="font-normal text-sm text-muted-foreground">파이썬 스크래퍼가 중지되어 일정 시간 동안 대화가 수집되지 않으면 경고 팝업을 띄웁니다.</span>
+                            </Label>
+                            <Switch
+                                id="chat-alert-enable"
+                                checked={settings.chat_alert_enabled}
+                                onCheckedChange={v => setSettings({ ...settings, chat_alert_enabled: v })}
+                                className="data-[state=checked]:bg-red-500"
+                            />
+                        </div>
+
+                        {/* 7-2-1. 카카오톡 수집 딜레이 기준 시간 (chat-alert-enable이 켜져있을 때만) */}
+                        <div className={`transition-opacity duration-200 ${!settings.chat_alert_enabled ? 'opacity-40 pointer-events-none' : ''}`}>
+                            <div className="flex items-center justify-between pb-2">
+                                <Label htmlFor="chat-alert-minutes" className="flex flex-col gap-1">
+                                    <span className="text-base font-bold text-slate-800">오늘의대화 알림 시간 기준</span>
+                                    <span className="font-normal text-sm text-muted-foreground">가장 최근 수집된 대화 시간으로부터 이 시간이 지나면 팝업이 뜹니다. (기본 30분)</span>
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        id="chat-alert-minutes" type="number" disabled={!settings.chat_alert_enabled}
+                                        value={settings.chat_threshold_min}
+                                        onChange={e => setSettings({ ...settings, chat_threshold_min: parseInt(e.target.value) || 0 })}
+                                        className="w-24 text-center font-bold text-lg border-red-200 focus-visible:ring-red-400 bg-red-50 text-red-900 shadow-sm"
+                                    />
+                                    <span className="text-sm font-bold text-red-800">분 초과 시</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 7-3. 발주마감시간 알림 (기존 유지) */}
+                        <div className="flex items-center justify-between pt-5 border-t border-slate-100">
                             <Label htmlFor="order-alert-enable" className="flex flex-col gap-1 cursor-pointer">
-                                <span className="text-base font-bold text-slate-800">발주마감시간 팝업 활성화 여부</span>
-                                <span className="font-normal text-sm text-muted-foreground">기능을 활성화하면 설정된 발주시간에 팝업이 실행됩니다.</span>
+                                <span className="text-base font-bold text-slate-800">발주마감시간 알림 여부</span>
+                                <span className="font-normal text-sm text-muted-foreground">등록된 상품의 발주마감시간이 임박할 때 팝업을 띄웁니다.</span>
                             </Label>
                             <Switch
                                 id="order-alert-enable"
@@ -428,35 +488,36 @@ export default function SettingsPage() {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between pt-5 border-t border-slate-100">
-                            <Label htmlFor="alert-minutes" className="flex flex-col gap-1">
-                                <span className="text-base font-bold text-slate-800">마감 카운트다운 알림 타이머</span>
-                                <span className="font-normal text-sm text-muted-foreground">발주 마감 시간이 되기 몇 분 전에 미리 팝업을 띄워 생산을 유도할지 정합니다.</span>
-                            </Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    id="alert-minutes"
-                                    type="number"
-                                    value={settings.alert_minutes_before}
-                                    onChange={e => setSettings({ ...settings, alert_minutes_before: parseInt(e.target.value) || 0 })}
-                                    className="w-24 text-center font-bold text-lg border-red-200 focus-visible:ring-red-400 focus-visible:ring-offset-0 bg-red-50 text-red-900 shadow-sm"
-                                />
-                                <span className="text-sm font-bold text-red-800">분 전</span>
+                        {/* 7-3-1. 카운트다운 시간 설정 */}
+                        <div className={`transition-opacity duration-200 ${!settings.order_alert_enabled ? 'opacity-40 pointer-events-none' : ''}`}>
+                            <div className="flex items-center justify-between pb-2">
+                                <Label htmlFor="alert-minutes" className="flex flex-col gap-1">
+                                    <span className="text-base font-bold text-slate-800">마감 카운트다운 타이머</span>
+                                    <span className="font-normal text-sm text-muted-foreground">발주 마감 시간이 되기 몇 분 전에 미리 팝업을 띄워 생산을 유도할지 정합니다.</span>
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        id="alert-minutes" type="number" disabled={!settings.order_alert_enabled}
+                                        value={settings.alert_minutes_before}
+                                        onChange={e => setSettings({ ...settings, alert_minutes_before: parseInt(e.target.value) || 0 })}
+                                        className="w-24 text-center font-bold text-lg border-red-200 focus-visible:ring-red-400 bg-red-50 text-red-900 shadow-sm"
+                                    />
+                                    <span className="text-sm font-bold text-red-800">분 전</span>
+                                </div>
+                            </div>
+                            <div className="pt-2">
+                                <Button
+                                    variant="outline"
+                                    className="w-full text-red-700 font-bold border-red-200 border-dashed bg-white hover:bg-red-50 transition-colors"
+                                    onClick={() => {
+                                        window.dispatchEvent(new CustomEvent('simulate-deadline-alert', { detail: { minutes: settings.alert_minutes_before, productName: '[테스트] 벚꽃 한정 마카롱 5구' } }))
+                                    }}
+                                >
+                                    🔔 설정된 {settings.alert_minutes_before}분 전 상태로 발주 모의 팝업 테스트
+                                </Button>
                             </div>
                         </div>
 
-                        <div className="pt-2">
-                            <Button
-                                variant="outline"
-                                className="w-full text-red-700 font-bold border-red-200 border-dashed bg-white hover:bg-red-50 hover:text-red-900 transition-colors"
-                                onClick={() => {
-                                    if (!settings.order_alert_enabled) return alert("먼저 위쪽의 [알림 기능 활성화] 스위치를 켜주세요!");
-                                    window.dispatchEvent(new CustomEvent('simulate-deadline-alert', { detail: { minutes: settings.alert_minutes_before, productName: '[테스트] 벚꽃 한정 마카롱 5구' } }))
-                                }}
-                            >
-                                🔔 설정된 {settings.alert_minutes_before}분 전 상태로 모의 팝업 테스트 실행해보기
-                            </Button>
-                        </div>
                     </CardContent>
                 </Card>
                 </GuideBadge>

@@ -353,7 +353,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-bold tracking-tight">오늘의 대화</h2>
         <p className="text-muted-foreground">
-          실시간으로 챗봇을 통해 접수되는 모든 대화 및 주문 로그를 관리합니다. 일괄 상태 변경이나 삭제 등 통합 처리가 가능합니다.
+          
         </p>
       </div>
 

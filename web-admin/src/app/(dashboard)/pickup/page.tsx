@@ -1116,7 +1116,7 @@ export default function PickupCalendarPage() {
 
             <div className="flex flex-col gap-2">
                 <h2 className="text-2xl font-bold tracking-tight">주문관리</h2>
-                <p className="text-muted-foreground">판매 등록된 상품과 수집된 주문정보를 교차 조회합니다.</p>
+                
             </div>
 
             <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">

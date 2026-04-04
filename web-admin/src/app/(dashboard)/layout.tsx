@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { OrderDeadlineProvider } from "@/components/OrderDeadlineProvider";
 import { ProtectedRoute } from "@/components/protected-route";
 import { GuideModeProvider } from "@/components/layout/guide-context";
+import { PopupManager } from "@/components/PopupManager";
 
 export default function DashboardLayout({
     children,
@@ -27,6 +28,7 @@ export default function DashboardLayout({
                             <OrderDeadlineProvider>
                                 {children}
                             </OrderDeadlineProvider>
+                            <PopupManager />
                         </main>
                     </div>
                 </div>
