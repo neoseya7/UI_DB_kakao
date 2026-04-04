@@ -84,7 +84,7 @@ export default function PickupCalendarPage() {
                 const saved = localStorage.getItem(`pickupSettings_${storeId}`)
                 if (saved) {
                     const parsed = JSON.parse(saved)
-                    if (parsed.searchScope) setSearchScope(parsed.searchScope)
+                    // searchScope는 항상 "today"로 시작 (모든날짜 복원 시 초기 로딩 느림 방지)
                     if (parsed.customSearchDate) setCustomSearchDate(parsed.customSearchDate)
                     if (parsed.customEndDate) setCustomEndDate(parsed.customEndDate)
                     if (parsed.receiptFilter) setReceiptFilter(parsed.receiptFilter)
