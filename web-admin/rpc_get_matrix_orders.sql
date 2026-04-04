@@ -54,6 +54,6 @@ BEGIN
       )
     GROUP BY o.id
     ORDER BY o.pickup_date DESC, o.created_at DESC
-    LIMIT 2000;
+    LIMIT 5000;
 END;
 $$;

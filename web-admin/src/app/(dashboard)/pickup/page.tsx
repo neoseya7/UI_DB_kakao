@@ -252,7 +252,7 @@ export default function PickupCalendarPage() {
                  p_pickup_date: pDate,
                  p_start_date: startDate,
                  p_end_date: endDate
-             })
+             }).limit(5000)
              rpcData = res.data;
              rpcError = res.error;
         }
