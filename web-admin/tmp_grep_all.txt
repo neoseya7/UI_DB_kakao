@@ -1,0 +1,22 @@
+src\app\(dashboard)\page.tsx:67:       const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id).eq('is_hidden', false).order('created_at', { ascending: false }).limit(5000)
+src\app\(dashboard)\pickup\page.tsx:180:             const { data } = await supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
+src\app\(dashboard)\pickup\page.tsx:207:                 .eq('is_hidden', false)
+src\app\(dashboard)\pickup\page.tsx:233:         const { data: dateData } = await supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false)
+src\app\(dashboard)\pickup\page.tsx:260:             let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
+src\app\(dashboard)\pickup\page.tsx:289:         let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
+src\app\(dashboard)\pickup\page.tsx:800:                 .update({ is_hidden: true })
+src\app\(dashboard)\pickup\page.tsx:810:                 .update({ is_hidden: true })
+src\app\(dashboard)\pickup\page.tsx:840:                 .update({ is_hidden: false })
+src\app\(dashboard)\pickup\page.tsx:849:                 .update({ is_hidden: false })
+src\app\(dashboard)\products\page.tsx:104:             .eq('is_hidden', false)
+src\app\(dashboard)\products\page.tsx:361:         const { error } = await supabase.from('products').update({ is_hidden: true }).eq('id', id)
+src\app\(dashboard)\products\page.tsx:461:         const { error } = await supabase.from('products').update({ is_hidden: true }).in('id', selectedDeleteProductIds);
+src\app\(dashboard)\utilities\page.tsx:44:             const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received').eq('store_id', user.id).eq('is_hidden', false).limit(3000)
+src\app\api\collect-bulk\route.ts:34:             supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id).eq('is_hidden', false)
+src\app\api\collect-bulk\route.ts:394:                                 is_hidden: false,
+src\app\api\cron\cleanup\route.ts:50:         // 3. Hard-delete archived Products (is_hidden = true) that are over 90 days old
+src\app\api\cron\cleanup\route.ts:55:             .eq('is_hidden', true)
+src\app\api\public\orders\route.ts:42:                         is_hidden
+src\app\api\public\orders\route.ts:49:             .eq('is_hidden', false)
+src\app\api\public\orders\route.ts:60:             const visibleItems = order.order_items?.filter((item: any) => item.product && item.product.is_hidden === false) || [];
+src\app\api\public\store\[store_id]\route.ts:52:             .eq('is_hidden', false)

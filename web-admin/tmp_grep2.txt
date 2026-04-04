@@ -1,0 +1,3 @@
+104:             .eq('is_hidden', false)
+361:         const { error } = await supabase.from('products').update({ is_hidden: true }).eq('id', id)
+461:         const { error } = await supabase.from('products').update({ is_hidden: true }).in('id', selectedDeleteProductIds);

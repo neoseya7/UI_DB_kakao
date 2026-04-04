@@ -1,0 +1,95 @@
+{
+  "orders": [
+    {
+      "id": "cbc7892a-6b44-4bb9-80da-4c6520f9f36c",
+      "store_id": "b8274cb6-33ee-4856-a660-152d51fdd14c",
+      "pickup_date": "2026-04-06",
+      "customer_nickname": "최선",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-04-02T23:32:20.487622+00:00",
+      "is_hidden": false,
+      "order_items": [
+        {
+          "id": "7fc03116-6864-42c8-978c-8c591c3c4412",
+          "order_id": "cbc7892a-6b44-4bb9-80da-4c6520f9f36c",
+          "products": {
+            "id": "9f8aae70-1c89-42f1-b7c9-0695eb4c387c",
+            "price": 6900,
+            "store_id": "b8274cb6-33ee-4856-a660-152d51fdd14c",
+            "image_url": "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/11d603af-ab54-4c2e-9043-319cccdd6b7a/1775115633037_lo6r1ei.png",
+            "is_hidden": false,
+            "unit_text": "",
+            "created_at": "2026-04-02T08:11:40.735847+00:00",
+            "image_urls": [
+              "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/11d603af-ab54-4c2e-9043-319cccdd6b7a/1775115633037_lo6r1ei.png"
+            ],
+            "is_stocked": false,
+            "is_visible": true,
+            "description": "🫐 뉴네이처 그레이드A 블루베리 퓨레100\n\n➡️1팩(14포) #6,900원 ‼️‼️\n\n💜 블루베리 좋아하시면 요거 주목‼️\n\n🫐 프리미엄 블루베리 품종만 100% 퓨레\n\n🫐 과육, 껍질, 씨까지 통째로 갈아만듬\n\n❌ 설탕,색소,정제수,보존료,착향료 아웃‼️\n\n🥄 요거트, 우유, 스무디에 찰떡\n\n✨ 한 스푼이면 홈카페 느낌 확\n\n😋 13브릭스 고당도의 진한 블루베리 가득\n\n❄️ 냉장고에 두면 은근 자주 손 가요\n\n✔️ 음료, 디저트, 토핑용 활용도 굿\n✔️ 블루베리 덕후분들 만족도 높아요\n✔️ 집에 두면 생각보다 진짜 잘 먹어요💜",
+            "target_date": "2026-04-06",
+            "box_quantity": null,
+            "collect_name": "블루베리퓨레",
+            "display_name": "블루베리퓨레",
+            "product_memo": "",
+            "deadline_date": null,
+            "deadline_time": null,
+            "tiered_prices": [],
+            "incoming_price": 0,
+            "allocated_stock": 30,
+            "is_regular_sale": false
+          },
+          "quantity": 3,
+          "product_id": "9f8aae70-1c89-42f1-b7c9-0695eb4c387c"
+        }
+      ]
+    },
+    {
+      "id": "6b25a2fd-39ea-4e41-ac29-dd10577c7ebd",
+      "store_id": "b8274cb6-33ee-4856-a660-152d51fdd14c",
+      "pickup_date": "2026-04-06",
+      "customer_nickname": "최선",
+      "is_received": false,
+      "customer_memo_1": "AI 수집",
+      "customer_memo_2": null,
+      "created_at": "2026-04-04T00:43:39.57271+00:00",
+      "is_hidden": true,
+      "order_items": [
+        {
+          "id": "d7ca13a0-76d2-438f-871a-720963b7a9df",
+          "order_id": "6b25a2fd-39ea-4e41-ac29-dd10577c7ebd",
+          "products": {
+            "id": "1a14236f-609c-4765-8d1e-b2241e48df2f",
+            "price": 3900,
+            "store_id": "b8274cb6-33ee-4856-a660-152d51fdd14c",
+            "image_url": "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/9018fcb3-897d-47f2-8396-1f4ddf5701c9/1775222228290_v5tbbin.png",
+            "is_hidden": false,
+            "unit_text": "",
+            "created_at": "2026-04-03T23:52:15.422968+00:00",
+            "image_urls": [
+              "https://iultzlyrvsvrldyuvqhd.supabase.co/storage/v1/object/public/product-images/9018fcb3-897d-47f2-8396-1f4ddf5701c9/1775222228290_v5tbbin.png"
+            ],
+            "is_stocked": false,
+            "is_visible": true,
+            "description": "",
+            "target_date": "2026-04-06",
+            "box_quantity": null,
+            "collect_name": "통통김말이",
+            "display_name": "통통김말이",
+            "product_memo": "",
+            "deadline_date": null,
+            "deadline_time": null,
+            "tiered_prices": [],
+            "incoming_price": 0,
+            "allocated_stock": 500,
+            "is_regular_sale": false
+          },
+          "quantity": 1,
+          "product_id": "1a14236f-609c-4765-8d1e-b2241e48df2f"
+        }
+      ]
+    }
+  ],
+  "chats": null
+}

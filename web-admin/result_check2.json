@@ -1,0 +1,32 @@
+{
+  "chats": [
+    {
+      "id": "d4c7984e-40dc-4c99-a1ff-48d66e23f1d0",
+      "store_id": "b8274cb6-33ee-4856-a660-152d51fdd14c",
+      "collect_date": "2026-04-04",
+      "chat_time": "09:38:00",
+      "nickname": "최선",
+      "chat_content": "[최선] [오전 9:38] 김말이1",
+      "category": "ORDER",
+      "product_name": "통통김말이",
+      "quantity": 1,
+      "is_processed": true,
+      "created_at": "2026-04-04T00:43:33.347248+00:00",
+      "classification": "분류:주문"
+    },
+    {
+      "id": "0df7495c-38ae-43f9-997f-06a91b61e961",
+      "store_id": "b8274cb6-33ee-4856-a660-152d51fdd14c",
+      "collect_date": "2026-04-03",
+      "chat_time": "08:28:00",
+      "nickname": "최선",
+      "chat_content": "[최선] [오전 8:28] 블루베리퓨레3",
+      "category": "ORDER",
+      "product_name": "블루베리퓨레",
+      "quantity": 3,
+      "is_processed": true,
+      "created_at": "2026-04-02T23:32:18.116567+00:00",
+      "classification": "분류:주문"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+https://iultzlyrvsvrldyuvqhd.supabase.co/auth/v1/verify?token=f17a3cf8efaae3e5cd56a5c0f7ed62776962a1bebe476a5cdabee8b3&type=magiclink&redirect_to=http://localhost:3000

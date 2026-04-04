@@ -1,0 +1,258 @@
+﻿[dotenv@17.3.1] injecting env (3) from .env.local -- tip: ?숋툘  load multiple .env files with { path: ['.env.local', '.env'] }
+=== RECENT CHAT LOGS ===
+[
+  {
+    "id": "79b9a7f3-e253-4133-b6ac-49d13ef2984a",
+    "nickname": "誘몃땲諛띾컢",
+    "cat": "UNKNOWN",
+    "product": "X",
+    "qty": null,
+    "is_processed": false,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "53ab4c7d-482f-4dee-bd32-32ddcd522068",
+    "nickname": "臾몄쓽(Cs)?⑨툘媛쒖씤?〓ℓ?덉??⑨툘",
+    "cat": "UNKNOWN",
+    "product": "X",
+    "qty": null,
+    "is_processed": false,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "db81dde9-865f-4200-b35e-04bd1ce7a247",
+    "nickname": "洹몃젅?댁뒪1504",
+    "cat": "ORDER",
+    "product": "留먯감?먯씠??,
+    "qty": 4,
+    "is_processed": true,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "b772a6c2-e02f-42c5-833c-8e7191c7003e",
+    "nickname": "洹몃젅?댁뒪1504",
+    "cat": "UNKNOWN",
+    "product": "?⑤갚吏??먯씠??怨〓Ъ",
+    "qty": 4,
+    "is_processed": false,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "de658bc9-e6cc-4845-a188-1817b0b02bbe",
+    "nickname": "洹몃젅?댁뒪1504",
+    "cat": "ORDER",
+    "product": "?몃컮?붿껜以묎퀎?붿씠??,
+    "qty": 2,
+    "is_processed": true,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "a294237b-de45-4e67-aed5-a94e2d59ab45",
+    "nickname": "?먮삉7416",
+    "cat": "UNKNOWN",
+    "product": "X",
+    "qty": null,
+    "is_processed": false,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "fa451593-0462-42c4-a7b4-f48e9c1a2e49",
+    "nickname": "臾몄쓽(Cs)?⑨툘媛쒖씤?〓ℓ?덉??⑨툘",
+    "cat": "UNKNOWN",
+    "product": "X",
+    "qty": null,
+    "is_processed": false,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "eb3257d7-1a69-43c2-9b47-a244f7d136de",
+    "nickname": "?먮삉7416",
+    "cat": "ORDER",
+    "product": "怨〓Ъ",
+    "qty": 2,
+    "is_processed": true,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "0f2a2ec2-cf61-4ef1-89bf-3dfcf4315970",
+    "nickname": "?먮삉7416",
+    "cat": "ORDER",
+    "product": "珥덉퐫?먯씠??,
+    "qty": 3,
+    "is_processed": true,
+    "date": "2026-04-03"
+  },
+  {
+    "id": "9ef9e7cf-aeb1-434f-9381-8afaed8d6834",
+    "nickname": "?먮삉7416",
+    "cat": "ORDER",
+    "product": "留먯감?먯씠??,
+    "qty": 3,
+    "is_processed": true,
+    "date": "2026-04-03"
+  }
+]
+
+=== RECENT ORDERS ===
+[
+  {
+    "id": "25f26d1e-c289-4719-8cf6-d679b7f3042b",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "洹몃젅?댁뒪1504",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "留먯감?먯씠??
+        },
+        "quantity": 4,
+        "product_id": "7cda3f07-f2a8-491c-80a9-a5128213e667"
+      }
+    ]
+  },
+  {
+    "id": "ab453ee3-e914-48cb-846b-49a8783b7721",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "洹몃젅?댁뒪1504",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "?몃컮?붿껜以묎퀎?붿씠??
+        },
+        "quantity": 2,
+        "product_id": "652eb4ba-7645-49b8-b0cd-85cabf132346"
+      }
+    ]
+  },
+  {
+    "id": "1523d33d-91fd-4c87-8cf9-80656660e81a",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "?먮삉7416",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "怨〓Ъ"
+        },
+        "quantity": 2,
+        "product_id": "5b2da958-d941-4595-a76b-44f1fc8c8109"
+      }
+    ]
+  },
+  {
+    "id": "17639412-c7c5-4e4c-a2d6-de0ae4df1fcf",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "?먮삉7416",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "珥덉퐫?먯씠??
+        },
+        "quantity": 3,
+        "product_id": "711695c5-5b3a-4f6b-82c6-a2e4ecae7c5b"
+      }
+    ]
+  },
+  {
+    "id": "f312caa4-4076-4c71-9923-e5bc1bdbefbc",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "?먮삉7416",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "留먯감?먯씠??
+        },
+        "quantity": 3,
+        "product_id": "7cda3f07-f2a8-491c-80a9-a5128213e667"
+      }
+    ]
+  },
+  {
+    "id": "9bfeca20-7d51-4d49-8f46-463ce0976de3",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "媛?묎???760",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "珥덉퐫?먯씠??
+        },
+        "quantity": 1,
+        "product_id": "711695c5-5b3a-4f6b-82c6-a2e4ecae7c5b"
+      }
+    ]
+  },
+  {
+    "id": "e5a73089-314c-4aef-9721-027409ae272f",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "媛?묎???760",
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "留먯감?먯씠??
+        },
+        "quantity": 1,
+        "product_id": "7cda3f07-f2a8-491c-80a9-a5128213e667"
+      }
+    ]
+  },
+  {
+    "id": "5f4ba4da-77d7-4a5b-9f7b-a2011b684806",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "?섎삓??,
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "怨〓Ъ"
+        },
+        "quantity": 4,
+        "product_id": "5b2da958-d941-4595-a76b-44f1fc8c8109"
+      }
+    ]
+  },
+  {
+    "id": "26bef8ee-865b-4af1-b7f6-09c03f5bca01",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "?섎삓??,
+    "is_hidden": true,
+    "customer_memo_1": "AI ?섏쭛",
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "留먯감?먯씠??
+        },
+        "quantity": 4,
+        "product_id": "7cda3f07-f2a8-491c-80a9-a5128213e667"
+      }
+    ]
+  },
+  {
+    "id": "9c8848fe-0da5-4445-af80-68f91f17b8f7",
+    "pickup_date": "2026-04-07",
+    "customer_nickname": "?꾨땲9374",
+    "is_hidden": true,
+    "customer_memo_1": "以묐났 ?묒닔??,
+    "order_items": [
+      {
+        "products": {
+          "collect_name": "留먯감?먯씠??
+        },
+        "quantity": 1,
+        "product_id": "7cda3f07-f2a8-491c-80a9-a5128213e667"
+      }
+    ]
+  }
+]

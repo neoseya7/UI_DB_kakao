@@ -138,6 +138,18 @@ export default function ProductsPage() {
         e.preventDefault()
         if (!storeId) return
 
+        const targetDateValue = formData.target_date || null;
+        const isDuplicateName = products.some(p => 
+            p.collect_name === formData.collect_name && 
+            p.target_date === targetDateValue && 
+            p.id !== editingProductId
+        );
+
+        if (isDuplicateName) {
+            alert("같은 이름의 상품이 있습니다. 확인해주세요.");
+            return;
+        }
+
         if (editingProductId) {
             const originalProduct = products.find(p => p.id === editingProductId)
             const oldDate = originalProduct?.target_date || ""

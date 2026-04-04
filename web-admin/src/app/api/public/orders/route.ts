@@ -38,7 +38,8 @@ export async function POST(request: Request) {
                         price,
                         image_url,
                         image_urls,
-                        is_stocked
+                        is_stocked,
+                        is_hidden
                     )
                 )
             `)
@@ -54,9 +55,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'Failed to find orders' }, { status: 500 })
         }
 
+        // Filter out hidden products, and then filter out orders that become empty
+        const filteredOrders = (orders || []).map(order => {
+            const visibleItems = order.order_items?.filter((item: any) => item.product && item.product.is_hidden === false) || [];
+            return {
+                ...order,
+                order_items: visibleItems
+            };
+        }).filter(order => order.order_items.length > 0);
+
         return NextResponse.json({
             success: true,
-            orders: orders || []
+            orders: filteredOrders
         })
 
     } catch (e: any) {
