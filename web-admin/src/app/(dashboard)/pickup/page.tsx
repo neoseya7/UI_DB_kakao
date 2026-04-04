@@ -296,9 +296,9 @@ export default function PickupCalendarPage() {
                 }
             } else {
                 if (strIdList.length > 0) {
-                    pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true,id.in.(${strIdList})`)
+                    pQuery = pQuery.or(`target_date.eq.${currentDate},id.in.(${strIdList})`)
                 } else {
-                    pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+                    pQuery = pQuery.eq('target_date', currentDate)
                 }
             }
         } else if (searchScope === "date_range") {
