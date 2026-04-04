@@ -61,6 +61,7 @@ export default function ProductsPage() {
     // Search and filter UX (Duplicate detection logic)
     const isDuplicate = formData.collect_name.length > 0 && products.some(p => p.collect_name === formData.collect_name && p.target_date !== formData.target_date)
     const duplicateProduct = products.find(p => p.collect_name === formData.collect_name && p.target_date !== formData.target_date)
+    const isSameDateDuplicate = formData.collect_name.length > 0 && !editingProductId && products.some(p => p.collect_name === formData.collect_name && p.target_date === formData.target_date)
 
     useEffect(() => {
         let channel: any = null;
@@ -146,7 +147,7 @@ export default function ProductsPage() {
         );
 
         if (isDuplicateName) {
-            alert("같은 이름의 상품이 있습니다. 확인해주세요.");
+            alert(`${targetDateValue || '상시판매'}에 동일한 상품명이 있습니다.`);
             return;
         }
 
@@ -639,9 +640,14 @@ export default function ProductsPage() {
                                     />
                                     <p className="text-[11px] text-indigo-700/80 mt-1 font-medium bg-indigo-50/50 p-1.5 rounded-sm border border-indigo-100">이곳에 입력한 내용은 주문 현황 창의 <b>상품명 열 추가 비고란</b>과 실시간 연동됩니다.</p>
                                 </div>
-                                {isDuplicate && duplicateProduct && (
+                                {isSameDateDuplicate && (
+                                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-[13px] font-bold animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
+                                        {formData.target_date || '상시판매'}에 동일한 상품명이 있습니다. 등록할 수 없습니다.
+                                    </div>
+                                )}
+                                {isDuplicate && duplicateProduct && !isSameDateDuplicate && (
                                     <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[13px] font-medium animate-in fade-in slide-in-from-top-1 shadow-sm leading-normal">
-                                        ⚠️ <strong>{duplicateProduct.target_date}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
+                                        <strong>{duplicateProduct.target_date}</strong>에 판매 등록된 동일한 수집상품명이 있습니다.<br />
                                         재고 혼선을 막기 위해, 즉시 자동 이관(기존 재고 0 처리) 로직이 트리거됩니다.
                                     </div>
                                 )}
