@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Store, ShoppingBag, Users, Activity, Power } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Building2, Store, ShoppingBag, Users, Activity, Power, ExternalLink } from "lucide-react"
 
 export default function BrandAdminDashboard() {
     const [isLoading, setIsLoading] = useState(true)
@@ -38,6 +39,29 @@ export default function BrandAdminDashboard() {
         }
         fetchDashboard()
     }, [])
+
+    const handleImpersonate = async (email: string, storeName: string) => {
+        if (!confirm(`[${storeName}] 매장으로 접속하시겠습니까?\n\n비밀번호 없이 해당 매장의 대시보드에 접속합니다.\n새 창으로 열립니다.`)) return
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const res = await fetch('/api/admin/generate-login-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ store_email: email })
+            })
+            const data = await res.json()
+            if (data.success && data.link) {
+                window.open(data.link, '_blank')
+            } else {
+                alert(`접속 실패: ${data.error}`)
+            }
+        } catch (err: any) {
+            alert(`접속 중 오류 발생: ${err.message}`)
+        }
+    }
 
     if (isLoading) {
         return (
@@ -121,10 +145,11 @@ export default function BrandAdminDashboard() {
                                 <th className="px-5 py-3.5 font-semibold text-slate-600">아이디 (ID)</th>
                                 <th className="px-5 py-3.5 font-semibold text-slate-600">권한 구조</th>
                                 <th className="px-5 py-3.5 font-semibold text-slate-600">상태</th>
+                                <th className="px-5 py-3.5 font-semibold text-slate-600">매장 접근</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/60">
-                            {stores.length === 0 && (<tr><td colSpan={4} className="p-8 text-center text-slate-400">소속된 가맹점이 없습니다.</td></tr>)}
+                            {stores.length === 0 && (<tr><td colSpan={5} className="p-8 text-center text-slate-400">소속된 가맹점이 없습니다.</td></tr>)}
                             {stores.map((s, i) => (
                                 <tr key={i} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-5 py-4">
@@ -139,10 +164,22 @@ export default function BrandAdminDashboard() {
                                         }
                                     </td>
                                     <td className="px-5 py-4">
-                                        {s.status === 'active' 
+                                        {s.status === 'active'
                                             ? <div className="flex items-center gap-1.5 text-emerald-600 font-bold"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> 정상운영</div>
                                             : <div className="flex items-center gap-1.5 text-rose-500 font-bold"><div className="w-2 h-2 rounded-full bg-rose-500"></div> 승인보류 / 정지</div>
                                         }
+                                    </td>
+                                    <td className="px-5 py-4">
+                                        {s.status === 'active' && s.email && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleImpersonate(s.email, s.name)}
+                                                className="h-8 gap-1.5 font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200"
+                                            >
+                                                <ExternalLink className="w-3.5 h-3.5" /> 접속
+                                            </Button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
