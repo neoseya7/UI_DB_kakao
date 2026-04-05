@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Package, AlertCircle, CalendarDays, ShoppingBag, ImageIcon, Megaphone, ChevronLeft, ChevronRight } from "lucide-react"
+import Image from "next/image"
 
 export default function PublicStorePage({ params }: { params: Promise<{ store_id: string }> }) {
     const { store_id: storeId } = use(params)
@@ -410,10 +411,12 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                         {renderImage && (
                                             <div className="w-24 h-24 sm:w-[104px] sm:h-[104px] rounded-2xl bg-slate-100 flex-shrink-0 relative overflow-hidden border border-slate-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)]">
                                                 {displayImage ? (
-                                                    <img 
-                                                        src={displayImage} 
-                                                        alt={product.display_name} 
-                                                        className={`w-full h-full object-cover transition-transform group-hover:scale-105 ${outOfStock ? 'opacity-50 grayscale' : ''}`}
+                                                    <Image
+                                                        src={displayImage}
+                                                        alt={product.display_name}
+                                                        fill
+                                                        sizes="104px"
+                                                        className={`object-cover transition-transform group-hover:scale-105 ${outOfStock ? 'opacity-50 grayscale' : ''}`}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-slate-300">
@@ -519,10 +522,12 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                             <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x snap-mandatory w-full h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                                                 {images.map((img: string, idx: number) => (
                                                     <div key={idx} className="w-full shrink-0 snap-center h-full relative">
-                                                        <img 
-                                                            src={img} 
-                                                            alt={`${selectedProduct.display_name || selectedProduct.collect_name} 이미지 ${idx + 1}`} 
-                                                            className={`w-full h-full object-cover ${outOfStock ? 'opacity-50 grayscale' : ''}`}
+                                                        <Image
+                                                            src={img}
+                                                            alt={`${selectedProduct.display_name || selectedProduct.collect_name} 이미지 ${idx + 1}`}
+                                                            fill
+                                                            sizes="(max-width: 640px) 100vw, 500px"
+                                                            className={`object-cover ${outOfStock ? 'opacity-50 grayscale' : ''}`}
                                                         />
                                                         {images.length > 1 && (
                                                             <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white font-black text-[11px] px-3 py-1 rounded-full shadow-sm z-20 pointer-events-none tracking-widest">
