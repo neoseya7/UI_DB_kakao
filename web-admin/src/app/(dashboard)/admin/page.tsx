@@ -74,12 +74,18 @@ export default function AdminPage() {
     // Security & Logic states
     const [storeMetadata, setStoreMetadata] = useState<Record<string, any>>({})
     const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
+    const [storeSearchName, setStoreSearchName] = useState("")
     const [sortOption, setSortOption] = useState<'newest' | 'name'>('newest')
 
     // Approval Dialog states
     const [approveModalOpen, setApproveModalOpen] = useState(false)
     const [storeToApprove, setStoreToApprove] = useState<any>(null)
     const [selectedBrandForApprove, setSelectedBrandForApprove] = useState("")
+
+    // Update Brand Dialog states
+    const [updateBrandModalOpen, setUpdateBrandModalOpen] = useState(false)
+    const [storeToUpdateBrand, setStoreToUpdateBrand] = useState<any>(null)
+    const [selectedBrandForUpdate, setSelectedBrandForUpdate] = useState("")
 
     useEffect(() => {
         const fetchAdminData = async () => {
@@ -151,10 +157,17 @@ export default function AdminPage() {
 
     // Brand filtering logic for active stores tab
     const filteredActiveStores = activeStores.filter(store => {
-        if (selectedBrandFilter === 'all') return true;
-        const metaBrand = storeMetadata[store.id]?.brand_name;
-        if (selectedBrandFilter === 'unassigned') return !metaBrand;
-        return metaBrand === selectedBrandFilter;
+        if (selectedBrandFilter !== 'all') {
+            const metaBrand = storeMetadata[store.id]?.brand_name;
+            if (selectedBrandFilter === 'unassigned' && metaBrand) return false;
+            if (selectedBrandFilter !== 'unassigned' && selectedBrandFilter !== 'all' && metaBrand !== selectedBrandFilter) return false;
+        }
+        
+        if (storeSearchName.trim()) {
+            if (!store.name?.includes(storeSearchName.trim())) return false;
+        }
+
+        return true;
     });
 
     const displayStores = sortOption === 'name' 
@@ -184,6 +197,39 @@ export default function AdminPage() {
                 setStores(prev => prev.map(s => s.id === storeToApprove.id ? { ...s, status: 'active' } : s))
                 alert("해당 매장에 브랜드가 안전하게 할당되었으며, 최종 승인이 완료되었습니다!")
                 setApproveModalOpen(false)
+            } else {
+                alert("상태 오류: " + json.error)
+            }
+        } catch (e) {
+            alert("네트워크 송출 오류가 발생했습니다.")
+        }
+    }
+
+    const openUpdateBrandModal = (store: any, currentBrand: string) => {
+        setStoreToUpdateBrand(store)
+        setSelectedBrandForUpdate(currentBrand || adminConfig.allowed_brands?.[0] || "")
+        setUpdateBrandModalOpen(true)
+    }
+
+    const executeBrandUpdate = async () => {
+        if (!selectedBrandForUpdate) {
+            alert("할당할 브랜드를 선택해야 합니다.")
+            return
+        }
+        try {
+            const res = await fetch('/api/admin/update-brand', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ store_id: storeToUpdateBrand.id, brand_name: selectedBrandForUpdate })
+            })
+            const json = await res.json()
+            if (json.success) {
+                setStoreMetadata(prev => ({
+                    ...prev,
+                    [storeToUpdateBrand.id]: { ...prev[storeToUpdateBrand.id], brand_name: selectedBrandForUpdate }
+                }))
+                alert("브랜드가 성공적으로 재설정되었습니다!")
+                setUpdateBrandModalOpen(false)
             } else {
                 alert("상태 오류: " + json.error)
             }
@@ -484,6 +530,13 @@ export default function AdminPage() {
                                 >
                                     미분류 (기타)
                                 </button>
+                                <div className="w-px h-6 bg-slate-300 mx-2 self-center shrink-0"></div>
+                                <Input 
+                                    className="w-[200px] h-8 text-sm" 
+                                    placeholder="가맹점 이름 검색..." 
+                                    value={storeSearchName} 
+                                    onChange={(e) => setStoreSearchName(e.target.value)} 
+                                />
                             </div>
                             
                             {/* Sort Toggle */}
@@ -533,7 +586,19 @@ export default function AdminPage() {
                                                 <div className="flex flex-col gap-1.5">
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-bold text-lg text-slate-800">{store.name}</span>
-                                                        {meta.brand_name && <Badge className="bg-indigo-600 text-white border-none shrink-0 font-bold px-2">{meta.brand_name}</Badge>}
+                                                        {meta.brand_name ? (
+                                                            <button onClick={() => openUpdateBrandModal(store, meta.brand_name)} className="flex items-center group" title="브랜드 재설정">
+                                                                <Badge className="bg-indigo-600 text-white border-none shrink-0 font-bold px-2 group-hover:bg-indigo-700 transition-colors">
+                                                                    {meta.brand_name} <Settings2 className="w-3 h-3 ml-1 opacity-70 group-hover:opacity-100" />
+                                                                </Badge>
+                                                            </button>
+                                                        ) : (
+                                                            <button onClick={() => openUpdateBrandModal(store, "")} className="flex items-center group" title="브랜드 할당">
+                                                                <Badge variant="outline" className="border-indigo-300 text-indigo-500 shrink-0 font-bold px-2 group-hover:bg-indigo-50 transition-colors bg-white">
+                                                                    브랜드 미할당 +
+                                                                </Badge>
+                                                            </button>
+                                                        )}
                                                         {meta.role === 'brand_admin' && <Badge className="bg-emerald-600 text-white border-none shrink-0 font-bold px-2">본사 관리권한</Badge>}
                                                         {(meta.role === 'store_owner' || !meta.role) && <Badge variant="outline" className="text-slate-500 border-slate-300 shrink-0 font-semibold px-2">일반점장</Badge>}
                                                     </div>
@@ -728,6 +793,47 @@ export default function AdminPage() {
                         <Button variant="outline" onClick={() => setApproveModalOpen(false)} className="bg-white">돌아가기</Button>
                         <Button onClick={executeApproveStore} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-sm" disabled={!adminConfig.allowed_brands || adminConfig.allowed_brands.length === 0}>
                             최종 승인 및 권한 발급 완료
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Update Brand Modal */}
+            <Dialog open={updateBrandModalOpen} onOpenChange={setUpdateBrandModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl">운영 중인 가맹점 브랜드 재설정</DialogTitle>
+                        <DialogDescription className="text-[13px] pt-1 leading-relaxed">
+                            <strong className="text-indigo-600 font-bold">[{storeToUpdateBrand?.name}]</strong> 가맹점의 브랜드를 변경합니다.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="updateBrandSelect" className="font-bold text-slate-800 mb-1">
+                                변경할 공식 브랜드 <span className="text-rose-500">*</span>
+                            </Label>
+                            {(!adminConfig.allowed_brands || adminConfig.allowed_brands.length === 0) ? (
+                                <div className="text-[13px] text-rose-600 font-bold bg-rose-50 p-4 rounded-md border border-rose-200 leading-relaxed shadow-inner">
+                                    🚨 시스템에 등록된 공식 브랜드가 없습니다. 먼저 상단에서 브랜드를 등록해주세요.
+                                </div>
+                            ) : (
+                                <select
+                                    id="updateBrandSelect"
+                                    value={selectedBrandForUpdate}
+                                    onChange={(e) => setSelectedBrandForUpdate(e.target.value)}
+                                    className="flex h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-indigo-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                >
+                                    {adminConfig.allowed_brands.map((b: string, i: number) => (
+                                        <option key={i} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter className="border-t bg-slate-50/50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg mt-2">
+                        <Button variant="outline" onClick={() => setUpdateBrandModalOpen(false)} className="bg-white">취소</Button>
+                        <Button onClick={executeBrandUpdate} className="bg-indigo-600 hover:bg-indigo-700 font-bold shadow-sm" disabled={!adminConfig.allowed_brands || adminConfig.allowed_brands.length === 0}>
+                            브랜드 일괄 변경 저장
                         </Button>
                     </DialogFooter>
                 </DialogContent>

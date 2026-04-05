@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabaseClient"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Search, Trash2, Edit3 } from "lucide-react"
+import { Search, Trash2, Edit3, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<any[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isChanging, setIsChanging] = useState(false)
   const [activeProducts, setActiveProducts] = useState<any[]>([])
   const [crmDict, setCrmDict] = useState<Record<string, { category: string, memo: string }>>({})
 
@@ -259,6 +260,7 @@ export default function Dashboard() {
     if (!bulkProduct && !bulkDate) return alert("변경할 상품명 또는 날짜를 선택해주세요.")
 
     try {
+      setIsChanging(true)
       setIsLoading(true)
       const targetLogs = logs.filter(l => selectedIds.includes(l.id))
 
@@ -344,9 +346,20 @@ export default function Dashboard() {
       console.error(err)
       alert(`변경 및 동기화 실패: ${err.message}`)
     } finally {
+      setIsChanging(false)
       setIsLoading(false)
     }
   }
+
+  const formatDateWithDow = (dateStr: string) => {
+    if (!dateStr || dateStr === "-") return dateStr;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const days = ["일", "월", "화", "수", "목", "금", "토"];
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${mm}-${dd}(${days[d.getDay()]})`;
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full mx-auto pb-10 max-w-[1900px] px-2 md:px-4">
@@ -481,7 +494,7 @@ export default function Dashboard() {
             </SelectTrigger>
             <SelectContent>
               {Array.from(new Set(activeProducts.map(p => p.target_date).filter(Boolean))).sort().map(date => (
-                <SelectItem key={date} value={date}>{date}</SelectItem>
+                <SelectItem key={date} value={date}>{formatDateWithDow(date)}</SelectItem>
               ))}
               <SelectItem value="-">초기화 (선택안함)</SelectItem>
             </SelectContent>
@@ -504,8 +517,9 @@ export default function Dashboard() {
             </SelectContent>
           </Select>
 
-          <Button onClick={handleChangeSelected} variant="default" size="sm" className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto shadow-sm text-sm" disabled={selectedIds.length === 0}>
-            <Edit3 className="w-4 h-4" /> 변경
+          <Button onClick={handleChangeSelected} variant="default" size="sm" className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto shadow-sm text-sm" disabled={selectedIds.length === 0 || isChanging}>
+            {isChanging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
+            {isChanging ? "이동 중..." : "변경"}
           </Button>
         </div>
         </GuideBadge>
