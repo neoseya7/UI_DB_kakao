@@ -687,20 +687,58 @@ export default function PickupCalendarPage() {
         }).eq('id', targetProduct.id)
         if (pErr) errors.push(`상품 변경 실패: ${pErr.message}`)
 
-        // 2. 해당 날짜의 주문 중 이 상품이 포함된 주문의 pickup_date 일괄 변경
-        const { data: oData, error: oErr } = await supabase.from('orders').select('id').eq('store_id', storeId).eq('pickup_date', sourceDate)
+        // 2. 해당 날짜의 주문 중 이 상품이 포함된 주문 처리 (주문 분리 방식)
+        const { data: oData, error: oErr } = await supabase.from('orders').select('id, customer_nickname, is_received').eq('store_id', storeId).eq('pickup_date', sourceDate)
         if (oErr) errors.push(`주문 조회 실패: ${oErr.message}`)
 
         if (oData && oData.length > 0) {
             const orderIds = oData.map((o: any) => o.id)
-            const { data: oiData, error: oiErr } = await supabase.from('order_items').select('order_id').eq('product_id', targetProduct.id).in('order_id', orderIds)
+            // 이동 대상 상품의 order_items 조회
+            const { data: oiData, error: oiErr } = await supabase.from('order_items').select('id, order_id, quantity').eq('product_id', targetProduct.id).in('order_id', orderIds)
             if (oiErr) errors.push(`주문항목 조회 실패: ${oiErr.message}`)
 
             if (oiData && oiData.length > 0) {
-                const affectedOrderIds = oiData.map((oi: any) => oi.order_id)
+                // 각 주문별로 다른 상품이 있는지 확인
+                const affectedOrderIds = [...new Set(oiData.map((oi: any) => oi.order_id))]
+                const { data: allItems, error: allErr } = await supabase.from('order_items').select('id, order_id').in('order_id', affectedOrderIds)
+                if (allErr) errors.push(`전체 주문항목 조회 실패: ${allErr.message}`)
+
+                const itemCountByOrder: Record<string, number> = {}
+                if (allItems) {
+                    for (const item of allItems) {
+                        itemCountByOrder[item.order_id] = (itemCountByOrder[item.order_id] || 0) + 1
+                    }
+                }
+
                 for (const oId of affectedOrderIds) {
-                    const { error: uErr } = await supabase.from('orders').update({ pickup_date: newPickup }).eq('id', oId)
-                    if (uErr) errors.push(`주문 ${oId.slice(0,8)} 변경 실패: ${uErr.message}`)
+                    const orderItemsToMove = oiData.filter((oi: any) => oi.order_id === oId)
+                    const totalItemsInOrder = itemCountByOrder[oId] || 0
+                    const movingCount = orderItemsToMove.length
+
+                    if (movingCount >= totalItemsInOrder) {
+                        // 이 주문에 이동 대상 상품만 있음 → 주문 자체의 pickup_date 변경
+                        const { error: uErr } = await supabase.from('orders').update({ pickup_date: newPickup }).eq('id', oId)
+                        if (uErr) errors.push(`주문 ${oId.slice(0,8)} 변경 실패: ${uErr.message}`)
+                    } else {
+                        // 이 주문에 다른 상품도 있음 → 새 주문으로 분리
+                        const originalOrder = oData.find((o: any) => o.id === oId)
+                        const { data: newOrder, error: nErr } = await supabase.from('orders').insert({
+                            store_id: storeId,
+                            pickup_date: newPickup,
+                            customer_nickname: originalOrder?.customer_nickname || '',
+                            is_received: originalOrder?.is_received || false
+                        }).select().single()
+
+                        if (nErr || !newOrder) {
+                            errors.push(`주문 분리 실패 (${oId.slice(0,8)}): ${nErr?.message}`)
+                            continue
+                        }
+
+                        // order_items를 새 주문으로 이동
+                        const moveIds = orderItemsToMove.map((oi: any) => oi.id)
+                        const { error: mvErr } = await supabase.from('order_items').update({ order_id: newOrder.id }).in('id', moveIds)
+                        if (mvErr) errors.push(`주문항목 이동 실패 (${oId.slice(0,8)}): ${mvErr.message}`)
+                    }
                 }
             }
         }
