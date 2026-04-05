@@ -73,11 +73,12 @@ export async function POST(request: Request) {
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
         const isSystem = !nickname || nickname === "System" || nickname === "시스템" || nickname === "카카오톡" || nickname === "알림톡" || nickname === "알수없음"
         
-        const normalizeNick = (n: string) => n ? n.toString().replace(/\[|\]|\s/g, '') : ''
+        const normalizeNick = (n: string) => n ? n.toString().normalize('NFC').replace(/[\[\]\s\u200B\u200C\u200D\uFEFF]/g, '').replace(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu, '') : ''
         const cleanNickname = normalizeNick(nickname)
         const isManager = managerNicks.some((n: string) => normalizeNick(n) === cleanNickname)
 
         if (isSystem || isManager) {
+            console.log(`[collect] Skipping manager/system: "${nickname}" (store: ${store_id})`)
             return NextResponse.json({ success: true, message: 'Message ignored (System or Manager)' })
         }
 
