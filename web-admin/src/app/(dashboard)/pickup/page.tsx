@@ -1381,7 +1381,7 @@ export default function PickupCalendarPage() {
             </div>
 
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
-                <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 360px)" }}>
+                <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 240px)" }}>
                     <table className="w-full text-sm text-center border-collapse min-w-max relative">
                         <thead className="bg-muted/90 sticky top-0 z-30 shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
@@ -1401,7 +1401,16 @@ export default function PickupCalendarPage() {
                                 </th>
                                 <th rowSpan={6} className={`border-b border-r px-1 sm:px-2 py-3 whitespace-nowrap align-bottom pb-4 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
                                 {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
-                                <th rowSpan={6} className={`border-b border-r px-4 py-3 align-bottom pb-4 ${getStickyClasses('summary').th}`}>주문 상품 요약</th>
+                                <th rowSpan={6} className={`border-b border-r px-2 py-0 align-bottom pb-4 ${getStickyClasses('summary').th}`}>
+                                    <div className="flex flex-col h-full items-center justify-end pb-0 gap-2">
+                                        <div className="flex flex-col gap-0.5 text-[11px] font-medium text-slate-600 bg-slate-50/80 px-2 py-1.5 rounded w-full min-w-[70px] border shadow-sm ring-1 ring-slate-900/5 mt-2">
+                                            <div className="text-slate-800 font-bold border-b border-slate-200 pb-0.5 mb-0.5 tracking-tight">총 {filteredCustomers.length}건</div>
+                                            <div className="text-emerald-700 font-semibold tracking-tight">수령: {filteredCustomers.filter(c => c.checked).length}</div>
+                                            <div className="text-rose-600 font-semibold tracking-tight">미수령: {filteredCustomers.filter(c => !c.checked).length}</div>
+                                        </div>
+                                        <span className="text-sm font-bold text-slate-800">주문 상품 요약</span>
+                                    </div>
+                                </th>
                                 <th rowSpan={2} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
                                 <th rowSpan={2} className={`border-b border-r p-0 align-bottom bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
                                     <GuideBadge text="고객이 수령일 변경을 원할 경우 고객찜에 입력을 하면 남은+미체크에 숫자가 변경이 되요." className="w-full h-full p-2 pb-4">
@@ -1500,8 +1509,8 @@ export default function PickupCalendarPage() {
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>
-                                        <td className={`border-b border-r p-2 sm:p-3 text-xs sm:text-sm font-semibold whitespace-nowrap ${getStickyClasses('name').td}`}>
-                                            <div className="flex flex-col items-start gap-1">
+                                        <td className={`border-b border-r px-2 py-1 text-xs sm:text-sm font-semibold whitespace-nowrap ${getStickyClasses('name').td}`}>
+                                            <div className="flex flex-col items-start gap-0.5">
                                                 <div className="flex items-center gap-2">
                                                     {posSyncEnabled && (
                                                         <Checkbox 
@@ -1542,10 +1551,10 @@ export default function PickupCalendarPage() {
                                                 </div>
                                             </td>
                                         )}
-                                        <td className={`border-b border-r px-3 py-2 ${getStickyClasses('summary').td}`}>
-                                            <span className="text-sm font-medium text-slate-800">{getDisplaySummary(c.items)}</span>
+                                        <td className={`border-b border-r px-2 py-1 ${getStickyClasses('summary').td}`}>
+                                            <span className="text-xs sm:text-sm font-medium text-slate-800">{getDisplaySummary(c.items)}</span>
                                         </td>
-                                        <td className={`border-b border-r px-3 py-2 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
+                                        <td className={`border-b border-r px-2 py-1 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
                                             {activeProductIndices.reduce((total, oi) => total + calculateItemPrice(products[oi], c.items[oi] || 0), 0).toLocaleString()}원
                                         </td>
                                         <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
@@ -1573,7 +1582,7 @@ export default function PickupCalendarPage() {
                                             return (
                                                 <td
                                                     key={di}
-                                                    className={`border-b border-r p-2 sm:p-3 text-lg font-bold transition-colors cursor-pointer ${qty > 0 ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-slate-50'}`}
+                                                    className={`border-b border-r px-2 py-1 text-base font-bold transition-colors cursor-pointer ${qty > 0 ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-slate-50'}`}
                                                     onClick={() => {
                                                         if (!isEditing && !isMerged) {
                                                             setEditingQty({ orderId: c.id, productIdx: oi });
