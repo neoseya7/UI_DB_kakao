@@ -48,7 +48,6 @@ export async function POST(request: Request) {
             .eq('is_received', false)
             .eq('is_hidden', false)
             .order('pickup_date', { ascending: false })
-            .limit(10) // Limit to most recent 10 orders for safety
 
         if (ordersError) {
             console.error("Order fetch error:", ordersError)
