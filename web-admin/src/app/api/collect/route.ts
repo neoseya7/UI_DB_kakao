@@ -114,6 +114,13 @@ export async function POST(request: Request) {
         // --- NEW: CRITICAL SYSTEM OVERRIDE FOR MULTI-ITEM BUNDLING ---
         promptA += "\n\n[CRITICAL SYSTEM FORMATTING RULE]: If a user orders multiple different products in one message (e.g. '수박1 사과2' or '수박(1) 사과(2)'), YOU MUST NEVER COMBINE THEM INTO A SINGLE JSON OBJECT! You MUST explicitly separate them into an array of multiple JSON objects. Example output ALWAYS: [{\"product\": \"수박\", \"quantity\": 1}, {\"product\": \"사과\", \"quantity\": 2}]. Do NOT return {\"product\": \"수박 1 사과 2\"}!!";
 
+        // --- NEW: PRODUCT VARIANT AWARENESS ---
+        // Inject registered product names so AI can distinguish variants from quantities
+        const productNameList = products.map(p => p.collect_name).filter(Boolean);
+        if (productNameList.length > 0) {
+            promptA += `\n\n[REGISTERED PRODUCT LIST]: The store has these products: [${productNameList.join(', ')}]. IMPORTANT: When a number follows a product name (e.g. '석류즙30', '석류즙 60'), check if it matches a registered product variant (e.g. '석류즙(30포)', '석류즙(60포)'). If so, the number is a VARIANT IDENTIFIER, NOT a quantity. Output the matched product name exactly as registered with quantity 1. Example: '석류즙30' → {"product": "석류즙(30포)", "quantity": 1}, NOT {"product": "석류즙", "quantity": 30}.`;
+        }
+
         const callGemini = async (sysPrompt: string, userText: string) => {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`
             const res = await fetch(url, {
@@ -190,21 +197,61 @@ export async function POST(request: Request) {
         }
         
         // --- NEW: ADVANCED REGEX BUNDLE SHREDDER ---
+        // Helper: check if a name (or variant with parentheses) matches a registered product
+        const productNameSet = new Set(products.map(p => p.collect_name));
+        const matchesRegisteredProduct = (name: string) => {
+            if (productNameSet.has(name)) return true;
+            // Try common variant patterns: "석류즙30" → "석류즙(30포)", "석류즙(30)"
+            const numSuffix = name.match(/(.+?)(\d+)$/);
+            if (numSuffix) {
+                const base = numSuffix[1].trim();
+                const num = numSuffix[2];
+                if (productNameSet.has(`${base}(${num}포)`)) return true;
+                if (productNameSet.has(`${base}(${num}개)`)) return true;
+                if (productNameSet.has(`${base}(${num})`)) return true;
+                if (productNameSet.has(`${base} ${num}포`)) return true;
+                if (productNameSet.has(`${base}${num}포`)) return true;
+            }
+            return false;
+        };
+
         if (extractedItems.length > 0) {
             const newItems: any[] = [];
             for (const item of extractedItems) {
                 let combinedName = item.product || "";
                 combinedName = combinedName.replace(/\)\s+([^\s])/g, '), $1');
                 combinedName = combinedName.replace(/(\d)\s+([가-힣a-zA-Z])/g, '$1, $2');
-                
+
                 if (combinedName.includes(",") || combinedName.includes("+") || combinedName.includes("&") || combinedName.includes("/")) {
                     const productsStr = combinedName.split(/[,+&/]/).map((s: string) => s.trim()).filter(Boolean);
                     const quantitiesStr = item.quantity ? item.quantity.toString().split(/[,+&/]/).map((s: string) => s.trim()) : ["1"];
-                    
+
                     for (let i = 0; i < productsStr.length; i++) {
                         let rawName = productsStr[i];
                         let itemQtyStr = quantitiesStr[i] || quantitiesStr[0] || "1";
-                        
+
+                        // Skip number stripping if the name matches a registered product variant
+                        if (!matchesRegisteredProduct(rawName)) {
+                            const qtyMatch = rawName.match(/(.+?)(?:\((\d+)\))$/);
+                            if (qtyMatch) {
+                                rawName = qtyMatch[1].trim();
+                                itemQtyStr = qtyMatch[2];
+                            } else {
+                                const spaceNumMatch = rawName.match(/(.+?)\s*(\d{1,2})$/);
+                                if (spaceNumMatch) {
+                                    rawName = spaceNumMatch[1].trim();
+                                    itemQtyStr = spaceNumMatch[2];
+                                }
+                            }
+                        }
+                        newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
+                    }
+                } else {
+                    let rawName = combinedName;
+                    let itemQtyStr = item.quantity ? item.quantity.toString() : "1";
+
+                    // Skip number stripping if the name matches a registered product variant
+                    if (!matchesRegisteredProduct(rawName)) {
                         const qtyMatch = rawName.match(/(.+?)(?:\((\d+)\))$/);
                         if (qtyMatch) {
                             rawName = qtyMatch[1].trim();
@@ -215,21 +262,6 @@ export async function POST(request: Request) {
                                 rawName = spaceNumMatch[1].trim();
                                 itemQtyStr = spaceNumMatch[2];
                             }
-                        }
-                        newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
-                    }
-                } else {
-                    let rawName = combinedName;
-                    let itemQtyStr = item.quantity ? item.quantity.toString() : "1";
-                    const qtyMatch = rawName.match(/(.+?)(?:\((\d+)\))$/);
-                    if (qtyMatch) {
-                        rawName = qtyMatch[1].trim();
-                        itemQtyStr = qtyMatch[2];
-                    } else {
-                        const spaceNumMatch = rawName.match(/(.+?)\s*(\d{1,2})$/);
-                        if (spaceNumMatch) {
-                            rawName = spaceNumMatch[1].trim();
-                            itemQtyStr = spaceNumMatch[2];
                         }
                     }
                     newItems.push({ ...item, product: rawName, quantity: itemQtyStr });
