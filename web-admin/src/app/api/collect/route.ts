@@ -420,7 +420,7 @@ export async function POST(request: Request) {
 
                 // Save to Orders DB
                 if (isActualOrder && item.matchedProduct) {
-                    let targetDateStr = item.finalDateStr || collect_date;
+                    let targetDateStr = item.matchedProduct.target_date || item.finalDateStr || collect_date;
                     if (targetDateStr === "날짜미지정") targetDateStr = collect_date;
                     if (!targetDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
                         targetDateStr = collect_date;
