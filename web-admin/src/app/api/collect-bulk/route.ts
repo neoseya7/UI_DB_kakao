@@ -1,4 +1,4 @@
-export const maxDuration = 120; // 2 minutes max per bulk execution
+export const maxDuration = 300; // 5 minutes max per bulk execution (Pro plan)
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
