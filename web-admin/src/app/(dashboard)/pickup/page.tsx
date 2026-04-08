@@ -267,11 +267,12 @@ export default function PickupCalendarPage() {
             console.warn("RPC fetch failed, falling back to legacy:", rpcError);
             let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
             if (searchScope === "today") {
-                oQuery = oQuery.eq('pickup_date', currentDate)
+                const dbDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
+                oQuery = oQuery.or(`pickup_date.eq.${dbDate},pickup_date.eq.1900-01-01`)
             } else if (searchScope === "date_range" && customSearchDate && customEndDate) {
-                oQuery = oQuery.gte('pickup_date', customSearchDate).lte('pickup_date', customEndDate)
+                oQuery = oQuery.or(`and(pickup_date.gte.${customSearchDate},pickup_date.lte.${customEndDate}),pickup_date.eq.1900-01-01`)
             } else if (searchScope === "date_range" && customSearchDate && !customEndDate) {
-                oQuery = oQuery.eq('pickup_date', customSearchDate)
+                oQuery = oQuery.or(`pickup_date.eq.${customSearchDate},pickup_date.eq.1900-01-01`)
             }
             const { data: oData } = await oQuery.limit(2000).order('pickup_date', { ascending: false })
             orders = oData || []
