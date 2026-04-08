@@ -204,6 +204,73 @@ export default function Dashboard() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  // 주문 취소 (오늘의대화에서 잘못 생성된 주문 삭제)
+  const handleRevokeOrder = async (log: any) => {
+    if (!confirm(`"${log.nickname}" 님의 [${log.product}] 주문을 삭제하고 대화를 미처리 상태로 되돌리시겠습니까?`)) return
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    try {
+      setIsLoading(true)
+
+      // 1. 매칭된 날짜 추출
+      let assignedDate: string | null = null
+      if (log.matchBadges?.length > 0) {
+        const matched = log.matchBadges.find((b: any) => b.isMatched)
+        if (matched) assignedDate = matched.dateText
+      }
+
+      // 2. 해당 주문 찾기 (닉네임 + 날짜 + 상품)
+      if (assignedDate && assignedDate !== "상시판매") {
+        const rawProductName = log.product?.replace(/\(.*?\)$/, '').trim()
+        const matchedProd = activeProducts?.find((p: any) => {
+          const pName = p.unit_text ? `${p.collect_name}(${p.unit_text})` : p.collect_name
+          return (pName === log.product || p.collect_name === log.product || p.collect_name === rawProductName) && p.target_date === assignedDate
+        }) || activeProducts?.find((p: any) => p.collect_name === rawProductName)
+
+        if (matchedProd) {
+          const { data: orders } = await supabase.from('orders')
+            .select('id')
+            .eq('store_id', user.id)
+            .eq('pickup_date', assignedDate)
+            .eq('customer_nickname', log.nickname)
+
+          if (orders) {
+            for (const order of orders) {
+              const { data: items } = await supabase.from('order_items')
+                .select('id, product_id')
+                .eq('order_id', order.id)
+                .eq('product_id', matchedProd.id)
+
+              if (items && items.length > 0) {
+                await supabase.from('order_items').delete().eq('id', items[0].id)
+                // 빈 주문 정리
+                const { count } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('order_id', order.id)
+                if (count === 0) {
+                  await supabase.from('orders').delete().eq('id', order.id)
+                }
+                break
+              }
+            }
+          }
+        }
+      }
+
+      // 3. chat_logs 미처리로 되돌리기
+      await supabase.from('chat_logs').update({
+        is_processed: false,
+        category: 'UNKNOWN',
+        classification: null
+      }).eq('id', log.id)
+
+      await fetchLogs()
+    } catch (err: any) {
+      alert("주문 취소 실패: " + err.message)
+    }
+    setIsLoading(false)
+  }
+
   // Row Clone
   const duplicateRow = async (e: React.MouseEvent, rowId: string) => {
     e.stopPropagation()
@@ -309,6 +376,11 @@ export default function Dashboard() {
               const { data: oldOrders } = await supabase.from('orders').select('id').eq('store_id', user.id).eq('pickup_date', log.date).eq('customer_nickname', log.nickname).limit(1)
               if (oldOrders && oldOrders.length > 0) {
                 await supabase.from('order_items').delete().eq('order_id', oldOrders[0].id).eq('product_id', oldProd.id)
+                // 빈 주문 정리: 남은 order_item이 없으면 주문도 삭제
+                const { count } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('order_id', oldOrders[0].id)
+                if (count === 0) {
+                  await supabase.from('orders').delete().eq('id', oldOrders[0].id)
+                }
               }
             }
           }
@@ -611,7 +683,6 @@ export default function Dashboard() {
                       <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[60px] bg-slate-100/90 m-0 border-b border-border">수량</th>
                       <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[150px] bg-slate-100/90 m-0 border-b border-border">분류</th>
                       <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap w-[100px] bg-slate-100/90 m-0 border-b border-border">주문여부</th>
-                      <th className="px-4 py-3.5 font-semibold text-slate-700 text-center whitespace-nowrap bg-indigo-50/50 w-[80px] m-0 border-b border-border">관리</th>
                     </tr>
                   )}
                   itemContent={(index, log) => {
@@ -649,9 +720,14 @@ export default function Dashboard() {
                               {log.matchBadges && log.matchBadges.length > 0 && (
                                 <div className="flex flex-col gap-0.5">
                                   {log.matchBadges.map((badge: any, idx: number) => (
-                                    <Badge key={idx} variant="outline" className={`font-medium whitespace-nowrap text-[11px] px-1.5 py-0 shadow-sm ${badge.isMatched ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
-                                      {badge.isMatched ? '✅' : '❌'} [{badge.dateText}] {badge.name}
-                                    </Badge>
+                                    <div key={idx} className="flex items-center gap-1">
+                                      <Badge variant="outline" className={`font-medium whitespace-nowrap text-[11px] px-1.5 py-0 shadow-sm ${badge.isMatched ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-rose-300 text-rose-700 bg-rose-50'}`}>
+                                        {badge.isMatched ? '✅' : '❌'} [{badge.dateText}] {badge.name}
+                                      </Badge>
+                                      {badge.isMatched && (
+                                        <button onClick={(e) => { e.stopPropagation(); handleRevokeOrder(log) }} className="w-4 h-4 rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center text-[10px] font-bold transition-colors shrink-0" title="이 주문을 삭제하고 미처리로 되돌립니다">✕</button>
+                                      )}
+                                    </div>
                                   ))}
                                 </div>
                               )}
@@ -671,16 +747,6 @@ export default function Dashboard() {
                             <span className={`font-bold ${log.isOrder === 'Y' ? 'text-blue-600' : 'text-slate-400'}`}>
                               {log.isOrder}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-center bg-indigo-50/20">
-                            <Button
-                              variant="outline" size="sm"
-                              onClick={(e) => duplicateRow(e, log.id)}
-                              className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-2"
-                              title="다중 상품을 처리하기 위해 채팅 내역 줄을 하나 더 복사합니다."
-                            >
-                              📋 복제
-                            </Button>
                           </td>
                         </>
                       )

@@ -432,7 +432,7 @@ export async function POST(request: Request) {
                         customer_nickname: nickname,
                         is_received: false,
                         is_hidden: false,
-                        customer_memo_1: isDuplicate ? "중복 접수됨" : "AI 수집"
+                        customer_memo_1: isDuplicate ? "중복 접수됨" : null
                     }).select().single();
 
                     if (orderData) {

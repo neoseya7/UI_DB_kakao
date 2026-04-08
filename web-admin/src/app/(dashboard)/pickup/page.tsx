@@ -78,6 +78,11 @@ export default function PickupCalendarPage() {
     
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false)
 
+    // Inline row add
+    const [isAddingRow, setIsAddingRow] = useState(false)
+    const [addRowNick, setAddRowNick] = useState("")
+    const [addRowQtys, setAddRowQtys] = useState<Record<number, string>>({})
+
     useEffect(() => {
         if (storeId) {
             try {
@@ -788,6 +793,44 @@ export default function PickupCalendarPage() {
         }
     }
 
+    const handleAddRowSave = async () => {
+        if (!addRowNick.trim()) return alert("닉네임을 입력해주세요.")
+        const itemsToAdd = Object.entries(addRowQtys)
+            .map(([idx, q]) => ({ productIndex: parseInt(idx), qty: parseInt(q) || 0 }))
+            .filter(e => e.qty > 0)
+        if (itemsToAdd.length === 0) return alert("최소 1개 상품의 수량을 입력해주세요.")
+
+        setIsLoading(true)
+        const actualDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
+
+        const { data: oData, error: oErr } = await supabase.from('orders').insert({
+            store_id: storeId,
+            pickup_date: actualDate,
+            customer_nickname: addRowNick.trim(),
+            is_received: false,
+            is_hidden: false,
+            customer_memo_1: "수기 등록"
+        }).select().single()
+
+        if (oData) {
+            const orderItems = itemsToAdd.map(e => ({
+                order_id: oData.id,
+                product_id: products[e.productIndex].id,
+                quantity: e.qty
+            }))
+            const { error: oiErr } = await supabase.from('order_items').insert(orderItems)
+            if (oiErr) alert("주문항목 저장 실패: " + oiErr.message)
+
+            setIsAddingRow(false)
+            setAddRowNick("")
+            setAddRowQtys({})
+            fetchMatrixData()
+        } else {
+            alert("주문 추가 실패: " + oErr?.message)
+            setIsLoading(false)
+        }
+    }
+
     const toggleCheck = async (id: string, current: boolean, name?: string) => {
         try {
             if (isMerged && name) {
@@ -918,11 +961,23 @@ export default function PickupCalendarPage() {
         setIsLoading(false)
     }
 
-    const handleUpdateMemo = async (id: string, field: 'customer_memo_1' | 'customer_memo_2', val: string) => {
+    const handleUpdateMemo = async (id: string, field: 'customer_memo_1' | 'customer_memo_2', val: string, customerName?: string) => {
+        const memoKey = field === 'customer_memo_1' ? 'memo1' : 'memo2'
+        if (isMerged && customerName) {
+            // 합치기 모드: 같은 닉네임의 모든 주문에 동일 값 저장
+            const targetIds = rawCustomers.filter(c => c.name === customerName).map(c => c.id).filter(Boolean)
+            if (targetIds.length > 0) {
+                const { error } = await supabase.from('orders').update({ [field]: val }).in('id', targetIds)
+                if (!error) {
+                    setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, [memoKey]: val } : c))
+                }
+            }
+            return
+        }
         const { error } = await supabase.from('orders').update({ [field]: val }).eq('id', id)
         if (!error) {
-            setRawCustomers(prev => prev.map(c => 
-                c.id === id ? { ...c, [field === 'customer_memo_1' ? 'memo1' : 'memo2']: val } : c
+            setRawCustomers(prev => prev.map(c =>
+                c.id === id ? { ...c, [memoKey]: val } : c
             ))
         }
     }
@@ -1541,6 +1596,50 @@ export default function PickupCalendarPage() {
                         <tbody>
                             <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="h-2 bg-muted/10 border-b border-t border-t-slate-300"></td></tr>
 
+                            {/* 행 추가 버튼 */}
+                            {!isAddingRow && !isMerged && (
+                                <tr>
+                                    <td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)}>
+                                        <button onClick={() => setIsAddingRow(true)} className="w-full py-2 text-sm text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-colors font-medium border-b border-dashed border-slate-200">
+                                            + 행 추가 (수기 주문 등록)
+                                        </button>
+                                    </td>
+                                </tr>
+                            )}
+
+                            {/* 인라인 행 추가 입력 */}
+                            {isAddingRow && (
+                                <tr className="bg-amber-50/80 border-2 border-amber-300">
+                                    <td className={`border-b border-r px-1 py-1 ${getStickyClasses('name').td}`}>
+                                        <Input autoFocus value={addRowNick} onChange={e => setAddRowNick(e.target.value)} placeholder="닉네임" className="h-8 text-xs font-semibold bg-white border-amber-400 px-1 w-full" onKeyDown={e => { if (e.key === 'Escape') { setIsAddingRow(false); setAddRowNick(""); setAddRowQtys({}) }}} />
+                                    </td>
+                                    <td className={`border-b border-r px-1 py-1 ${getStickyClasses('receive').td}`}>
+                                        <div className="flex gap-1 justify-center">
+                                            <Button size="sm" onClick={handleAddRowSave} className="h-7 px-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold">저장</Button>
+                                            <Button size="sm" variant="ghost" onClick={() => { setIsAddingRow(false); setAddRowNick(""); setAddRowQtys({}) }} className="h-7 px-2 text-xs">취소</Button>
+                                        </div>
+                                    </td>
+                                    {isDeleteMode && <td className="border-b border-r"></td>}
+                                    <td className={`border-b border-r px-2 py-1 ${getStickyClasses('summary').td}`}>
+                                        <span className="text-xs text-amber-700 font-medium">
+                                            {Object.entries(addRowQtys).filter(([,q]) => parseInt(q) > 0).map(([idx, q]) => `${products[parseInt(idx)]?.name || ''} ${q}`).join(', ') || '상품을 입력하세요'}
+                                        </span>
+                                    </td>
+                                    <td className={`border-b border-r px-2 py-1 font-bold text-amber-800 ${getStickyClasses('price').td}`}>
+                                        {Object.entries(addRowQtys).reduce((total, [idx, q]) => {
+                                            const p = products[parseInt(idx)];
+                                            return total + (p ? calculateItemPrice(p, parseInt(q) || 0) : 0);
+                                        }, 0).toLocaleString()}원
+                                    </td>
+                                    <td className={`border-b border-r py-1 px-1 ${getStickyClasses('memo').td}`}></td>
+                                    {activeProductIndices.map((oi, di) => (
+                                        <td key={di} className="border-b border-r px-1 py-1">
+                                            <Input type="number" value={addRowQtys[oi] || ""} onChange={e => setAddRowQtys(prev => ({...prev, [oi]: e.target.value}))} className="w-[50px] h-8 mx-auto text-center font-bold px-1 py-0 bg-white border-amber-300 text-amber-900" placeholder="-" onKeyDown={e => { if (e.key === 'Enter') handleAddRowSave() }} />
+                                        </td>
+                                    ))}
+                                </tr>
+                            )}
+
                             {isLoading ? (
                                 <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
                             ) : filteredCustomers.length === 0 ? (
@@ -1599,17 +1698,17 @@ export default function PickupCalendarPage() {
                                         <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
                                             <div className="flex flex-col gap-1 w-full relative">
                                                 {editingMemo?.orderId === c.id && editingMemo?.type === 'memo1' ? (
-                                                    <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고 1" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
+                                                    <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고 1" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
                                                 ) : (
-                                                    <div onClick={() => !isMerged && setEditingMemo({ orderId: c.id, type: 'memo1' })} className="h-7 text-xs bg-white/70 border border-slate-200 rounded-sm px-1 flex items-center justify-center cursor-pointer hover:bg-white truncate" title={isMerged ? "이름 합치기 모드에서는 수정 불가" : "클릭하여 편집"}>
+                                                    <div onClick={() => setEditingMemo({ orderId: c.id, type: 'memo1' })} className={`h-7 text-xs border rounded-sm px-1 flex items-center justify-center cursor-pointer truncate ${c.memo1 ? 'bg-red-50 border-red-300 text-red-700 font-semibold hover:bg-red-100' : 'bg-white/70 border-slate-200 hover:bg-white'}`} title="클릭하여 편집">
                                                         {c.memo1 || <span className="text-muted-foreground/50">비고 1</span>}
                                                     </div>
                                                 )}
-                                                
+
                                                 {editingMemo?.orderId === c.id && editingMemo?.type === 'memo2' ? (
-                                                    <Input autoFocus defaultValue={c.memo2} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_2', e.target.value); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="고객찜" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
+                                                    <Input autoFocus defaultValue={c.memo2} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_2', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="고객찜" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
                                                 ) : (
-                                                    <div onClick={() => !isMerged && setEditingMemo({ orderId: c.id, type: 'memo2' })} className="h-7 text-xs bg-white/70 border border-slate-200 rounded-sm px-1 flex items-center justify-center cursor-pointer hover:bg-white truncate" title={isMerged ? "이름 합치기 모드에서는 수정 불가" : "클릭하여 편집"}>
+                                                    <div onClick={() => setEditingMemo({ orderId: c.id, type: 'memo2' })} className={`h-7 text-xs border rounded-sm px-1 flex items-center justify-center cursor-pointer truncate ${c.memo2 ? 'bg-red-50 border-red-300 text-red-700 font-semibold hover:bg-red-100' : 'bg-white/70 border-slate-200 hover:bg-white'}`} title="클릭하여 편집">
                                                         {c.memo2 || <span className="text-muted-foreground/50">고객찜</span>}
                                                     </div>
                                                 )}
@@ -1652,6 +1751,7 @@ export default function PickupCalendarPage() {
                                     </tr>
                                 ))
                             )}
+
                         </tbody>
                     </table>
                 </div>

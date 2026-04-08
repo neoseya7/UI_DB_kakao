@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Loader2, Trash2 } from "lucide-react"
+import { Save, Loader2, Trash2, ImagePlus, X } from "lucide-react"
 import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function SettingsPage() {
@@ -60,6 +60,7 @@ export default function SettingsPage() {
                         chat_alert_enabled: data.popup_settings?.chat_enabled ?? false,
                         chat_threshold_min: data.popup_settings?.chat_threshold_min ?? 30
                     })
+                    if (data.og_image_url) setOgImageUrl(data.og_image_url)
                 }
             }
             setIsLoading(false)
@@ -93,7 +94,8 @@ export default function SettingsPage() {
                 deadline_enabled: settings.deadline_alert_enabled,
                 chat_enabled: settings.chat_alert_enabled,
                 chat_threshold_min: settings.chat_threshold_min
-            }
+            },
+            og_image_url: ogImageUrl || null
         }
 
         // Use the secure API to handle possible missing store records (Foreign Key constraints)
@@ -133,6 +135,33 @@ export default function SettingsPage() {
     }
 
     // CRM Handlers
+    const [ogImageUrl, setOgImageUrl] = useState<string>("")
+    const [ogImageUploading, setOgImageUploading] = useState(false)
+
+    const handleOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !storeId) return
+        if (!file.type.startsWith('image/')) return alert("이미지 파일만 업로드 가능합니다.")
+        if (file.size > 5 * 1024 * 1024) return alert("5MB 이하의 이미지만 업로드 가능합니다.")
+
+        setOgImageUploading(true)
+        const fileName = `${storeId}/og_image_${Date.now()}.${file.name.split('.').pop()}`
+        const { error: uploadErr } = await supabase.storage.from('product-images').upload(fileName, file, { upsert: true })
+        if (uploadErr) {
+            alert("이미지 업로드 실패: " + uploadErr.message)
+            setOgImageUploading(false)
+            return
+        }
+        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+        setOgImageUrl(urlData.publicUrl)
+        setOgImageUploading(false)
+    }
+
+    const handleRemoveOgImage = () => {
+        if (!confirm("미리보기 이미지를 삭제하시겠습니까?")) return
+        setOgImageUrl("")
+    }
+
     const [newManager, setNewManager] = useState("")
     const addManager = () => {
         if (!newManager.trim()) return
@@ -265,6 +294,43 @@ export default function SettingsPage() {
                         <Button onClick={addNotice} variant="secondary" className="w-full mt-2 font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 border-dashed">
                             + 텍스트 공지줄 새로 추가하기
                         </Button>
+                    </CardContent>
+                </Card>
+                </GuideBadge>
+
+                {/* 3.5 카카오톡 공유 미리보기 이미지 */}
+                <GuideBadge text="카카오톡이나 SNS에 매장 링크를 공유할 때 표시되는 대표 이미지를 설정합니다. 설정하지 않으면 이미지 없이 텍스트만 표시됩니다." className="block">
+                <Card>
+                    <CardHeader className="text-left">
+                        <CardTitle className="flex items-center gap-2">
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md text-sm">3.5</span>
+                            카카오톡 공유 미리보기 이미지
+                        </CardTitle>
+                        <CardDescription>카카오톡, 문자 등에 매장 링크를 공유할 때 보이는 대표 이미지를 설정합니다.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {ogImageUrl ? (
+                            <div className="relative inline-block">
+                                <img src={ogImageUrl} alt="미리보기 이미지" className="w-64 h-40 object-cover rounded-lg border shadow-sm" />
+                                <button onClick={handleRemoveOgImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col items-center justify-center w-64 h-40 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors">
+                                {ogImageUploading ? (
+                                    <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+                                ) : (
+                                    <>
+                                        <ImagePlus className="w-8 h-8 text-slate-400 mb-2" />
+                                        <span className="text-sm text-slate-500">클릭하여 이미지 업로드</span>
+                                        <span className="text-xs text-slate-400 mt-1">권장: 800x400px, 최대 5MB</span>
+                                    </>
+                                )}
+                                <input type="file" accept="image/*" onChange={handleOgImageUpload} className="hidden" />
+                            </label>
+                        )}
+                        <p className="text-xs text-muted-foreground">설정 저장 버튼을 눌러야 반영됩니다. 카카오톡 캐시로 인해 반영까지 시간이 걸릴 수 있습니다.</p>
                     </CardContent>
                 </Card>
                 </GuideBadge>

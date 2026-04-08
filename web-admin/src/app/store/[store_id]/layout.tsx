@@ -11,18 +11,17 @@ export async function generateMetadata(
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     
     let storeName = '매장'
-    
+    let ogImageUrl: string | null = null
+
     if (supabaseUrl && serviceKey && store_id) {
         const supabaseAdmin = createClient(supabaseUrl, serviceKey)
-        const { data } = await supabaseAdmin
-            .from('stores')
-            .select('name')
-            .eq('id', store_id)
-            .single()
-            
-        if (data?.name) {
-            storeName = data.name
-        }
+        const [{ data: storeData }, { data: settingsData }] = await Promise.all([
+            supabaseAdmin.from('stores').select('name').eq('id', store_id).single(),
+            supabaseAdmin.from('store_settings').select('og_image_url').eq('store_id', store_id).single()
+        ])
+
+        if (storeData?.name) storeName = storeData.name
+        if (settingsData?.og_image_url) ogImageUrl = settingsData.og_image_url
     }
 
     const title = `${storeName} 간편 예약 및 주문 조회`
@@ -37,11 +36,13 @@ export async function generateMetadata(
             siteName: storeName,
             type: 'website',
             locale: 'ko_KR',
+            ...(ogImageUrl ? { images: [{ url: ogImageUrl, width: 800, height: 400 }] } : {}),
         },
         twitter: {
-            card: 'summary',
+            card: ogImageUrl ? 'summary_large_image' : 'summary',
             title: title,
             description: description,
+            ...(ogImageUrl ? { images: [ogImageUrl] } : {}),
         }
     }
 }
