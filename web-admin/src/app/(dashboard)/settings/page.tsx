@@ -9,13 +9,20 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Loader2, Trash2, ImagePlus, X } from "lucide-react"
+import { Save, Loader2, Trash2, ImagePlus, X, CheckCircle2, XCircle, ChevronDown, ChevronUp, Sheet } from "lucide-react"
 import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function SettingsPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+
+    const [backupSpreadsheetUrl, setBackupSpreadsheetUrl] = useState("")
+    const [backupSpreadsheetId, setBackupSpreadsheetId] = useState("")
+    const [backupTestStatus, setBackupTestStatus] = useState<'idle' | 'testing' | 'success' | 'fail'>('idle')
+    const [backupTestMessage, setBackupTestMessage] = useState("")
+    const [backupGuideOpen, setBackupGuideOpen] = useState(false)
+    const [backupSaving, setBackupSaving] = useState(false)
 
     // Main Master State matching Supabase `store_settings`
     const [settings, setSettings] = useState({
@@ -24,6 +31,7 @@ export default function SettingsPage() {
         show_product_image: true,
         show_product_desc: true,
         show_stock_badge: true,
+        hide_soldout: false,
         notice_texts: ["[필독] 설 연휴 기간은 딸기 수급 문제로 일부 주문이 제한될 수 있습니다."],
         badge_stock_level: 3,
         crm_tags: [] as any[],
@@ -49,6 +57,7 @@ export default function SettingsPage() {
                         show_product_image: data.show_product_image ?? true,
                         show_product_desc: data.show_product_desc ?? true,
                         show_stock_badge: data.show_stock_badge ?? true,
+                        hide_soldout: data.hide_soldout ?? false,
                         notice_texts: data.notice_texts || [],
                         badge_stock_level: data.badge_stock_level || 3,
                         crm_tags: data.crm_tags?.filter((t: any) => t.type === 'crm') || [],
@@ -61,6 +70,10 @@ export default function SettingsPage() {
                         chat_threshold_min: data.popup_settings?.chat_threshold_min ?? 30
                     })
                     if (data.og_image_url) setOgImageUrl(data.og_image_url)
+                    if (data.backup_spreadsheet_id) {
+                        setBackupSpreadsheetId(data.backup_spreadsheet_id)
+                        setBackupSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${data.backup_spreadsheet_id}/edit`)
+                    }
                 }
             }
             setIsLoading(false)
@@ -85,6 +98,7 @@ export default function SettingsPage() {
             show_product_image: settings.show_product_image,
             show_product_desc: settings.show_product_desc,
             show_stock_badge: settings.show_stock_badge,
+            hide_soldout: settings.hide_soldout,
             notice_texts: settings.notice_texts,
             badge_stock_level: settings.badge_stock_level,
             crm_tags: combinedTags,
@@ -118,6 +132,66 @@ export default function SettingsPage() {
             setIsSaving(false)
             alert(`설정 저장 중 오류: ${err.message}`)
         }
+    }
+
+    const extractSpreadsheetId = (url: string): string | null => {
+        const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+        return match ? match[1] : null
+    }
+
+    const handleBackupUrlChange = (url: string) => {
+        setBackupSpreadsheetUrl(url)
+        const id = extractSpreadsheetId(url)
+        setBackupSpreadsheetId(id || "")
+        setBackupTestStatus('idle')
+    }
+
+    const handleBackupTest = async () => {
+        if (!backupSpreadsheetId) {
+            setBackupTestStatus('fail')
+            setBackupTestMessage('올바른 스프레드시트 URL을 입력해주세요.')
+            return
+        }
+        setBackupTestStatus('testing')
+        try {
+            const res = await fetch('/api/stores/test-spreadsheet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ spreadsheet_id: backupSpreadsheetId })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setBackupTestStatus('success')
+                setBackupTestMessage('스프레드시트에 쓰기 권한이 확인되었습니다.')
+            } else {
+                setBackupTestStatus('fail')
+                setBackupTestMessage(data.error || '연결 실패. 공유 설정에서 "편집자" 권한을 확인해주세요.')
+            }
+        } catch {
+            setBackupTestStatus('fail')
+            setBackupTestMessage('네트워크 오류가 발생했습니다.')
+        }
+    }
+
+    const handleBackupSave = async () => {
+        if (!storeId) return
+        setBackupSaving(true)
+        try {
+            const res = await fetch('/api/stores/update-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ store_id: storeId, payload: { backup_spreadsheet_id: backupSpreadsheetId || null } })
+            })
+            const result = await res.json()
+            if (result.success) {
+                alert('✅ 백업 스프레드시트가 저장되었습니다.')
+            } else {
+                alert(`저장 실패: ${result.error}`)
+            }
+        } catch (err: any) {
+            alert(`저장 중 오류: ${err.message}`)
+        }
+        setBackupSaving(false)
     }
 
     // Handlers for dynamic array state
@@ -365,6 +439,13 @@ export default function SettingsPage() {
                                 </Label>
                                 <Switch id="show-badge" checked={settings.show_stock_badge} onCheckedChange={(v) => setSettings({ ...settings, show_stock_badge: v })} />
                             </div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="hide-soldout" className="flex flex-col gap-1 cursor-pointer">
+                                    <span className="text-base font-semibold">마감된 상품 숨김</span>
+                                    <span className="font-normal text-sm text-muted-foreground">재고가 0인 상품을 고객 상품리스트에서 숨깁니다.</span>
+                                </Label>
+                                <Switch id="hide-soldout" checked={settings.hide_soldout} onCheckedChange={(v) => setSettings({ ...settings, hide_soldout: v })} />
+                            </div>
                         </div>
 
                         {/* Inventory Threshold Section */}
@@ -587,6 +668,91 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
                 </GuideBadge>
+
+                {/* 8. Spreadsheet Backup */}
+                <GuideBadge text="서버 장애 시에도 주문 데이터를 확인할 수 있도록 Google 스프레드시트에 자동 백업합니다." className="block">
+                <Card className="border-teal-100 shadow-sm">
+                    <CardHeader className="text-left bg-teal-50/50 border-b border-teal-100 py-4">
+                        <CardTitle className="text-teal-900 flex items-center gap-2"><Sheet className="w-5 h-5" /> 8. 주문 백업 스프레드시트</CardTitle>
+                        <CardDescription>서버 장애 시에도 최근 주문 데이터를 확인할 수 있도록, 2시간마다 최근 7일간의 주문 내역이 Google 스프레드시트에 자동 백업됩니다.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5 pt-5 bg-white rounded-b-lg">
+
+                        <button
+                            onClick={() => setBackupGuideOpen(!backupGuideOpen)}
+                            className="w-full flex items-center justify-between p-3 rounded-lg bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-colors text-left"
+                        >
+                            <span className="font-bold text-sm text-teal-900">스프레드시트 설정 방법 안내</span>
+                            {backupGuideOpen ? <ChevronUp className="w-4 h-4 text-teal-700" /> : <ChevronDown className="w-4 h-4 text-teal-700" />}
+                        </button>
+
+                        {backupGuideOpen && (
+                            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3 text-sm text-slate-700">
+                                <div className="font-bold text-slate-900">Google 스프레드시트 만들기</div>
+                                <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                                    <li>인터넷 브라우저에서 <strong>sheets.google.com</strong> 에 접속합니다</li>
+                                    <li>왼쪽 위 <strong>[+ 새 스프레드시트 만들기]</strong> 또는 <strong>[빈 스프레드시트]</strong>를 클릭합니다</li>
+                                    <li>왼쪽 위 제목을 <strong>"매장명_주문백업"</strong> 등으로 변경합니다</li>
+                                    <li>오른쪽 위 <strong className="text-teal-700">[공유]</strong> 버튼을 클릭합니다</li>
+                                    <li><strong>"일반 액세스"</strong> 항목을 찾아 <strong className="text-teal-700">[링크가 있는 모든 사용자]</strong>로 변경합니다</li>
+                                    <li>오른쪽 역할을 <strong className="text-red-600">[편집자]</strong>로 변경합니다 <span className="text-red-500 font-bold">(중요!)</span></li>
+                                    <li><strong>[완료]</strong>를 클릭합니다</li>
+                                    <li>브라우저 <strong>주소창의 URL을 전체 복사</strong>해서 아래에 붙여넣기 합니다</li>
+                                </ol>
+                                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-bold">
+                                    ⚠️ 반드시 "편집자" 권한으로 설정해야 합니다. "뷰어"로 되어 있으면 백업이 실행되지 않습니다.
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <Label className="font-bold text-[13px] text-teal-900">스프레드시트 URL</Label>
+                            <Input
+                                placeholder="https://docs.google.com/spreadsheets/d/..."
+                                value={backupSpreadsheetUrl}
+                                onChange={(e) => handleBackupUrlChange(e.target.value)}
+                                className="font-mono text-sm bg-slate-50 focus-visible:ring-teal-500 h-10"
+                            />
+                            {backupSpreadsheetId && (
+                                <p className="text-xs text-slate-500">추출된 ID: <code className="bg-slate-100 px-1 rounded">{backupSpreadsheetId}</code></p>
+                            )}
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={handleBackupTest}
+                                disabled={!backupSpreadsheetId || backupTestStatus === 'testing'}
+                                className="font-bold border-teal-200 text-teal-700 hover:bg-teal-50 gap-2"
+                            >
+                                {backupTestStatus === 'testing' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sheet className="w-4 h-4" />}
+                                연결 테스트
+                            </Button>
+                            <Button
+                                onClick={handleBackupSave}
+                                disabled={backupSaving}
+                                className="font-bold bg-teal-600 hover:bg-teal-700 gap-2"
+                            >
+                                {backupSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                저장
+                            </Button>
+                        </div>
+
+                        {backupTestStatus === 'success' && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-bold">
+                                <CheckCircle2 className="w-4 h-4" /> {backupTestMessage}
+                            </div>
+                        )}
+                        {backupTestStatus === 'fail' && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm font-bold">
+                                <XCircle className="w-4 h-4" /> {backupTestMessage}
+                            </div>
+                        )}
+
+                    </CardContent>
+                </Card>
+                </GuideBadge>
+
             </div>
         </div>
     )

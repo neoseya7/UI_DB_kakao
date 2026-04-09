@@ -57,6 +57,66 @@ function PromptEditorCard({ title, desc, model, initialValue, onSave }: { title:
     )
 }
 
+function AiErrorLogSection() {
+    const [logs, setLogs] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            const res = await fetch('/api/admin/ai-error-logs')
+            if (res.ok) {
+                const data = await res.json()
+                if (data.success) setLogs(data.logs || [])
+            }
+            setLoading(false)
+        }
+        fetchLogs()
+    }, [])
+
+    if (loading) return <div className="text-sm text-slate-400 p-4">로딩 중...</div>
+    if (logs.length === 0) return (
+        <Card className="border-green-200 bg-green-50/30">
+            <CardContent className="py-6 text-center text-green-700 font-bold text-sm">
+                최근 48시간 내 AI API 장애 기록이 없습니다.
+            </CardContent>
+        </Card>
+    )
+
+    return (
+        <Card className="border-red-200 shadow-sm">
+            <CardHeader className="bg-red-50/50 border-b border-red-100 py-4">
+                <CardTitle className="text-base text-red-900 font-extrabold flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4" /> AI API 장애 로그 (최근 48시간)
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className="max-h-[300px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-red-50 sticky top-0">
+                            <tr>
+                                <th className="text-left p-2 font-bold text-red-900">시간</th>
+                                <th className="text-left p-2 font-bold text-red-900">제공자</th>
+                                <th className="text-left p-2 font-bold text-red-900">에러</th>
+                                <th className="text-left p-2 font-bold text-red-900">폴백</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {logs.map((log: any, i: number) => (
+                                <tr key={i} className="border-t border-red-100 hover:bg-red-50/50">
+                                    <td className="p-2 text-xs text-slate-600 whitespace-nowrap">{new Date(log.created_at).toLocaleString('ko-KR')}</td>
+                                    <td className="p-2"><span className={`text-xs font-bold px-2 py-0.5 rounded ${log.provider === 'gemini' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>{log.provider}</span></td>
+                                    <td className="p-2 text-xs text-red-700 max-w-[300px] truncate">{log.error_message}</td>
+                                    <td className="p-2 text-xs font-bold">{log.fallback_used ? <span className="text-amber-600">{log.fallback_provider}</span> : <span className="text-red-600">전체 실패</span>}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 export default function AdminPage() {
     const [activeTab, setActiveTab] = useState("stores")
     const [isLoading, setIsLoading] = useState(true)
@@ -64,7 +124,8 @@ export default function AdminPage() {
     const [stores, setStores] = useState<any[]>([])
     const [kakaoRoomNames, setKakaoRoomNames] = useState<Record<string, string>>({})
     const [adminConfig, setAdminConfig] = useState<any>({
-        gemini_api_key: "", gemini_model: "gemini-1.5-flash", openai_api_key: "", openai_model: "gpt-4o-mini",
+        gemini_api_key: "", gemini_model: "gemini-1.5-flash", gemini_api_key_backup: "",
+        openai_api_key: "", openai_model: "gpt-4o-mini", openai_api_key_backup: "",
         prompt_set_1: {}, prompt_set_2: {}, allowed_brands: []
     })
 
@@ -712,7 +773,7 @@ export default function AdminPage() {
                         <h3 className="text-xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
                             <KeyRound className="w-5 h-5" /> 클라우드 API 연동 키 관리
                         </h3>
-                        <p className="text-sm text-slate-600">주문수집 서버 파싱에 쓰이는 LLM API 인증키를 등록합니다.</p>
+                        <p className="text-sm text-slate-600">주문수집 서버 파싱에 쓰이는 LLM API 인증키를 등록합니다. 장애 시 자동 전환 순서: Gemini → Gemini 백업 → OpenAI → OpenAI 백업</p>
                     </div>
 
                     <div className="grid lg:grid-cols-2 gap-8">
@@ -720,8 +781,12 @@ export default function AdminPage() {
                             <CardHeader className="bg-blue-50/50 border-b border-blue-100"><CardTitle className="text-lg text-blue-900 font-extrabold flex items-center gap-2">Google Gemini API</CardTitle></CardHeader>
                             <CardContent className="pt-6 space-y-5">
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-[13px] text-blue-900">API Key 인증 토큰</Label>
+                                    <Label className="font-bold text-[13px] text-blue-900">API Key 인증 토큰 (기본)</Label>
                                     <Input type="password" value={adminConfig.gemini_api_key || ""} onChange={(e) => setAdminConfig({ ...adminConfig, gemini_api_key: e.target.value })} className="font-mono bg-slate-50 focus-visible:ring-blue-500 h-10" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-bold text-[13px] text-blue-700">API Key 백업 토큰 (장애 시 자동 전환)</Label>
+                                    <Input type="password" value={adminConfig.gemini_api_key_backup || ""} onChange={(e) => setAdminConfig({ ...adminConfig, gemini_api_key_backup: e.target.value })} className="font-mono bg-blue-50/50 focus-visible:ring-blue-400 h-10 border-blue-200" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="font-bold text-[13px] text-blue-900">활성화된 API 모델명</Label>
@@ -729,7 +794,7 @@ export default function AdminPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="bg-slate-50/50 border-t justify-end p-4">
-                                <Button onClick={() => handleSaveMultipleConfig({ gemini_api_key: adminConfig.gemini_api_key, gemini_model: adminConfig.gemini_model })} className="bg-blue-600 hover:bg-blue-700 font-bold gap-2 shadow-sm">
+                                <Button onClick={() => handleSaveMultipleConfig({ gemini_api_key: adminConfig.gemini_api_key, gemini_api_key_backup: adminConfig.gemini_api_key_backup, gemini_model: adminConfig.gemini_model })} className="bg-blue-600 hover:bg-blue-700 font-bold gap-2 shadow-sm">
                                     <Save className="w-4 h-4" /> 정보 저장
                                 </Button>
                             </CardFooter>
@@ -739,8 +804,12 @@ export default function AdminPage() {
                             <CardHeader className="bg-emerald-50/50 border-b border-emerald-100"><CardTitle className="text-lg text-emerald-900 font-extrabold flex items-center gap-2">OpenAI ChatGPT API</CardTitle></CardHeader>
                             <CardContent className="pt-6 space-y-5">
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-[13px] text-emerald-900">API Key 인증 토큰</Label>
+                                    <Label className="font-bold text-[13px] text-emerald-900">API Key 인증 토큰 (기본)</Label>
                                     <Input type="password" value={adminConfig.openai_api_key || ""} onChange={(e) => setAdminConfig({ ...adminConfig, openai_api_key: e.target.value })} className="font-mono bg-slate-50 focus-visible:ring-emerald-500 h-10" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-bold text-[13px] text-emerald-700">API Key 백업 토큰 (장애 시 자동 전환)</Label>
+                                    <Input type="password" value={adminConfig.openai_api_key_backup || ""} onChange={(e) => setAdminConfig({ ...adminConfig, openai_api_key_backup: e.target.value })} className="font-mono bg-emerald-50/50 focus-visible:ring-emerald-400 h-10 border-emerald-200" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="font-bold text-[13px] text-emerald-900">활성화된 API 모델명</Label>
@@ -748,12 +817,14 @@ export default function AdminPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="bg-slate-50/50 border-t justify-end p-4">
-                                <Button onClick={() => handleSaveMultipleConfig({ openai_api_key: adminConfig.openai_api_key, openai_model: adminConfig.openai_model })} className="bg-emerald-600 hover:bg-emerald-700 font-bold gap-2 shadow-sm">
+                                <Button onClick={() => handleSaveMultipleConfig({ openai_api_key: adminConfig.openai_api_key, openai_api_key_backup: adminConfig.openai_api_key_backup, openai_model: adminConfig.openai_model })} className="bg-emerald-600 hover:bg-emerald-700 font-bold gap-2 shadow-sm">
                                     <Save className="w-4 h-4" /> 정보 저장
                                 </Button>
                             </CardFooter>
                         </Card>
                     </div>
+
+                    <AiErrorLogSection />
                 </div>
             )}
 

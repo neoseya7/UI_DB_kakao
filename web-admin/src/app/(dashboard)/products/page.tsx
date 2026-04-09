@@ -962,6 +962,7 @@ export default function ProductsPage() {
                                                 {product.is_visible === false && <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0 rounded-sm text-[9px] font-bold mr-1 align-middle shadow-sm"><EyeOff className="w-2.5 h-2.5" />숨김</span>}
                                                 {product.is_stocked && <span className="inline-flex items-center gap-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 px-1 py-0 rounded-sm text-[10px] font-extrabold mr-1 align-middle shadow-sm tracking-tight">입고🟢</span>}
                                                 {product.collect_name}
+                                                {product.price > 0 && <span className="text-[12px] font-semibold text-slate-400 ml-0.5">({product.price.toLocaleString()}원)</span>}
                                             </CardTitle>
                                             <div className="flex items-center gap-1.5">
                                                 {product.is_regular_sale ? (

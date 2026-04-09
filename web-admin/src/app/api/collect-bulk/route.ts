@@ -60,7 +60,11 @@ export async function POST(request: Request) {
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
 
         const geminiKey = config?.gemini_api_key
+        const geminiKeyBackup = config?.gemini_api_key_backup
         const geminiModel = config?.gemini_model || 'gemini-1.5-flash'
+        const openaiKey = config?.openai_api_key
+        const openaiKeyBackup = config?.openai_api_key_backup
+        const openaiModel = config?.openai_model || 'gpt-4o-mini'
 
         let promptA = "Output UNKNOWN"
         let promptB = "Output []"
@@ -75,11 +79,25 @@ export async function POST(request: Request) {
         }
 
         // --- NEW: CRITICAL SYSTEM OVERRIDE FOR MULTI-ITEM BUNDLING ---
-        // Dynamically enforce multi-object JSON splitting at the Prompt layer to prevent Gemini from omitting delimiters or grouping items.
         promptA += "\n\n[CRITICAL SYSTEM FORMATTING RULE]: If a user orders multiple different products in one message (e.g. '수박1 사과2' or '수박(1) 사과(2)'), YOU MUST NEVER COMBINE THEM INTO A SINGLE JSON OBJECT! You MUST explicitly separate them into an array of multiple JSON objects. Example output ALWAYS: [{\"product\": \"수박\", \"quantity\": 1}, {\"product\": \"사과\", \"quantity\": 2}]. Do NOT return {\"product\": \"수박 1 사과 2\"}!!";
 
-        const callGemini = async (sysPrompt: string, userText: string) => {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`
+        // --- AI Fallback Chain: Gemini → Gemini Backup → OpenAI → OpenAI Backup ---
+        let consecutiveFailures = 0
+
+        const logAiError = async (provider: string, errorMessage: string, fallbackUsed: boolean, fallbackProvider: string | null) => {
+            try {
+                await supabase.from('ai_error_logs').insert({
+                    provider,
+                    error_message: errorMessage.slice(0, 500),
+                    fallback_used: fallbackUsed,
+                    fallback_provider: fallbackProvider,
+                    store_id
+                })
+            } catch (e) { /* silent */ }
+        }
+
+        const callGeminiWithKey = async (sysPrompt: string, userText: string, apiKey: string) => {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -90,11 +108,60 @@ export async function POST(request: Request) {
             })
             if (!res.ok) {
                 const errText = await res.text()
-                throw new Error(`Gemini API Error: ${res.status} - ${errText}`)
+                throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`)
             }
             const json = await res.json()
             return json.candidates?.[0]?.content?.parts?.[0]?.text || ""
         }
+
+        const callOpenAIWithKey = async (sysPrompt: string, userText: string, apiKey: string) => {
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: openaiModel,
+                    messages: [
+                        { role: 'system', content: sysPrompt },
+                        { role: 'user', content: userText }
+                    ],
+                    temperature: 0.1
+                })
+            })
+            if (!res.ok) {
+                const errText = await res.text()
+                throw new Error(`OpenAI ${res.status}: ${errText.slice(0, 200)}`)
+            }
+            const json = await res.json()
+            return json.choices?.[0]?.message?.content || ""
+        }
+
+        const callAIWithFallback = async (sysPrompt: string, userText: string): Promise<string> => {
+            const providers: { name: string; fn: () => Promise<string> }[] = []
+            if (geminiKey) providers.push({ name: 'gemini', fn: () => callGeminiWithKey(sysPrompt, userText, geminiKey) })
+            if (geminiKeyBackup) providers.push({ name: 'gemini-backup', fn: () => callGeminiWithKey(sysPrompt, userText, geminiKeyBackup) })
+            if (openaiKey) providers.push({ name: 'openai', fn: () => callOpenAIWithKey(sysPrompt, userText, openaiKey) })
+            if (openaiKeyBackup) providers.push({ name: 'openai-backup', fn: () => callOpenAIWithKey(sysPrompt, userText, openaiKeyBackup) })
+
+            for (let i = 0; i < providers.length; i++) {
+                try {
+                    const result = await providers[i].fn()
+                    consecutiveFailures = 0
+                    return result
+                } catch (err: any) {
+                    const isLast = i === providers.length - 1
+                    const fallbackProvider = isLast ? null : providers[i + 1]?.name
+                    await logAiError(providers[i].name, err.message, !isLast, fallbackProvider)
+                    if (isLast) {
+                        consecutiveFailures++
+                        throw err
+                    }
+                }
+            }
+            throw new Error('No AI providers configured')
+        }
+
+        // Keep backward-compatible alias
+        const callGemini = callAIWithFallback
 
         const matchProductWithAI = async (userProductName: string, productCandidates: any[]) => {
             if (!productCandidates || productCandidates.length === 0) return userProductName;
@@ -399,11 +466,17 @@ export async function POST(request: Request) {
                                 let itemQty = parseInt(item.quantity, 10) || 1;
                                 if (isCancellation) itemQty = -Math.abs(itemQty);
 
-                                await supabase.from('order_items').insert({
+                                const { error: itemError } = await supabase.from('order_items').insert({
                                     order_id: orderData.id,
                                     product_id: item.matchedProduct.id,
                                     quantity: itemQty
                                 });
+
+                                // order_items 실패 시 빈 주문 삭제
+                                if (itemError) {
+                                    await supabase.from('orders').delete().eq('id', orderData.id);
+                                    console.error("order_items insert failed, removed empty order:", itemError.message);
+                                }
                             }
                         }
 

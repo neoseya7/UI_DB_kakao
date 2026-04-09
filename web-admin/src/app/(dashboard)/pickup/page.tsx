@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,8 @@ import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, Ar
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
 import { GuideBadge } from "@/components/ui/guide-badge"
+import PickupTable from "./components/PickupTable"
+import PickupCardList from "./components/PickupCardList"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +79,15 @@ export default function PickupCalendarPage() {
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
     
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false)
+
+    // Mobile detection
+    const [isMobile, setIsMobile] = useState(false)
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener('resize', check)
+        return () => window.removeEventListener('resize', check)
+    }, [])
 
     // Inline row add
     const [isAddingRow, setIsAddingRow] = useState(false)
@@ -1253,10 +1264,20 @@ export default function PickupCalendarPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2 w-full bg-muted/30 p-1.5 rounded-md border shrink-0">
-                        <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 w-full bg-muted/30 p-1.5 rounded-md border shrink-0">
+                        <div className="relative w-full">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="닉네임, 상품명, 비고 등 통합 검색..."
+                                className="pl-9 bg-white h-10 w-full shadow-sm"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
                             <Select value={searchScope} onValueChange={setSearchScope}>
-                                <SelectTrigger className="w-full sm:w-[130px] h-10 bg-white border-muted shadow-sm font-medium shrink-0">
+                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[130px] h-10 bg-white border-muted shadow-sm font-medium shrink-0">
                                     <SelectValue placeholder="검색 범위" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1266,28 +1287,8 @@ export default function PickupCalendarPage() {
                                 </SelectContent>
                             </Select>
 
-                            {searchScope === "date_range" && (
-                                <div className="flex items-center gap-1 shrink-0">
-                                    <Input
-                                        type="date"
-                                        value={customSearchDate}
-                                        onChange={(e) => setCustomSearchDate(e.target.value)}
-                                        className="w-[120px] sm:w-[130px] h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
-                                        title="시작일"
-                                    />
-                                    <span className="font-bold text-indigo-300">~</span>
-                                    <Input
-                                        type="date"
-                                        value={customEndDate}
-                                        onChange={(e) => setCustomEndDate(e.target.value)}
-                                        className="w-[120px] sm:w-[130px] h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
-                                        title="종료일"
-                                    />
-                                </div>
-                            )}
-
                             <Select value={receiptFilter} onValueChange={setReceiptFilter}>
-                                <SelectTrigger className="w-full sm:w-[120px] h-10 bg-white border-muted shadow-sm font-medium">
+                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[120px] h-10 bg-white border-muted shadow-sm font-medium">
                                     <SelectValue placeholder="수령 상태" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1298,7 +1299,7 @@ export default function PickupCalendarPage() {
                             </Select>
 
                             <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
-                                <SelectTrigger className="w-full sm:w-[130px] h-10 bg-indigo-50 border-indigo-200 shadow-sm font-bold text-indigo-700 shrink-0">
+                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[130px] h-10 bg-indigo-50 border-indigo-200 shadow-sm font-bold text-indigo-700 shrink-0">
                                     <SelectValue placeholder="정렬 방식" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1308,21 +1309,31 @@ export default function PickupCalendarPage() {
                             </Select>
                         </div>
 
-                        <div className="relative w-full sm:w-[200px] xl:ml-2">
-                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="닉네임, 상품명, 비고 등 통합 검색..."
-                                className="pl-9 bg-white h-10 w-full shadow-sm"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+                        {searchScope === "date_range" && (
+                            <div className="flex items-center gap-1">
+                                <Input
+                                    type="date"
+                                    value={customSearchDate}
+                                    onChange={(e) => setCustomSearchDate(e.target.value)}
+                                    className="flex-1 h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
+                                    title="시작일"
+                                />
+                                <span className="font-bold text-indigo-300">~</span>
+                                <Input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="flex-1 h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
+                                    title="종료일"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* 2번째 줄: 핵심 액션 버튼 (수동추가, 삭제, 병합) + 더보기 메뉴 */}
-                <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 border-t pt-4 border-slate-200/60 mt-2">
-                    
+                <div className={`flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 border-t pt-4 border-slate-200/60 mt-2 ${isMobile ? 'hidden' : ''}`}>
+
                     <GuideBadge text="닉네임과 상품명, 수량을 직접 입력할 수 있어요.">
                     <div className="flex flex-col sm:flex-row items-center gap-2 bg-indigo-50/50 p-1.5 rounded-md border border-indigo-100 shadow-sm w-full xl:w-auto xl:mr-auto">
                         <span className="text-sm font-bold flex items-center gap-1.5 min-w-[max-content] text-indigo-900 border-r border-indigo-200 px-2 shrink-0">
@@ -1474,6 +1485,55 @@ export default function PickupCalendarPage() {
                 <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
             </div>
 
+            {isMobile ? (
+                <PickupCardList
+                    products={products}
+                    displayProducts={displayProducts}
+                    activeProductIndices={activeProductIndices}
+                    filteredCustomers={filteredCustomers}
+                    rawCustomers={rawCustomers}
+                    isLoading={isLoading}
+                    isMerged={isMerged}
+                    isDeleteMode={isDeleteMode}
+                    selectedDeleteIds={selectedDeleteIds}
+                    posSyncEnabled={posSyncEnabled}
+                    selectedPosOrders={selectedPosOrders}
+                    editingQty={editingQty}
+                    tempQty={tempQty}
+                    editingMemo={editingMemo}
+                    isAddingRow={isAddingRow}
+                    addRowNick={addRowNick}
+                    addRowQtys={addRowQtys}
+                    toggleCheck={toggleCheck}
+                    toggleDeleteSelect={toggleDeleteSelect}
+                    togglePosSelect={togglePosSelect}
+                    togglePosSelectAll={togglePosSelectAll}
+                    handleUpdateQuantity={handleUpdateQuantity}
+                    handleUpdateMemo={handleUpdateMemo}
+                    handleUpdateProductField={handleUpdateProductField}
+                    handleDeleteOrder={handleDeleteOrder}
+                    handleAddRowSave={handleAddRowSave}
+                    getDisplaySummary={getDisplaySummary}
+                    calculateItemPrice={calculateItemPrice}
+                    setEditingQty={setEditingQty}
+                    setTempQty={setTempQty}
+                    setEditingMemo={setEditingMemo}
+                    setIsAddingRow={setIsAddingRow}
+                    setAddRowNick={setAddRowNick}
+                    setAddRowQtys={setAddRowQtys}
+                    currentDate={currentDate}
+                    manualOrderProducts={manualOrderProducts}
+                    newNick={newNick}
+                    newDate={newDate}
+                    newProductId={newProductId}
+                    newQty={newQty}
+                    setNewNick={setNewNick}
+                    setNewDate={setNewDate}
+                    setNewProductId={setNewProductId}
+                    setNewQty={setNewQty}
+                    handleAddOrder={handleAddOrder}
+                />
+            ) : (
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
                 <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 240px)" }}>
                     <table className="w-full text-sm text-center border-collapse min-w-max relative">
@@ -1756,6 +1816,7 @@ export default function PickupCalendarPage() {
                     </table>
                 </div>
             </Card>
+            )}
 
             {/* Floating POS Action Bar */}
             {selectedPosOrders.length > 0 && (

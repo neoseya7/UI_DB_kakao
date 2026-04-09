@@ -436,11 +436,17 @@ export async function POST(request: Request) {
                     }).select().single();
 
                     if (orderData) {
-                        await supabase.from('order_items').insert({
+                        const { error: itemError } = await supabase.from('order_items').insert({
                             order_id: orderData.id,
                             product_id: item.matchedProduct.id,
                             quantity: item.quantity || 1
                         });
+
+                        // order_items 실패 시 빈 주문 삭제
+                        if (itemError) {
+                            await supabase.from('orders').delete().eq('id', orderData.id);
+                            console.error("order_items insert failed, removed empty order:", itemError.message);
+                        }
                     }
                 }
 

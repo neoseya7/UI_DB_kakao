@@ -655,9 +655,9 @@ export default function Dashboard() {
         return (
           <>
             <Card className="overflow-hidden border-border/80 shadow-md bg-card">
-              <div className="w-full max-h-[600px] h-[600px] overflow-x-auto">
+              <div className="w-full overflow-x-auto" style={{ height: "calc(100vh - 320px)", minHeight: "400px" }}>
                 <TableVirtuoso
-                  style={{ height: "600px", minWidth: "1350px" }}
+                  style={{ height: "100%", minWidth: "1350px" }}
                   data={filteredLogs}
                   components={{
                     Table: (props) => <table {...props} className="w-full text-sm text-left border-collapse table-fixed" style={{...props.style, minWidth: "1350px"}} />,

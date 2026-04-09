@@ -153,6 +153,10 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
             baseList = products.filter(p => !p.is_regular_sale && p.target_date === activeFilter)
         }
 
+        if (settings?.hide_soldout) {
+            baseList = baseList.filter(p => p.allocated_stock === null || p.allocated_stock > 0)
+        }
+
         const threshold = settings?.badge_stock_level || 3;
 
         return baseList.sort((a, b) => {
