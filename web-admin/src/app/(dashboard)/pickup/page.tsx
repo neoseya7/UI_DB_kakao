@@ -51,6 +51,8 @@ export default function PickupCalendarPage() {
     })
 
     const [searchTerm, setSearchTerm] = useState("")
+    const [activeSearchTerm, setActiveSearchTerm] = useState("")
+    const [searchField, setSearchField] = useState<"all" | "nickname" | "product" | "memo">("all")
     const [searchScope, setSearchScope] = useState("today")
     const [customSearchDate, setCustomSearchDate] = useState("")
     const [customEndDate, setCustomEndDate] = useState("")
@@ -117,6 +119,12 @@ export default function PickupCalendarPage() {
             localStorage.setItem(`pickupSettings_${storeId}`, JSON.stringify(settingsToSave))
         }
     }, [storeId, isSettingsLoaded, searchScope, customSearchDate, customEndDate, receiptFilter, sortOrder])
+
+    // 검색 범위 변경 시 검색어 초기화 (모든 날짜 진입 시 빈 화면 유지)
+    useEffect(() => {
+        setActiveSearchTerm("")
+        setSearchTerm("")
+    }, [searchScope])
 
     const getStickyClasses = (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo') => {
         const base = "sticky z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] bg-background group-hover:bg-muted/40"
@@ -187,7 +195,7 @@ export default function PickupCalendarPage() {
             fetchMatrixData()
             setSelectedPosOrders([])
         }
-    }, [storeId, currentDate, searchScope, customSearchDate, customEndDate])
+    }, [storeId, currentDate, searchScope, customSearchDate, customEndDate, activeSearchTerm])
 
     useEffect(() => {
         if (!storeId || !isTransferModalOpen) return;
@@ -243,6 +251,13 @@ export default function PickupCalendarPage() {
 
     const fetchMatrixData = async () => {
         if (!storeId) return
+        // 모든 날짜 모드에서 검색어가 없으면 데이터를 불러오지 않음 (대용량 보호)
+        if (searchScope === "all_dates" && !activeSearchTerm.trim()) {
+            setRawCustomers([])
+            setProducts([])
+            setIsLoading(false)
+            return
+        }
         setIsLoading(true)
 
         // 세션 토큰을 미리 갱신하여 병렬 호출 시 토큰 충돌 방지
@@ -447,6 +462,115 @@ export default function PickupCalendarPage() {
         setIsDeleteMode(false);
         setSelectedDeleteIds([]);
         fetchMatrixData();
+    }
+
+    const handleDeleteReceivedOrders = async () => {
+        if (!storeId) return
+        // 현재 화면의 날짜 라벨
+        const dateLabel = (() => {
+            if (currentDate === "상시판매") return "상시판매"
+            const parts = currentDate.split("-")
+            if (parts.length === 3) return `${parts[1]}월${parts[2]}일`
+            return currentDate
+        })()
+
+        // 1) 해당 날짜 + is_received=true 주문 조회
+        const targetDbDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
+        const { data: receivedOrders, error: fErr } = await supabase
+            .from("orders")
+            .select("id, customer_nickname, pickup_date, customer_memo_1, customer_memo_2, is_received")
+            .eq("store_id", storeId)
+            .eq("is_hidden", false)
+            .eq("is_received", true)
+            .eq("pickup_date", targetDbDate)
+        if (fErr) { alert("조회 실패: " + fErr.message); return }
+        if (!receivedOrders || receivedOrders.length === 0) {
+            alert(`${dateLabel}의 수령 완료 주문이 없습니다.`)
+            return
+        }
+
+        if (!confirm(`${dateLabel}의 수령제품을 삭제하시겠습니까?\n대상: ${receivedOrders.length}건\n\n자동으로 엑셀 백업이 먼저 다운로드됩니다.`)) return
+
+        setIsLoading(true)
+        try {
+            // 2) order_items 조회 (청크)
+            const orderIds = receivedOrders.map(o => o.id)
+            let allItems: any[] = []
+            const CHUNK = 30
+            for (let i = 0; i < orderIds.length; i += CHUNK) {
+                const { data } = await supabase.from("order_items").select("*").in("order_id", orderIds.slice(i, i + CHUNK))
+                if (data) allItems = allItems.concat(data)
+            }
+
+            // 3) 상품 dict
+            const productIds = Array.from(new Set(allItems.map(it => it.product_id)))
+            let prodDict: Record<string, { name: string; price: number }> = {}
+            if (productIds.length > 0) {
+                const { data: prodRows } = await supabase.from("products").select("id, collect_name, price").in("id", productIds)
+                ;(prodRows || []).forEach(p => { prodDict[p.id] = { name: p.collect_name || "(이름없음)", price: p.price || 0 } })
+            }
+
+            // 4) 업로드 양식과 동일한 행 구성
+            const rows: any[] = []
+            for (const o of receivedOrders) {
+                const items = allItems.filter(it => it.order_id === o.id)
+                if (items.length === 0) {
+                    rows.push({
+                        "고객명": o.customer_nickname,
+                        "픽업일": o.pickup_date === "1900-01-01" ? "상시판매" : o.pickup_date,
+                        "상품명": "",
+                        "발주수량": 0,
+                        "가격": 0,
+                        "주문확인": o.is_received ? "O" : "X",
+                        "고객비고1": o.customer_memo_1 || "",
+                        "고객비고2": o.customer_memo_2 || "",
+                    })
+                    continue
+                }
+                for (const it of items) {
+                    const p = prodDict[it.product_id]
+                    rows.push({
+                        "고객명": o.customer_nickname,
+                        "픽업일": o.pickup_date === "1900-01-01" ? "상시판매" : o.pickup_date,
+                        "상품명": p?.name || "(삭제된 상품)",
+                        "발주수량": it.quantity,
+                        "가격": p?.price || 0,
+                        "주문확인": o.is_received ? "O" : "X",
+                        "고객비고1": o.customer_memo_1 || "",
+                        "고객비고2": o.customer_memo_2 || "",
+                    })
+                }
+            }
+
+            // 5) 엑셀 저장
+            const ws = XLSX.utils.json_to_sheet(rows)
+            const wb = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(wb, ws, "수령주문백업")
+            const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "")
+            const safeLabel = dateLabel.replace(/[월일]/g, "")
+            const fname = `수령백업_${safeLabel}_${stamp}.xlsx`
+            XLSX.writeFile(wb, fname)
+
+            // 6) DB 삭제 (order_items → orders 순)
+            for (let i = 0; i < orderIds.length; i += CHUNK) {
+                const chunk = orderIds.slice(i, i + CHUNK)
+                const { error: iErr } = await supabase.from("order_items").delete().in("order_id", chunk)
+                if (iErr) throw iErr
+            }
+            for (let i = 0; i < orderIds.length; i += CHUNK) {
+                const chunk = orderIds.slice(i, i + CHUNK)
+                const { error: oErr } = await supabase.from("orders").delete().in("id", chunk)
+                if (oErr) throw oErr
+            }
+
+            alert(`${dateLabel}의 수령제품 ${receivedOrders.length}건 삭제 완료.\n백업 엑셀이 다운로드됐습니다.\n복원 시 '더보기(⋮) → 엑셀 일괄 등록' 메뉴로 재업로드하세요.`)
+            await fetchMatrixData()
+        } catch (e: any) {
+            console.error(e)
+            alert("삭제 중 오류: " + (e?.message || e))
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1106,13 +1230,19 @@ export default function PickupCalendarPage() {
         : rawCustomers
 
     const filteredCustomers = customers.filter(c => {
-        const lowerTerm = (searchTerm || "").toLowerCase()
+        const lowerTerm = (activeSearchTerm || "").toLowerCase()
         const custName = (c.name || "").toLowerCase()
         const summaryText = getDisplaySummary(c.items).toLowerCase()
         const memo1 = (c.memo1 || "").toLowerCase()
         const memo2 = (c.memo2 || "").toLowerCase()
 
-        const matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+        let matchSearch = true
+        if (lowerTerm) {
+            if (searchField === "nickname") matchSearch = custName.includes(lowerTerm)
+            else if (searchField === "product") matchSearch = summaryText.includes(lowerTerm)
+            else if (searchField === "memo") matchSearch = memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+            else matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+        }
         const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
         return matchSearch && matchReceipt
     }).sort((a, b) => {
@@ -1221,7 +1351,10 @@ export default function PickupCalendarPage() {
 
             <div className="flex flex-col gap-2">
                 <h2 className="text-2xl font-bold tracking-tight">주문관리</h2>
-                
+                <div className="flex items-start gap-2 p-3 rounded-md border border-amber-200 bg-amber-50 text-amber-900 text-sm font-medium shadow-sm">
+                    <span className="shrink-0">📢</span>
+                    <span>주문정보가 많아지면 기능이 저하될 수 있습니다. 수령 완료된 과거 주문은 주기적으로 삭제해주세요.</span>
+                </div>
             </div>
 
             <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-lg border shadow-sm">
@@ -1244,6 +1377,8 @@ export default function PickupCalendarPage() {
                                     onClick={() => {
                                         setCurrentDate(date)
                                         setSearchScope("today")
+                                        setActiveSearchTerm("")
+                                        setSearchTerm("")
                                     }}
                                     className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${currentDate === date ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
                                 >
@@ -1258,6 +1393,8 @@ export default function PickupCalendarPage() {
                                 onChange={(e) => {
                                     setCurrentDate(e.target.value)
                                     setSearchScope("today")
+                                    setActiveSearchTerm("")
+                                    setSearchTerm("")
                                 }}
                                 title="달력에서 날짜 직접 지정"
                             />
@@ -1265,14 +1402,41 @@ export default function PickupCalendarPage() {
                     </div>
 
                     <div className="flex flex-col gap-2 w-full bg-muted/30 p-1.5 rounded-md border shrink-0">
-                        <div className="relative w-full">
-                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="닉네임, 상품명, 비고 등 통합 검색..."
-                                className="pl-9 bg-white h-10 w-full shadow-sm"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div className="flex items-center gap-2 w-full">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder={
+                                        searchField === "nickname" ? "닉네임 입력 후 엔터 또는 🔍 클릭"
+                                        : searchField === "product" ? "상품명 입력 후 엔터 또는 🔍 클릭"
+                                        : searchField === "memo" ? "비고 입력 후 엔터 또는 🔍 클릭"
+                                        : (searchScope === "all_dates" ? "닉네임 또는 상품명 입력 후 엔터 또는 🔍 클릭" : "닉네임, 상품명, 비고 입력 후 엔터 또는 🔍 클릭")
+                                    }
+                                    className="pl-9 bg-white h-10 w-full shadow-sm pr-3"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") setActiveSearchTerm(searchTerm) }}
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={() => setActiveSearchTerm(searchTerm)}
+                                className="h-10 w-10 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm p-0"
+                                title="검색"
+                            >
+                                <Search className="h-4 w-4" />
+                            </Button>
+                            {activeSearchTerm && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => { setActiveSearchTerm(""); setSearchTerm("") }}
+                                    className="h-10 px-3 shrink-0 shadow-sm"
+                                    title="검색어 초기화"
+                                >
+                                    초기화
+                                </Button>
+                            )}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
@@ -1305,6 +1469,18 @@ export default function PickupCalendarPage() {
                                 <SelectContent>
                                     <SelectItem value="entered" className="font-semibold">⏳ 입력된 순서</SelectItem>
                                     <SelectItem value="name" className="font-semibold">가 가나다 순서</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={searchField} onValueChange={(v: any) => setSearchField(v)}>
+                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[110px] h-10 bg-white border-muted shadow-sm font-medium shrink-0">
+                                    <SelectValue placeholder="검색 항목" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">모두</SelectItem>
+                                    <SelectItem value="nickname">닉네임</SelectItem>
+                                    <SelectItem value="product">상품명</SelectItem>
+                                    <SelectItem value="memo">비고</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -1390,6 +1566,9 @@ export default function PickupCalendarPage() {
                                 <Trash2 className="h-4 w-4" /> 삭제 모드
                             </Button>
                         )}
+                        <Button variant="outline" onClick={handleDeleteReceivedOrders} className="gap-2 shadow-sm border border-amber-300 text-amber-700 hover:bg-amber-50 transition-all h-10 w-full sm:w-auto px-3 font-semibold">
+                            <Trash2 className="h-4 w-4" /> 수령제품 삭제
+                        </Button>
                         </div>
                         </GuideBadge>
                         <GuideBadge text="1명의 여러상품을 주문했을 때 여러줄이 한줄로 합칠 수 있어요. 물론 다시 분리할수도 있어요.">
@@ -1532,6 +1711,8 @@ export default function PickupCalendarPage() {
                     setNewProductId={setNewProductId}
                     setNewQty={setNewQty}
                     handleAddOrder={handleAddOrder}
+                    searchScope={searchScope}
+                    activeSearchTerm={activeSearchTerm}
                 />
             ) : (
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
@@ -1703,7 +1884,11 @@ export default function PickupCalendarPage() {
                             {isLoading ? (
                                 <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="p-8 text-center text-muted-foreground animate-pulse">데이터베이스에서 실시간 상태를 불러오는 중입니다...</td></tr>
                             ) : filteredCustomers.length === 0 ? (
-                                <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="p-8 text-muted-foreground font-medium text-center">조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)</td></tr>
+                                <tr><td colSpan={displayProducts.length + (isDeleteMode ? 7 : 6)} className="p-8 text-muted-foreground font-medium text-center">
+                                    {searchScope === "all_dates" && !activeSearchTerm.trim()
+                                        ? "닉네임 또는 상품명을 입력 후 엔터를 눌러주세요."
+                                        : "조회할 데이터가 없습니다. (해당 일자에 상품이나 주문이 없습니다)"}
+                                </td></tr>
                             ) : (
                                 filteredCustomers.map((c, i) => (
                                     <tr key={`${isMerged}-${c.id || i}`} className={`hover:bg-muted/40 transition-colors group ${c.checked ? 'bg-emerald-50/30 opacity-70' : 'bg-background'} ${selectedPosOrders.includes(c.id) ? 'bg-indigo-50/40' : ''}`}>

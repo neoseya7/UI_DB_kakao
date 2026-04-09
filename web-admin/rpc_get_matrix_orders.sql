@@ -45,14 +45,16 @@ BEGIN
     WHERE o.store_id = p_store_id
       AND o.is_hidden = false
       AND (
-          -- 상시판매 주문은 항상 포함
-          o.pickup_date = '1900-01-01'::date
-          -- 조건 1: 오늘(또는 특정일) 검색인 경우
-          OR (p_pickup_date IS NOT NULL AND o.pickup_date = p_pickup_date)
-          -- 조건 2: 특정 기간(~부터 ~까지) 검색인 경우
-          OR (p_start_date IS NOT NULL AND p_end_date IS NOT NULL AND o.pickup_date >= p_start_date AND o.pickup_date <= p_end_date)
-          OR (p_start_date IS NOT NULL AND p_end_date IS NULL AND o.pickup_date = p_start_date)
-          -- 조건 3: 전체 검색 (날짜 파라미터 모두 NULL)
+          -- 해당 달력선택일: 그 날짜만 (상시판매 버튼은 p_pickup_date='1900-01-01'로 들어오므로 자연히 포함)
+          (p_pickup_date IS NOT NULL AND o.pickup_date = p_pickup_date)
+          -- 특정 기간: 기간 내 + 상시판매 포함
+          OR (p_start_date IS NOT NULL AND p_end_date IS NOT NULL
+              AND (o.pickup_date BETWEEN p_start_date AND p_end_date
+                   OR o.pickup_date = '1900-01-01'::date))
+          OR (p_start_date IS NOT NULL AND p_end_date IS NULL
+              AND (o.pickup_date = p_start_date
+                   OR o.pickup_date = '1900-01-01'::date))
+          -- 모든 날짜: 전부 (상시판매 포함)
           OR (p_pickup_date IS NULL AND p_start_date IS NULL AND p_end_date IS NULL)
       )
     GROUP BY o.id

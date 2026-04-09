@@ -23,6 +23,9 @@ interface PickupCardListProps extends PickupViewProps {
     setNewProductId: (v: string) => void
     setNewQty: (v: string) => void
     handleAddOrder: () => void
+    // Search gate state
+    searchScope?: string
+    activeSearchTerm?: string
 }
 
 export default function PickupCardList(props: PickupCardListProps) {
@@ -32,7 +35,8 @@ export default function PickupCardList(props: PickupCardListProps) {
         toggleCheck, handleUpdateQuantity, handleUpdateMemo, handleDeleteOrder,
         getDisplaySummary, calculateItemPrice,
         currentDate, manualOrderProducts, newNick, newDate, newProductId, newQty,
-        setNewNick, setNewDate, setNewProductId, setNewQty, handleAddOrder
+        setNewNick, setNewDate, setNewProductId, setNewQty, handleAddOrder,
+        searchScope, activeSearchTerm
     } = props
 
     const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -95,7 +99,9 @@ export default function PickupCardList(props: PickupCardListProps) {
                 </div>
             ) : filteredCustomers.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground text-sm">
-                    조회할 데이터가 없습니다.
+                    {searchScope === "all_dates" && !(activeSearchTerm || "").trim()
+                        ? "닉네임 또는 상품명을 입력 후 엔터를 눌러주세요."
+                        : "조회할 데이터가 없습니다."}
                 </div>
             ) : (
                 filteredCustomers.map((c, i) => {

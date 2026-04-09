@@ -4,13 +4,24 @@ import Link from "next/link"
 import { MessageSquare, Calendar, Store, Settings, ShieldAlert, LogOut, Blocks, BarChart3, Key } from "lucide-react"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 export function Sidebar({ className }: { className?: string }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isBrandAdmin, setIsBrandAdmin] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/")
+
+  const linkCls = (href: string) =>
+    `flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${
+      isActive(href)
+        ? "text-brand font-medium bg-muted/50"
+        : "text-muted-foreground hover:text-primary"
+    }`
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -49,45 +60,27 @@ export function Sidebar({ className }: { className?: string }) {
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4 gap-1">
             {!isAdmin && (
               <>
-                <Link
-                  href="/"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-brand font-medium bg-muted/50 transition-all hover:text-brand"
-                >
+                <Link href="/" className={linkCls("/")}>
                   <MessageSquare className="h-4 w-4" />
                   오늘의 대화
                 </Link>
-                <Link
-                  href="/pickup"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
+                <Link href="/pickup" className={linkCls("/pickup")}>
                   <Calendar className="h-4 w-4" />
                   주문관리
                 </Link>
-                <Link
-                  href="/products"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
+                <Link href="/products" className={linkCls("/products")}>
                   <Store className="h-4 w-4" />
                   상품 관리
                 </Link>
-                <Link
-                  href="/utilities"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
+                <Link href="/utilities" className={linkCls("/utilities")}>
                   <Blocks className="h-4 w-4" />
                   부가기능
                 </Link>
-                <Link
-                  href="/analytics"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
+                <Link href="/analytics" className={linkCls("/analytics")}>
                   <BarChart3 className="h-4 w-4" />
                   매출통계
                 </Link>
-                <Link
-                  href="/settings"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
+                <Link href="/settings" className={linkCls("/settings")}>
                   <Settings className="h-4 w-4" />
                   매장 설정
                 </Link>

@@ -37,11 +37,12 @@ export default function UtilitiesPage() {
                 .from('products')
                 .select('*')
                 .eq('store_id', user.id)
+                .eq('is_hidden', false)
                 .order('created_at', { ascending: false })
             
             if (pData) setProducts(pData)
 
-            const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received').eq('store_id', user.id).eq('is_hidden', false).limit(3000)
+            const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received, customer_memo_2').eq('store_id', user.id).eq('is_hidden', false).limit(3000)
             if (oData && oData.length > 0) {
                 const orderIds = oData.map(o => o.id)
                 const chunkSize = 250
@@ -79,6 +80,9 @@ export default function UtilitiesPage() {
     // The manually editable text area content
     const [editableText, setEditableText] = useState("")
 
+    // 미수령 판단: is_received=false 이면서 고객찜(customer_memo_2) 비어있을 때만 노쇼로 간주
+    const isNoshow = (o: any) => !o.is_received && !(o.customer_memo_2 && String(o.customer_memo_2).trim())
+
     // Generate Message function mapping multiple products
     useEffect(() => {
         const template = templates[activeTemplateIdx];
@@ -101,10 +105,10 @@ export default function UtilitiesPage() {
             if (selectedDate !== "all" && selectedDate !== "regular") {
                 const dateOrders = orders.filter(o => o.pickup_date === selectedDate)
                 relevantOrderIds = dateOrders.map(o => o.id)
-                noshowNames = Array.from(new Set(dateOrders.filter(o => !o.is_received).map(o => o.customer_nickname || "알수없음")))
+                noshowNames = Array.from(new Set(dateOrders.filter(isNoshow).map(o => o.customer_nickname || "알수없음")))
             } else {
                 relevantOrderIds = orders.map(o => o.id)
-                noshowNames = Array.from(new Set(orders.filter(o => !o.is_received).map(o => o.customer_nickname || "알수없음")))
+                noshowNames = Array.from(new Set(orders.filter(isNoshow).map(o => o.customer_nickname || "알수없음")))
             }
             
             const noshowString = noshowNames.length > 0 ? noshowNames.map(n => `@${n}`).join(" ") : "(미수령고객 없음)"
@@ -114,7 +118,7 @@ export default function UtilitiesPage() {
             const remaining = Math.max(0, (p.allocated_stock || 0) - orderSum)
             
             const prodOrderIds = relevantItems.map(oi => oi.order_id);
-            const prodNoshowOrders = orders.filter(o => prodOrderIds.includes(o.id) && !o.is_received);
+            const prodNoshowOrders = orders.filter(o => prodOrderIds.includes(o.id) && isNoshow(o));
             const prodNoshowNames = Array.from(new Set(prodNoshowOrders.map(o => o.customer_nickname || "알수없음")));
             const prodNoshowString = prodNoshowNames.length > 0 ? prodNoshowNames.map(n => `@${n}`).join(" ") : "(미수령고객 없음)";
 
@@ -137,10 +141,10 @@ export default function UtilitiesPage() {
         if (!hasProductVariables) {
             let globalNoshow = "(미수령고객 없음)";
             if (selectedDate !== "all" && selectedDate !== "regular") {
-                const currentNoshows = Array.from(new Set(orders.filter(o => o.pickup_date === selectedDate && !o.is_received).map(o => o.customer_nickname || "알수없음")));
+                const currentNoshows = Array.from(new Set(orders.filter(o => o.pickup_date === selectedDate && isNoshow(o)).map(o => o.customer_nickname || "알수없음")));
                 globalNoshow = currentNoshows.length > 0 ? currentNoshows.map(n => `@${n}`).join(" ") : "(미수령고객 없음)";
             } else {
-                const currentNoshows = Array.from(new Set(orders.filter(o => !o.is_received).map(o => o.customer_nickname || "알수없음")));
+                const currentNoshows = Array.from(new Set(orders.filter(isNoshow).map(o => o.customer_nickname || "알수없음")));
                 globalNoshow = currentNoshows.length > 0 ? currentNoshows.map(n => `@${n}`).join(" ") : "(미수령고객 없음)";
             }
             
