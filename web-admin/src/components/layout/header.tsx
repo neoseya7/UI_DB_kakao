@@ -20,12 +20,12 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user && user.email) {
-                setUserEmail(user.email)
-                setUserId(user.id)
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user && session.user.email) {
+                setUserEmail(session.user.email)
+                setUserId(session.user.id)
                 
-                const { data } = await supabase.from('stores').select('name').eq('id', user.id).single()
+                const { data } = await supabase.from('stores').select('name').eq('id', session.user.id).single()
                 if (data && data.name) {
                     setStoreName(data.name)
                 }

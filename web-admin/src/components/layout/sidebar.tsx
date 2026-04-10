@@ -24,10 +24,10 @@ export function Sidebar({ className }: { className?: string }) {
     }`
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        const role = user.user_metadata?.role
-        const fallbackAdmin = user.email?.toLowerCase().includes('admin')
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const role = session.user.user_metadata?.role
+        const fallbackAdmin = session.user.email?.toLowerCase().includes('admin')
         if (role === 'super_admin' || fallbackAdmin) {
           setIsAdmin(true)
         }

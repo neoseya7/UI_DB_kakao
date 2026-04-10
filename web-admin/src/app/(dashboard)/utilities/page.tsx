@@ -21,7 +21,8 @@ export default function UtilitiesPage() {
     // Fetch real products and orders from DB
     useEffect(() => {
         const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
+            const user = session?.user
             if (!user) return
 
             const { data: storeSet } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()

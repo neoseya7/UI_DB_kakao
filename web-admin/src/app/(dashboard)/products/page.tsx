@@ -70,8 +70,9 @@ export default function ProductsPage() {
         let timeoutId: NodeJS.Timeout;
 
         const initData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+                const user = session.user
                 setStoreId(user.id)
                 await fetchProducts(user.id)
 

@@ -180,13 +180,7 @@ export default function PickupCalendarPage() {
         const initUser = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession()
-                let user: any = session?.user
-                
-                if (!user) {
-                    const { data } = await supabase.auth.getUser()
-                    user = data?.user
-                }
-
+                const user = session?.user
                 if (user) {
                     setStoreId(user.id)
                     const { data: sData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
