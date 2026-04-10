@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string, tiered_prices?: {qty: number, price: number}[], unit_text?: string }
-type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, originalIndex?: number, crm?: { category: string, memo: string } }
+type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, pickup_date?: string, originalIndex?: number, crm?: { category: string, memo: string } }
 
 export default function PickupCalendarPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -56,6 +56,7 @@ export default function PickupCalendarPage() {
     const [searchScope, setSearchScope] = useState("today")
     const [customSearchDate, setCustomSearchDate] = useState("")
     const [customEndDate, setCustomEndDate] = useState("")
+    const [focusedDate, setFocusedDate] = useState<string | null>(null)
     const [receiptFilter, setReceiptFilter] = useState("unreceived")
 
     const [newNick, setNewNick] = useState("")
@@ -120,11 +121,22 @@ export default function PickupCalendarPage() {
         }
     }, [storeId, isSettingsLoaded, searchScope, customSearchDate, customEndDate, receiptFilter, sortOrder])
 
-    // 검색 범위 변경 시 검색어 초기화 (모든 날짜 진입 시 빈 화면 유지)
+    // searchScope 가 date_range 가 아닐 때에만 검색어 초기화 (모든 날짜 진입 시 빈 화면 유지)
     useEffect(() => {
-        setActiveSearchTerm("")
-        setSearchTerm("")
+        if (searchScope === "all_dates") {
+            setActiveSearchTerm("")
+            setSearchTerm("")
+        }
+        // scope 변경 시 focusedDate 해제
+        if (searchScope !== "date_range") {
+            setFocusedDate(null)
+        }
     }, [searchScope])
+
+    // 기간검색 범위가 바뀌면 focusedDate 해제
+    useEffect(() => {
+        setFocusedDate(null)
+    }, [customSearchDate, customEndDate])
 
     const getStickyClasses = (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo') => {
         const base = "sticky z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] bg-background group-hover:bg-muted/40"
@@ -390,6 +402,7 @@ export default function PickupCalendarPage() {
                     memo2: o.customer_memo_2 || "",
                     crm: crmDict[o.customer_nickname] || null,
                     checked: o.is_received || false,
+                    pickup_date: o.pickup_date,
                     originalIndex: index
                 }
             })
@@ -433,6 +446,7 @@ export default function PickupCalendarPage() {
                 memo2: o.customer_memo_2 || "",
                 crm: crmDict[o.customer_nickname] || null,
                 checked: o.is_received || false,
+                pickup_date: o.pickup_date,
                 originalIndex: index
             }
         })
@@ -1213,8 +1227,16 @@ export default function PickupCalendarPage() {
         }).filter(Boolean).join(" / ")
     }
 
+    // 기간검색 드릴다운: focusedDate 가 설정되어 있으면 그 날짜의 주문만 남김 (병합 전 선-필터링)
+    const dateFilteredRaw = (searchScope === "date_range" && focusedDate)
+        ? rawCustomers.filter(c => {
+            const target = focusedDate === "상시판매" ? "1900-01-01" : focusedDate
+            return c.pickup_date === target
+        })
+        : rawCustomers
+
     const customers = isMerged
-        ? rawCustomers.reduce((acc, current) => {
+        ? dateFilteredRaw.reduce((acc, current) => {
             const existing = acc.find(item => item.name === current.name)
             if (existing) {
                 const mergedItems = existing.items.map((qty, idx) => qty + current.items[idx])
@@ -1227,7 +1249,7 @@ export default function PickupCalendarPage() {
                 return [...acc, { ...current }]
             }
         }, [] as Order[])
-        : rawCustomers
+        : dateFilteredRaw
 
     const filteredCustomers = customers.filter(c => {
         const lowerTerm = (activeSearchTerm || "").toLowerCase()
@@ -1369,34 +1391,54 @@ export default function PickupCalendarPage() {
                                     const d = new Date(date);
                                     if (!isNaN(d.getTime())) label = `${date} (${d.toLocaleDateString('ko-KR', { weekday: 'short' })})`;
                                 }
+                                const isFocused = searchScope === "date_range" && focusedDate === date
+                                const isCurrent = searchScope !== "date_range" && currentDate === date
                                 return (
                                 <Button
                                     key={date}
-                                    variant={currentDate === date ? "default" : "outline"}
+                                    variant={isCurrent ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => {
-                                        setCurrentDate(date)
-                                        setSearchScope("today")
-                                        setActiveSearchTerm("")
-                                        setSearchTerm("")
+                                        if (searchScope === "date_range") {
+                                            // 기간검색 유지 상태에서는 focusedDate 토글 (드릴다운)
+                                            setFocusedDate(prev => prev === date ? null : date)
+                                        } else {
+                                            setCurrentDate(date)
+                                            setSearchScope("today")
+                                        }
                                     }}
-                                    className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${currentDate === date ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'}`}
+                                    className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${
+                                        isCurrent
+                                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-transparent'
+                                            : isFocused
+                                                ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-2 border-amber-400'
+                                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                                    }`}
+                                    title={searchScope === "date_range" ? "기간검색 중 - 클릭하면 이 날짜 주문만 표시" : undefined}
                                 >
-                                    {label}
+                                    {isFocused && <span className="mr-1">🔍</span>}{label}
                                 </Button>
                                 )
                             })}
                             <Input
                                 type="date"
                                 className="w-[140px] h-10 font-bold bg-white border-slate-200 rounded-full shadow-sm text-center text-slate-600 focus-visible:ring-indigo-500 transition-colors cursor-pointer shrink-0"
-                                value={currentDate}
+                                value={searchScope === "date_range" && focusedDate && focusedDate !== "상시판매" ? focusedDate : (searchScope === "date_range" ? "" : currentDate)}
                                 onChange={(e) => {
-                                    setCurrentDate(e.target.value)
-                                    setSearchScope("today")
-                                    setActiveSearchTerm("")
-                                    setSearchTerm("")
+                                    const v = e.target.value
+                                    if (!v) return
+                                    if (searchScope === "date_range" && customSearchDate && customEndDate && v >= customSearchDate && v <= customEndDate) {
+                                        // 기간 내: focusedDate 설정 (기간검색 유지)
+                                        setFocusedDate(v)
+                                    } else if (searchScope === "date_range" && customSearchDate && !customEndDate && v === customSearchDate) {
+                                        setFocusedDate(v)
+                                    } else {
+                                        // 기간 밖 또는 다른 scope: scope 전환
+                                        setCurrentDate(v)
+                                        setSearchScope("today")
+                                    }
                                 }}
-                                title="달력에서 날짜 직접 지정"
+                                title={searchScope === "date_range" ? "기간 내 날짜는 드릴다운, 기간 밖 날짜는 이동" : "달력에서 날짜 직접 지정"}
                             />
                         </div>
                     </div>
@@ -1502,6 +1544,21 @@ export default function PickupCalendarPage() {
                                     className="flex-1 h-10 bg-indigo-50/50 shadow-sm border-indigo-200 focus-visible:ring-indigo-500 font-bold text-indigo-700 px-2"
                                     title="종료일"
                                 />
+                            </div>
+                        )}
+
+                        {searchScope === "date_range" && focusedDate && (
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-sm font-bold shadow-sm">
+                                <span>🔍 {focusedDate} 만 보기 (기간검색 내 드릴다운)</span>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setFocusedDate(null)}
+                                    className="h-7 px-2 text-xs bg-white border-amber-400 text-amber-800 hover:bg-amber-100"
+                                >
+                                    전체 기간 보기
+                                </Button>
                             </div>
                         )}
                     </div>

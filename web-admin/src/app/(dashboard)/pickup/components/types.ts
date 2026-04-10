@@ -18,6 +18,7 @@ export type Order = {
     memo1: string
     memo2: string
     checked: boolean
+    pickup_date?: string
     originalIndex?: number
     crm?: { category: string; memo: string }
 }
