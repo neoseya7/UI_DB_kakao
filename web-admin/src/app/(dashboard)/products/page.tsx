@@ -19,14 +19,10 @@ export default function ProductsPage() {
     const [products, setProducts] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [filterDate, setFilterDate] = useState<string>(() => {
-        const today = new Date()
-        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    })
+    const [filterDate, setFilterDate] = useState<string>("all")
     const [editingProductId, setEditingProductId] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [sortOrder, setSortOrder] = useState("latest")
-    const [availableDates, setAvailableDates] = useState<string[]>([])
 
     // Shared Clone Dialog States
     const [isSharedDialogOpen, setIsSharedDialogOpen] = useState(false)
@@ -74,18 +70,9 @@ export default function ProductsPage() {
         let timeoutId: NodeJS.Timeout;
 
         const initData = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session?.user) {
-                const user = session.user
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
                 setStoreId(user.id)
-
-                // 날짜 목록을 가볍게 가져옴 (필터 버튼용)
-                const { data: dateData } = await supabase.from('products').select('target_date, is_regular_sale').eq('store_id', user.id).eq('is_hidden', false)
-                if (dateData) {
-                    const dates = Array.from(new Set(dateData.filter(p => !p.is_regular_sale && p.target_date).map(p => p.target_date))).sort() as string[]
-                    setAvailableDates(dates)
-                }
-
                 await fetchProducts(user.id)
 
                 channel = supabase
@@ -112,29 +99,12 @@ export default function ProductsPage() {
         }
     }, [])
 
-    // 필터 변경 시 DB 재조회
-    useEffect(() => {
-        if (storeId) {
-            fetchProducts(storeId, filterDate)
-        }
-    }, [filterDate])
-
-    const fetchProducts = async (sid: string, dateFilter?: string) => {
-        const activeFilter = dateFilter ?? filterDate
-        let query = supabase
+    const fetchProducts = async (sid: string) => {
+        const { data, error } = await supabase
             .from('products')
             .select('*')
             .eq('store_id', sid)
             .eq('is_hidden', false)
-
-        if (activeFilter === "regular") {
-            query = query.eq('is_regular_sale', true)
-        } else if (activeFilter !== "all") {
-            // 특정 날짜: 해당 날짜 + 상시판매 포함
-            query = query.or(`target_date.eq.${activeFilter},is_regular_sale.eq.true`)
-        }
-
-        const { data, error } = await query
             .order('created_at', { ascending: false })
             .limit(5000)
             
@@ -170,11 +140,6 @@ export default function ProductsPage() {
     const handleSaveProduct = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!storeId) return
-
-        if (!formData.collect_name.trim()) {
-            alert("수집상품명은 필수 입력 항목입니다.")
-            return
-        }
 
         const targetDateValue = formData.target_date || null;
         const isDuplicateName = products.some(p => 
@@ -536,7 +501,7 @@ export default function ProductsPage() {
                         {filterDate === "regular" && <div className="absolute inset-0 bg-emerald-100/50 z-0"></div>}
                     </Button>
 
-                    {availableDates.map(date => (
+                    {Array.from(new Set(products.map(p => p.target_date).filter(Boolean))).sort().map(date => (
                         <Button
                             key={date}
                             variant={filterDate === date ? "default" : "outline"}
@@ -614,7 +579,7 @@ export default function ProductsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="collect-name">수집상품명 <span className="text-destructive">*</span></Label>
-                                    <Input id="collect-name" placeholder="예: 바닐라마카롱5구" value={formData.collect_name} onChange={e => setFormData({ ...formData, collect_name: e.target.value })} className="bg-muted/50 focus:bg-background" />
+                                    <Input id="collect-name" placeholder="예: 바닐라마카롱5구" value={formData.collect_name} onChange={e => setFormData({ ...formData, collect_name: e.target.value })} required className="bg-muted/50 focus:bg-background" />
                                 </div>
                             </div>
 

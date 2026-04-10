@@ -37,8 +37,7 @@ export function PopupManager() {
 
     useEffect(() => {
         const init = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            const user = session?.user
+            const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
             setStoreId(user.id)
 

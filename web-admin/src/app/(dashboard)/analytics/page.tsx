@@ -24,10 +24,10 @@ export default function AnalyticsPage() {
     const [chartData, setChartData] = useState<any[]>([])
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                setStoreId(session.user.id)
-                fetchAnalytics(session.user.id)
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+                setStoreId(user.id)
+                fetchAnalytics(user.id)
             }
         })
     }, [])

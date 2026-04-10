@@ -208,8 +208,7 @@ export default function Dashboard() {
   const handleRevokeOrder = async (log: any) => {
     if (!confirm(`"${log.nickname}" 님의 [${log.product}] 주문을 삭제하고 대화를 미처리 상태로 되돌리시겠습니까?`)) return
 
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     try {
@@ -275,8 +274,7 @@ export default function Dashboard() {
   // Row Clone
   const duplicateRow = async (e: React.MouseEvent, rowId: string) => {
     e.stopPropagation()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     try {

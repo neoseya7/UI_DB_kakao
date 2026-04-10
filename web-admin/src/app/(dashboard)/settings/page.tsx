@@ -46,9 +46,8 @@ export default function SettingsPage() {
 
     useEffect(() => {
         const init = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session?.user) {
-                const user = session.user
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
                 setStoreId(user.id)
                 const { data } = await supabase.from('store_settings').select('*').eq('store_id', user.id).single()
                 if (data) {
