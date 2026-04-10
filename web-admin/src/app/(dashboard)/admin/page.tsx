@@ -376,7 +376,6 @@ export default function AdminPage() {
             })
             const data = await res.json()
             if (data.success && data.link) {
-                // Open magic link in new tab, automatically logging the admin into that session securely
                 window.open(data.link, '_blank')
             } else {
                 alert(`접속 실패: ${data.error}`)

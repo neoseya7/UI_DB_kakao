@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Sidebar } from "./sidebar"
 import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useGuideMode } from "@/components/layout/guide-context"
 
 export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boolean; toggleSidebar?: () => void }) {
@@ -14,18 +14,20 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
     const [userId, setUserId] = useState<string | null>(null)
     const [storeName, setStoreName] = useState<string | null>(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isSheetOpen, setIsSheetOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
+    const pathname = usePathname()
     const { isGuideMode, toggleGuideMode } = useGuideMode()
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user && user.email) {
-                setUserEmail(user.email)
-                setUserId(user.id)
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user && session.user.email) {
+                setUserEmail(session.user.email)
+                setUserId(session.user.id)
                 
-                const { data } = await supabase.from('stores').select('name').eq('id', user.id).single()
+                const { data } = await supabase.from('stores').select('name').eq('id', session.user.id).single()
                 if (data && data.name) {
                     setStoreName(data.name)
                 }
@@ -33,6 +35,10 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
         }
         fetchUserData()
     }, [])
+
+    useEffect(() => {
+        setIsSheetOpen(false)
+    }, [pathname])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +67,7 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
 
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 shadow-sm">
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                     <Button
                         variant="outline"

@@ -13,6 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
         storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
-        storageKey: 'sb-auth-token-isolated'
+        storageKey: 'sb-auth-token-isolated',
+        lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => await fn()
     }
 })

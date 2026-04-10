@@ -59,18 +59,17 @@ export async function POST(req: Request) {
         
         let actionLink = data.properties.action_link;
 
-        // 2) If we are on localhost, forcibly override the Vercel base URL to localhost 
-        // to prevent redirecting the developer to production during local testing.
-        if (realOrigin.includes('localhost') || realOrigin.includes('127.0.0.1')) {
-            actionLink = actionLink.replace(/https:\/\/ui-db-kakao\.vercel\.app/gi, realOrigin);
-            // Additionally fix the redirect_to parameter if it exists
-            actionLink = actionLink.replace(/redirect_to=https%3A%2F%2Fui-db-kakao\.vercel\.app/gi, `redirect_to=${encodeURIComponent(realOrigin)}`);
-            actionLink = actionLink.replace(/redirect_to=https:\/\/ui-db-kakao\.vercel\.app/gi, `redirect_to=${realOrigin}`);
-        } else {
-            // Production fallback block
-            if (actionLink.includes('localhost') || actionLink.includes('127.0.0.1')) {
-                actionLink = actionLink.replace(/https?:\/\/localhost(:\d+)?/gi, realOrigin);
-                actionLink = actionLink.replace(/https?:\/\/127\.0\.0\.1(:\d+)?/gi, realOrigin);
+        // 2) Replace only the redirect_to parameter with the current request origin.
+        // The base URL (Supabase auth server) must stay unchanged.
+        // Only the redirect_to value should point to the current app environment.
+        const url = new URL(actionLink);
+        const redirectTo = url.searchParams.get('redirect_to');
+        if (redirectTo) {
+            const redirectOrigin = new URL(redirectTo).origin;
+            if (redirectOrigin !== realOrigin) {
+                const newRedirectTo = redirectTo.replace(redirectOrigin, realOrigin);
+                url.searchParams.set('redirect_to', newRedirectTo);
+                actionLink = url.toString();
             }
         }
 

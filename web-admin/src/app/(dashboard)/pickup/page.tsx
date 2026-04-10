@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2, MoreVertical } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
+import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache } from "@/lib/pickupCache"
 import { GuideBadge } from "@/components/ui/guide-badge"
 import PickupTable from "./components/PickupTable"
 import PickupCardList from "./components/PickupCardList"
@@ -26,6 +27,7 @@ import {
 
 type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string, tiered_prices?: {qty: number, price: number}[], unit_text?: string }
 type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, pickup_date?: string, originalIndex?: number, crm?: { category: string, memo: string } }
+
 
 export default function PickupCalendarPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -68,6 +70,7 @@ export default function PickupCalendarPage() {
     const [tempQty, setTempQty] = useState<string>("")
     const [editingMemo, setEditingMemo] = useState<{ orderId: string, type: 'memo1' | 'memo2' } | null>(null)
 
+    const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false)
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
     const [transferSourceDate, setTransferSourceDate] = useState("")
     const [transferProductIdx, setTransferProductIdx] = useState<string>("")
@@ -82,6 +85,8 @@ export default function PickupCalendarPage() {
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
     
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false)
+    const isMountedRef = useRef(true)
+    useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false } }, [])
 
     // Mobile detection
     const [isMobile, setIsMobile] = useState(false)
@@ -180,20 +185,17 @@ export default function PickupCalendarPage() {
         const initUser = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession()
-                let user: any = session?.user
-                
-                if (!user) {
-                    const { data } = await supabase.auth.getUser()
-                    user = data?.user
-                }
-
+                const user = session?.user
                 if (user) {
+                    // setStoreId를 즉시 호출하여 fetchMatrixData가 빠르게 시작되도록 함
                     setStoreId(user.id)
-                    const { data: sData } = await supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single()
-                    if (sData) {
-                        const isPosEnabled = sData.crm_tags?.find((t:any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false;
-                        setPosSyncEnabled(isPosEnabled)
-                    }
+                    // store_settings는 fetchMatrixData와 병렬로 실행됨
+                    supabase.from('store_settings').select('crm_tags').eq('store_id', user.id).single().then(({ data: sData }) => {
+                        if (sData) {
+                            const isPosEnabled = sData.crm_tags?.find((t:any) => t.type === 'setting' && t.key === 'pos_sync_enabled')?.value ?? false;
+                            setPosSyncEnabled(isPosEnabled)
+                        }
+                    })
                 }
             } catch (err) {
                 console.warn("Auth initialization warning:", err)
@@ -202,18 +204,37 @@ export default function PickupCalendarPage() {
         initUser()
     }, [])
 
+    // 날짜 버튼 목록을 먼저 빠르게 가져옴 (RPC 대기 없이 즉시 표시)
     useEffect(() => {
-        if (storeId) {
+        if (!storeId) return
+        supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false).then(({ data }) => {
+            if (data && isMountedRef.current) {
+                const uniqueDates = Array.from(new Set(data.filter(p => !p.is_regular_sale && p.target_date).map(p => p.target_date))).sort() as string[]
+                if (data.some(p => p.is_regular_sale)) uniqueDates.push("상시판매")
+                setAvailableDates(uniqueDates)
+            }
+        })
+    }, [storeId])
+
+    useEffect(() => {
+        if (storeId && isSettingsLoaded) {
             fetchMatrixData()
             setSelectedPosOrders([])
         }
-    }, [storeId, currentDate, searchScope, customSearchDate, customEndDate, activeSearchTerm])
+    }, [storeId, isSettingsLoaded, currentDate, searchScope, customSearchDate, customEndDate])
+
+    // "모든 날짜" 모드에서만 검색어 변경 시 서버 재조회 (다른 모드는 클라이언트 필터링)
+    useEffect(() => {
+        if (storeId && isSettingsLoaded && searchScope === "all_dates") {
+            fetchMatrixData()
+        }
+    }, [activeSearchTerm])
 
     useEffect(() => {
         if (!storeId || !isTransferModalOpen) return;
         const fetchModalProducts = async () => {
             const date = transferSourceDate || currentDate;
-            const { data } = await supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
+            const { data } = await supabase.from('products').select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
             if (data) {
                 setTransferAvailableProducts(data.map(p => ({
                     id: p.id,
@@ -238,7 +259,7 @@ export default function PickupCalendarPage() {
         const activeDate = newDate || currentDate;
         const fetchManualProducts = async () => {
             const { data } = await supabase.from('products')
-                .select('*')
+                .select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text')
                 .eq('store_id', storeId)
                 .eq('is_hidden', false)
                 .or(`target_date.eq.${activeDate},is_regular_sale.eq.true`)
@@ -261,7 +282,7 @@ export default function PickupCalendarPage() {
         fetchManualProducts()
     }, [storeId, newDate, currentDate])
 
-    const fetchMatrixData = async () => {
+    const fetchMatrixData = async (forceRefresh = false) => {
         if (!storeId) return
         // 모든 날짜 모드에서 검색어가 없으면 데이터를 불러오지 않음 (대용량 보호)
         if (searchScope === "all_dates" && !activeSearchTerm.trim()) {
@@ -270,12 +291,27 @@ export default function PickupCalendarPage() {
             setIsLoading(false)
             return
         }
-        setIsLoading(true)
 
-        // 세션 토큰을 미리 갱신하여 병렬 호출 시 토큰 충돌 방지
-        await supabase.auth.getSession()
+        // 데이터 변경 후 재조회 시 캐시 무효화
+        if (forceRefresh) clearPickupCache()
 
-        // === 1단계: 날짜 목록 + 주문 조회를 병렬 실행 ===
+        // 메모리 캐시 확인: 캐시가 있으면 즉시 표시
+        // "모든 날짜" 모드에서만 검색어를 캐시 키에 포함 (다른 모드는 클라이언트 필터링)
+        const cacheSearchTerm = searchScope === "all_dates" ? activeSearchTerm : ""
+        const cacheKey = makeCacheKey(storeId, searchScope, currentDate, customSearchDate, customEndDate, cacheSearchTerm)
+        const cached = getPickupCache(cacheKey)
+        if (cached) {
+            setRawCustomers(cached.rawCustomers)
+            setProducts(cached.products)
+            // availableDates는 별도 useEffect에서 관리하므로 캐시에서 덮어쓰지 않음
+            setIsLoading(false)
+            // 캐시가 5분 이내면 갱신 생략
+            if (Date.now() - cached.timestamp < 5 * 60 * 1000) return
+        } else {
+            setIsLoading(true)
+        }
+
+        // === 1단계: 날짜 목록 + 주문 조회 + CRM 태그를 모두 병렬 실행 ===
         let pDate = null, startDate = null, endDate = null
         if (searchScope === "today") pDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
         else if (searchScope === "date_range") {
@@ -283,20 +319,39 @@ export default function PickupCalendarPage() {
             else if (customSearchDate && !customEndDate) { pDate = customSearchDate; }
         }
 
-        const [dateResult, rpcResult] = await Promise.all([
+        // 상품 쿼리 (날짜 기반 - 주문 의존성 없이 바로 병렬 실행)
+        let pQuery = supabase.from('products').select('id,collect_name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
+        if (searchScope === "today") {
+            if (currentDate === "상시판매") {
+                pQuery = pQuery.eq('is_regular_sale', true)
+            } else {
+                pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+            }
+        } else if (searchScope === "date_range") {
+            pQuery = pQuery.eq('is_regular_sale', true)
+        }
+
+        const [dateResult, rpcResult, settingsResult, pResult] = await Promise.all([
             supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false),
             supabase.rpc('get_matrix_orders', {
                 p_store_id: storeId,
                 p_pickup_date: pDate,
                 p_start_date: startDate,
                 p_end_date: endDate
-            }).limit(5000)
+            }).limit(5000),
+            supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single(),
+            pQuery.limit(5000)
         ])
 
+        // 컴포넌트가 언마운트됐으면 state 업데이트 중단 (페이지 이동 시 불필요한 처리 방지)
+        if (!isMountedRef.current) return
+
         // 날짜 목록 처리
+        let latestDates: string[] = []
         if (dateResult.data) {
             const uniqueDates = Array.from(new Set(dateResult.data.filter(p => !p.is_regular_sale).map(p => p.target_date))).filter(Boolean).sort() as string[]
             if (dateResult.data.some(p => p.is_regular_sale)) uniqueDates.push("상시판매")
+            latestDates = uniqueDates
             setAvailableDates(uniqueDates)
         }
 
@@ -308,7 +363,7 @@ export default function PickupCalendarPage() {
             orders = rpcData || []
         } else {
             console.warn("RPC fetch failed, falling back to legacy:", rpcError);
-            let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
+            let oQuery = supabase.from('orders').select('id,customer_nickname,customer_memo_1,customer_memo_2,is_received,pickup_date,created_at').eq('store_id', storeId).eq('is_hidden', false)
             if (searchScope === "today") {
                 const dbDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
                 oQuery = oQuery.or(`pickup_date.eq.${dbDate},pickup_date.eq.1900-01-01`)
@@ -321,41 +376,25 @@ export default function PickupCalendarPage() {
             orders = oData || []
         }
 
-        // 주문에서 product_id 추출
-        const orderedProductIds = new Set<string>()
+        // 주문에 포함된 상품 중 1단계에서 누락된 것이 있으면 추가 조회
+        const fetchedProductIds = new Set((pResult.data || []).map((p: any) => p.id))
+        const missingIds: string[] = []
         if (!rpcError && rpcData) {
             orders.forEach((o: any) => {
-                if (o.items) o.items.forEach((oi: any) => orderedProductIds.add(oi.product_id))
+                if (o.items) o.items.forEach((oi: any) => {
+                    if (!fetchedProductIds.has(oi.product_id)) missingIds.push(oi.product_id)
+                })
             })
-        } else {
-            for (let chunkFilter = 0; chunkFilter < orders.length; chunkFilter += 30) {
-               const chunkIds = orders.slice(chunkFilter, chunkFilter + 30).map((o: any) => o.id)
-               const { data: itemData } = await supabase.from('order_items').select('product_id').in('order_id', chunkIds)
-               if (itemData) itemData.forEach(oi => orderedProductIds.add(oi.product_id))
-            }
         }
-        const strIdList = Array.from(orderedProductIds).join(',')
-
-        // === 2단계: 상품 조회 + CRM 태그를 병렬 실행 ===
-        let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
-        if (searchScope === "today") {
-            if (currentDate === "상시판매") {
-                pQuery = strIdList.length > 0 ? pQuery.or(`is_regular_sale.eq.true,id.in.(${strIdList})`) : pQuery.eq('is_regular_sale', true)
-            } else {
-                pQuery = strIdList.length > 0 ? pQuery.or(`target_date.eq.${currentDate},id.in.(${strIdList})`) : pQuery.eq('target_date', currentDate)
-            }
-        } else if (searchScope === "date_range") {
-            if (strIdList.length > 0) pQuery = pQuery.or(`id.in.(${strIdList}),is_regular_sale.eq.true`)
+        let allProductData = pResult.data || []
+        if (missingIds.length > 0) {
+            const uniqueMissing = [...new Set(missingIds)]
+            const { data: extraProducts } = await supabase.from('products').select('id,collect_name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).in('id', uniqueMissing)
+            if (extraProducts) allProductData = [...allProductData, ...extraProducts]
         }
-
-        const [pResult, settingsResult] = await Promise.all([
-            pQuery.limit(5000),
-            supabase.from('store_settings').select('crm_tags').eq('store_id', storeId).single()
-        ])
-
-        const mappedProducts = (pResult.data || []).map(p => ({
+        const mappedProducts = allProductData.map((p: any) => ({
             id: p.id,
-            name: p.collect_name || p.name || "(이름없음)",
+            name: p.collect_name || "(이름없음)",
             price: p.price || 0,
             required: p.is_hidden ? 0 : (p.allocated_stock || 0),
             stock: p.is_hidden ? 0 : (p.allocated_stock || 0),
@@ -408,7 +447,10 @@ export default function PickupCalendarPage() {
             })
 
             setRawCustomers(mappedCustomers)
+            setPickupCache(cacheKey, mappedCustomers, mappedProducts, availableDates)
             setIsLoading(false)
+            // 전후 날짜 백그라운드 프리페치 (현재 데이터 로드 후 1초 뒤 실행하여 UI 블로킹 방지)
+            setTimeout(() => prefetchAdjacentDates(currentDate, latestDates, storeId), 1000)
             return
         }
 
@@ -418,7 +460,7 @@ export default function PickupCalendarPage() {
         const CHUNK_SIZE = 30
         for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
             const chunk = orderIds.slice(i, i + CHUNK_SIZE)
-            const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk)
+            const { data: chunkData } = await supabase.from('order_items').select('order_id,product_id,quantity').in('order_id', chunk)
             if (chunkData) orderItems = orderItems.concat(chunkData)
         }
 
@@ -452,8 +494,59 @@ export default function PickupCalendarPage() {
         })
 
         setRawCustomers(mappedCustomersLegacy)
+        setPickupCache(cacheKey, mappedCustomersLegacy, mappedProducts, availableDates)
         setIsLoading(false)
     }
+
+    // 전후 날짜 프리페치 (백그라운드에서 조용히 실행)
+    const prefetchAdjacentDates = useCallback(async (currentDateStr: string, dates: string[], storeIdStr: string) => {
+        if (searchScope !== "today" || currentDateStr === "상시판매") return
+        const idx = dates.indexOf(currentDateStr)
+        if (idx === -1) return
+
+        const adjacentDates = [dates[idx - 1], dates[idx + 1]].filter(Boolean)
+        for (const adjDate of adjacentDates) {
+            if (adjDate === "상시판매") continue // 상시판매는 프리페치 스킵
+            const key = makeCacheKey(storeIdStr, "today", adjDate, "", "", "")
+            if (getPickupCache(key)) continue // 이미 캐시에 있으면 스킵
+
+            try {
+                const [rpcRes, crmRes] = await Promise.all([
+                    supabase.rpc('get_matrix_orders', { p_store_id: storeIdStr, p_pickup_date: adjDate, p_start_date: null, p_end_date: null }).limit(5000),
+                    supabase.from('store_settings').select('crm_tags').eq('store_id', storeIdStr).single()
+                ])
+                if (!isMountedRef.current) return
+                const adjOrders = rpcRes.data || []
+                const adjOrderedIds = new Set<string>()
+                adjOrders.forEach((o: any) => { if (o.items) o.items.forEach((oi: any) => adjOrderedIds.add(oi.product_id)) })
+                const adjIdList = Array.from(adjOrderedIds).join(',')
+
+                let adjPQuery = supabase.from('products').select('id,collect_name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeIdStr).eq('is_hidden', false)
+                adjPQuery = adjIdList.length > 0 ? adjPQuery.or(`target_date.eq.${adjDate},id.in.(${adjIdList})`) : adjPQuery.eq('target_date', adjDate)
+                const adjPResult = await adjPQuery.limit(5000)
+                if (!isMountedRef.current) return
+
+                const adjProducts = (adjPResult.data || []).map((p: any) => ({
+                    id: p.id, name: p.collect_name || "(이름없음)", price: p.price || 0,
+                    required: p.is_hidden ? 0 : (p.allocated_stock || 0), stock: p.is_hidden ? 0 : (p.allocated_stock || 0),
+                    target_date: p.target_date, is_regular_sale: p.is_regular_sale,
+                    product_memo: p.product_memo || "", tiered_prices: p.tiered_prices || [], unit_text: p.unit_text || ""
+                }))
+
+                const adjCrmList = crmRes.data?.crm_tags?.filter((t: any) => t.type === 'crm') || []
+                const adjCrmDict = adjCrmList.reduce((acc: any, t: any) => { acc[t.name] = { category: t.category, memo: t.memo }; return acc }, {})
+
+                const adjProductIdxMap = new Map<string, number>()
+                adjProducts.forEach((p: any, i: number) => adjProductIdxMap.set(p.id, i))
+                const adjCustomers = adjOrders.map((o: any, index: number) => {
+                    const itemsArray = new Array(adjProducts.length).fill(0)
+                    if (o.items) { for (const oi of o.items) { const idx = adjProductIdxMap.get(oi.product_id); if (idx !== undefined) itemsArray[idx] = oi.quantity } }
+                    return { id: o.id, name: o.customer_nickname, items: itemsArray, memo1: o.customer_memo_1 || "", memo2: o.customer_memo_2 || "", crm: adjCrmDict[o.customer_nickname] || null, checked: o.is_received || false, pickup_date: o.pickup_date, originalIndex: index }
+                })
+                setPickupCache(key, adjCustomers, adjProducts, dates)
+            } catch { /* 프리페치 실패는 무시 */ }
+        }
+    }, [searchScope])
 
     const toggleDeleteSelect = (id: string) => {
         setSelectedDeleteIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
@@ -475,7 +568,7 @@ export default function PickupCalendarPage() {
         alert(`총 ${selectedDeleteIds.length}개의 주문이 일괄 삭제되었습니다.`);
         setIsDeleteMode(false);
         setSelectedDeleteIds([]);
-        fetchMatrixData();
+        fetchMatrixData(true);
     }
 
     const handleDeleteReceivedOrders = async () => {
@@ -578,7 +671,7 @@ export default function PickupCalendarPage() {
             }
 
             alert(`${dateLabel}의 수령제품 ${receivedOrders.length}건 삭제 완료.\n백업 엑셀이 다운로드됐습니다.\n복원 시 '더보기(⋮) → 엑셀 일괄 등록' 메뉴로 재업로드하세요.`)
-            await fetchMatrixData()
+            await fetchMatrixData(true)
         } catch (e: any) {
             console.error(e)
             alert("삭제 중 오류: " + (e?.message || e))
@@ -755,7 +848,7 @@ export default function PickupCalendarPage() {
 
             setUploadProgress({ current: 100, total: 100, isUploading: true })
             alert(`완료! 총 ${successCount}건의 개별 주문 내역이 묶임 없이 원본 그대로 성공적으로 일괄 업로드되었습니다.`)
-            fetchMatrixData()
+            fetchMatrixData(true)
         } catch (err: any) {
             console.error("Excel import error:", err)
             alert(`처리 중 에러가 발생했습니다: ${err.message}`)
@@ -795,7 +888,7 @@ export default function PickupCalendarPage() {
                     await supabase.from('order_items').insert({ order_id: orderId, product_id: targetProduct.id, quantity: validQty })
                 }
             }
-            await fetchMatrixData()
+            await fetchMatrixData(true)
         } catch (e) {
             console.error("Update quantity error", e)
             alert("수량 변경 중 오류가 발생했습니다.")
@@ -905,7 +998,7 @@ export default function PickupCalendarPage() {
             alert("✅ 이관 및 상품 동기화 반영이 완료되었습니다.")
         }
         setIsTransferModalOpen(false)
-        fetchMatrixData()
+        fetchMatrixData(true)
     }
 
     const handleAddOrder = async () => {
@@ -935,7 +1028,7 @@ export default function PickupCalendarPage() {
             })
             setNewNick("")
             setNewQty("")
-            fetchMatrixData()
+            fetchMatrixData(true)
         } else {
             alert("주문 추가 실패: " + oErr?.message)
             setIsLoading(false)
@@ -973,7 +1066,7 @@ export default function PickupCalendarPage() {
             setIsAddingRow(false)
             setAddRowNick("")
             setAddRowQtys({})
-            fetchMatrixData()
+            fetchMatrixData(true)
         } else {
             alert("주문 추가 실패: " + oErr?.message)
             setIsLoading(false)
@@ -1038,7 +1131,7 @@ export default function PickupCalendarPage() {
             alert(`${currentDate} 일자 데이터가 성공적으로 숨김 처리되었습니다.`);
             
             // Re-fetch data
-            await fetchMatrixData();
+            await fetchMatrixData(true);
             
         } catch (error: any) {
             console.error("Bulk hide by date error:", error);
@@ -1077,7 +1170,7 @@ export default function PickupCalendarPage() {
             alert(`${currentDate} 일자의 데이터가 성공적으로 복구(숨김 해제)되었습니다.`);
             
             // Re-fetch data
-            await fetchMatrixData();
+            await fetchMatrixData(true);
             
         } catch (error: any) {
             console.error("Bulk unhide by date error:", error);
@@ -1372,10 +1465,9 @@ export default function PickupCalendarPage() {
             )}
 
             <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-bold tracking-tight">주문관리</h2>
-                <div className="flex items-start gap-2 p-3 rounded-md border border-amber-200 bg-amber-50 text-amber-900 text-sm font-medium shadow-sm">
-                    <span className="shrink-0">📢</span>
-                    <span>주문정보가 많아지면 기능이 저하될 수 있습니다. 수령 완료된 과거 주문은 주기적으로 삭제해주세요.</span>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-2xl font-bold tracking-tight">주문관리</h2>
+                    <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 font-medium">📢 주문정보가 많아지면 기능이 저하될 수 있습니다. 수령 완료된 과거 주문은 주기적으로 삭제해주세요.</span>
                 </div>
             </div>
 
@@ -1444,46 +1536,9 @@ export default function PickupCalendarPage() {
                     </div>
 
                     <div className="flex flex-col gap-2 w-full bg-muted/30 p-1.5 rounded-md border shrink-0">
-                        <div className="flex items-center gap-2 w-full">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder={
-                                        searchField === "nickname" ? "닉네임 입력 후 엔터 또는 🔍 클릭"
-                                        : searchField === "product" ? "상품명 입력 후 엔터 또는 🔍 클릭"
-                                        : searchField === "memo" ? "비고 입력 후 엔터 또는 🔍 클릭"
-                                        : (searchScope === "all_dates" ? "닉네임 또는 상품명 입력 후 엔터 또는 🔍 클릭" : "닉네임, 상품명, 비고 입력 후 엔터 또는 🔍 클릭")
-                                    }
-                                    className="pl-9 bg-white h-10 w-full shadow-sm pr-3"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === "Enter") setActiveSearchTerm(searchTerm) }}
-                                />
-                            </div>
-                            <Button
-                                type="button"
-                                onClick={() => setActiveSearchTerm(searchTerm)}
-                                className="h-10 w-10 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm p-0"
-                                title="검색"
-                            >
-                                <Search className="h-4 w-4" />
-                            </Button>
-                            {activeSearchTerm && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => { setActiveSearchTerm(""); setSearchTerm("") }}
-                                    className="h-10 px-3 shrink-0 shadow-sm"
-                                    title="검색어 초기화"
-                                >
-                                    초기화
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <Select value={searchScope} onValueChange={setSearchScope}>
-                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[130px] h-10 bg-white border-muted shadow-sm font-medium shrink-0">
+                                <SelectTrigger className="w-[120px] h-9 bg-white border-muted shadow-sm font-medium text-xs shrink-0">
                                     <SelectValue placeholder="검색 범위" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1494,7 +1549,7 @@ export default function PickupCalendarPage() {
                             </Select>
 
                             <Select value={receiptFilter} onValueChange={setReceiptFilter}>
-                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[120px] h-10 bg-white border-muted shadow-sm font-medium">
+                                <SelectTrigger className="w-[95px] h-9 bg-white border-muted shadow-sm font-medium text-xs shrink-0">
                                     <SelectValue placeholder="수령 상태" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1505,7 +1560,7 @@ export default function PickupCalendarPage() {
                             </Select>
 
                             <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
-                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[130px] h-10 bg-indigo-50 border-indigo-200 shadow-sm font-bold text-indigo-700 shrink-0">
+                                <SelectTrigger className="w-[110px] h-9 bg-indigo-50 border-indigo-200 shadow-sm font-bold text-indigo-700 text-xs shrink-0">
                                     <SelectValue placeholder="정렬 방식" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1515,7 +1570,7 @@ export default function PickupCalendarPage() {
                             </Select>
 
                             <Select value={searchField} onValueChange={(v: any) => setSearchField(v)}>
-                                <SelectTrigger className="w-[calc(50%-4px)] sm:w-[110px] h-10 bg-white border-muted shadow-sm font-medium shrink-0">
+                                <SelectTrigger className="w-[80px] h-9 bg-white border-muted shadow-sm font-medium text-xs shrink-0">
                                     <SelectValue placeholder="검색 항목" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1525,6 +1580,94 @@ export default function PickupCalendarPage() {
                                     <SelectItem value="memo">비고</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            <div className="relative flex-1 min-w-[120px]">
+                                <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder={searchScope === "all_dates" ? "닉네임/상품명 검색" : "검색어 입력"}
+                                    className="pl-8 bg-white h-9 w-full shadow-sm pr-2 text-xs"
+                                    value={searchTerm}
+                                    onChange={(e) => { setSearchTerm(e.target.value); if (e.target.value === "") setActiveSearchTerm("") }}
+                                    onKeyDown={(e) => { if (e.key === "Enter") setActiveSearchTerm(searchTerm) }}
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={() => setActiveSearchTerm(searchTerm)}
+                                className="h-9 w-9 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm p-0"
+                                title="검색"
+                            >
+                                <Search className="h-3.5 w-3.5" />
+                            </Button>
+                            {activeSearchTerm && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => { setActiveSearchTerm(""); setSearchTerm("") }}
+                                    className="h-9 px-2 shrink-0 shadow-sm text-xs"
+                                    title="검색어 초기화"
+                                >
+                                    초기화
+                                </Button>
+                            )}
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-9 px-2 shadow-sm border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shrink-0 outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 gap-1 text-xs font-semibold">
+                                        <MoreVertical className="h-4 w-4" /> 추가기능
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 font-sans">
+                                    <DropdownMenuLabel>주문 관리</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsManualOrderModalOpen(true); }} className="gap-2 cursor-pointer font-medium text-indigo-700 focus:text-indigo-800 focus:bg-indigo-50">
+                                        <PlusCircle className="h-4 w-4" /> 수동 주문등록
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsMerged(!isMerged); }} className={`gap-2 cursor-pointer font-medium ${isMerged ? 'text-indigo-700 focus:text-indigo-800 focus:bg-indigo-50' : ''}`}>
+                                        <ListCollapse className="h-4 w-4" /> {isMerged ? "✓ 이름합치기 해제" : "이름합치기"}
+                                    </DropdownMenuItem>
+                                    {isDeleteMode ? (
+                                        <>
+                                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsDeleteMode(false); setSelectedDeleteIds([]); }} className="gap-2 cursor-pointer font-medium">
+                                                <Trash2 className="h-4 w-4 text-slate-500" /> 삭제모드 취소
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); executeBulkDelete(); }} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700 focus:bg-rose-50">
+                                                <Trash2 className="h-4 w-4" /> 선택 삭제 ({selectedDeleteIds.length})
+                                            </DropdownMenuItem>
+                                        </>
+                                    ) : (
+                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsDeleteMode(true); }} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700 focus:bg-rose-50">
+                                            <Trash2 className="h-4 w-4" /> 삭제 모드
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDeleteReceivedOrders(); }} className="gap-2 cursor-pointer font-medium text-amber-700 focus:text-amber-800 focus:bg-amber-50">
+                                        <Trash2 className="h-4 w-4" /> 수령제품 삭제
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>데이터 관리</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); fileInputRef.current?.click(); }} className="gap-2 cursor-pointer font-medium">
+                                        <UploadCloud className="h-4 w-4 text-emerald-600" /> 엑셀 일괄 등록
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleExportExcel(); }} className="gap-2 cursor-pointer font-medium">
+                                        <DownloadCloud className="h-4 w-4 text-emerald-600" /> 현재 날짜 추출 (엑셀)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDownloadTemplate(); }} className="gap-2 cursor-pointer text-slate-500">
+                                        <DownloadCloud className="h-4 w-4" /> 엑셀 양식 다운로드
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>고급 기능</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsTransferModalOpen(true); }} className="gap-2 cursor-pointer font-medium text-amber-700 focus:text-amber-800 focus:bg-amber-50">
+                                        <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 일괄 변경
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleHideDataByDate(); }} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700 focus:bg-rose-50">
+                                        <Trash2 className="h-4 w-4" /> 해당 일자 전체 숨김
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleUnhideDataByDate(); }} className="gap-2 cursor-pointer font-medium text-indigo-600 focus:text-indigo-700 focus:bg-indigo-50">
+                                        <ListCollapse className="h-4 w-4" /> 해당 일자 전체 숨김 해제 (복구)
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
 
                         {searchScope === "date_range" && (
@@ -1564,114 +1707,72 @@ export default function PickupCalendarPage() {
                     </div>
                 </div>
 
-                {/* 2번째 줄: 핵심 액션 버튼 (수동추가, 삭제, 병합) + 더보기 메뉴 */}
-                <div className={`flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 border-t pt-4 border-slate-200/60 mt-2 ${isMobile ? 'hidden' : ''}`}>
-
-                    <GuideBadge text="닉네임과 상품명, 수량을 직접 입력할 수 있어요.">
-                    <div className="flex flex-col sm:flex-row items-center gap-2 bg-indigo-50/50 p-1.5 rounded-md border border-indigo-100 shadow-sm w-full xl:w-auto xl:mr-auto">
-                        <span className="text-sm font-bold flex items-center gap-1.5 min-w-[max-content] text-indigo-900 border-r border-indigo-200 px-2 shrink-0">
-                            <PlusCircle className="h-4 w-4" /> 수동 주문등록
-                        </span>
-                        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                            <Input type="date" value={newDate || currentDate} onChange={e => { setNewDate(e.target.value); setNewProductId(""); }} className="w-[125px] h-9 bg-white shadow-sm shrink-0 px-2" />
-                            <Input placeholder="닉네임" value={newNick} onChange={e => setNewNick(e.target.value)} className="w-[85px] h-9 bg-white shadow-sm shrink-0 px-2" />
-                            <Select value={newProductId} onValueChange={setNewProductId}>
-                                <SelectTrigger className="w-[130px] h-9 bg-white shadow-sm shrink-0 px-2">
-                                    <SelectValue placeholder="상품명" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {manualOrderProducts
-                                        .sort((a, b) => {
-                                            const active = newDate || currentDate;
-                                            const aIsTarget = a.target_date === active;
-                                            const bIsTarget = b.target_date === active;
-                                            if (aIsTarget && !bIsTarget) return -1;
-                                            if (!aIsTarget && bIsTarget) return 1;
-                                            return a.name.localeCompare(b.name, 'ko-KR');
-                                        })
-                                        .map((p) => {
-                                            const active = newDate || currentDate;
-                                            const isTarget = p.target_date === active;
-                                            const label = isTarget ? `[해당일] ${p.name}` : `[상시] ${p.name}`;
-                                            return (
-                                                <SelectItem key={p.id} value={p.id}>{label}</SelectItem>
-                                            );
-                                        })}
-                                </SelectContent>
-                            </Select>
-                            <Input type="number" placeholder="수량" value={newQty} onChange={e => setNewQty(e.target.value)} className="w-[60px] h-9 bg-white shadow-sm shrink-0 px-2" min="1" />
-                            <Button onClick={handleAddOrder} size="sm" className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white min-w-[50px] shadow-sm shrink-0 px-3">
-                                등록
-                            </Button>
-                        </div>
-                    </div>
-                    </GuideBadge>
-
-                    {/* 우측 핵심 버튼 그룹 */}
-                    <div className="flex w-full sm:w-auto gap-2 items-center xl:justify-end">
-                        <GuideBadge text="버튼을 누르면 주문을 삭제할 수 있는 체크박스가 보여요. 체크박스를 체크한 후 삭제버튼을 클릭하면 주문이 삭제가되요.">
-                        <div className="flex gap-2 w-full sm:w-auto">
-                        {isDeleteMode ? (
-                            <>
-                                <Button variant="outline" onClick={() => { setIsDeleteMode(false); setSelectedDeleteIds([]); }} className="h-10 px-3 w-full sm:w-auto shadow-sm">취소</Button>
-                                <Button variant="destructive" onClick={executeBulkDelete} className="h-10 px-3 w-full sm:w-auto shadow-sm gap-1.5 font-bold">
-                                    <Trash2 className="h-4 w-4" /> 선택 삭제 ({selectedDeleteIds.length})
-                                </Button>
-                            </>
-                        ) : (
-                            <Button variant="outline" onClick={() => setIsDeleteMode(true)} className="gap-2 shadow-sm border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all h-10 w-full sm:w-auto px-3 font-semibold">
-                                <Trash2 className="h-4 w-4" /> 삭제 모드
-                            </Button>
-                        )}
-                        <Button variant="outline" onClick={handleDeleteReceivedOrders} className="gap-2 shadow-sm border border-amber-300 text-amber-700 hover:bg-amber-50 transition-all h-10 w-full sm:w-auto px-3 font-semibold">
-                            <Trash2 className="h-4 w-4" /> 수령제품 삭제
+                {/* 삭제 모드 활성화 시 인라인 알림 */}
+                {isDeleteMode && !isMobile && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-rose-300 bg-rose-50 text-rose-800 text-sm font-bold shadow-sm">
+                        <Trash2 className="h-4 w-4" />
+                        <span>삭제 모드 — 삭제할 주문을 체크하세요</span>
+                        <Button variant="destructive" size="sm" onClick={executeBulkDelete} className="h-7 px-2 text-xs ml-auto gap-1">
+                            <Trash2 className="h-3 w-3" /> 선택 삭제 ({selectedDeleteIds.length})
                         </Button>
-                        </div>
-                        </GuideBadge>
-                        <GuideBadge text="1명의 여러상품을 주문했을 때 여러줄이 한줄로 합칠 수 있어요. 물론 다시 분리할수도 있어요.">
-                        <Button
-                            variant={isMerged ? "default" : "outline"}
-                            className={`gap-2 shadow-sm border transition-all h-10 w-full sm:w-auto px-3 font-semibold ${isMerged ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
-                            onClick={() => setIsMerged(!isMerged)}
-                        >
-                            <ListCollapse className="h-4 w-4" /> {isMerged ? "병합 취소" : "이름 합치기"}
+                        <Button variant="outline" size="sm" onClick={() => { setIsDeleteMode(false); setSelectedDeleteIds([]); }} className="h-7 px-2 text-xs">
+                            취소
                         </Button>
-                        </GuideBadge>
-
-                        {/* 더보기 (추가 작업) 드롭다운 */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="h-10 px-2 shadow-sm border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shrink-0 outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                                    <MoreVertical className="h-5 w-5" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 font-sans">
-                                <DropdownMenuLabel>데이터 관리</DropdownMenuLabel>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); fileInputRef.current?.click(); }} className="gap-2 cursor-pointer font-medium">
-                                    <UploadCloud className="h-4 w-4 text-emerald-600" /> 엑셀 일괄 등록
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleExportExcel(); }} className="gap-2 cursor-pointer font-medium">
-                                    <DownloadCloud className="h-4 w-4 text-emerald-600" /> 현재 날짜 추출 (엑셀)
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDownloadTemplate(); }} className="gap-2 cursor-pointer text-slate-500">
-                                    <DownloadCloud className="h-4 w-4" /> 엑셀 양식 다운로드
-                                </DropdownMenuItem>
-
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel>고급 기능</DropdownMenuLabel>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsTransferModalOpen(true); }} className="gap-2 cursor-pointer font-medium text-amber-700 focus:text-amber-800 focus:bg-amber-50">
-                                    <ArrowRightLeft className="h-4 w-4" /> 상품 픽업일 일괄 변경
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleHideDataByDate(); }} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700 focus:bg-rose-50">
-                                    <Trash2 className="h-4 w-4" /> 해당 일자 전체 숨김
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleUnhideDataByDate(); }} className="gap-2 cursor-pointer font-medium text-indigo-600 focus:text-indigo-700 focus:bg-indigo-50">
-                                    <ListCollapse className="h-4 w-4" /> 해당 일자 전체 숨김 해제 (복구)
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
                     </div>
-                </div>
+                )}
+
+                {/* 수동 주문등록 모달 */}
+                <Dialog open={isManualOrderModalOpen} onOpenChange={setIsManualOrderModalOpen}>
+                    <DialogContent className="sm:max-w-[420px]">
+                        <DialogHeader>
+                            <DialogTitle>수동 주문등록</DialogTitle>
+                            <DialogDescription>닉네임과 상품, 수량을 입력하여 주문을 등록합니다.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">픽업 날짜</label>
+                                <Input type="date" value={newDate || currentDate} onChange={e => { setNewDate(e.target.value); setNewProductId(""); }} className="bg-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">닉네임</label>
+                                <Input placeholder="닉네임 입력" value={newNick} onChange={e => setNewNick(e.target.value)} className="bg-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">상품 선택</label>
+                                <Select value={newProductId} onValueChange={setNewProductId}>
+                                    <SelectTrigger className="bg-white">
+                                        <SelectValue placeholder="상품을 선택하세요" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {manualOrderProducts
+                                            .sort((a, b) => {
+                                                const active = newDate || currentDate;
+                                                const aIsTarget = a.target_date === active;
+                                                const bIsTarget = b.target_date === active;
+                                                if (aIsTarget && !bIsTarget) return -1;
+                                                if (!aIsTarget && bIsTarget) return 1;
+                                                return a.name.localeCompare(b.name, 'ko-KR');
+                                            })
+                                            .map((p) => {
+                                                const active = newDate || currentDate;
+                                                const isTarget = p.target_date === active;
+                                                const label = isTarget ? `[해당일] ${p.name}` : `[상시] ${p.name}`;
+                                                return <SelectItem key={p.id} value={p.id}>{label}</SelectItem>;
+                                            })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">수량</label>
+                                <Input type="number" placeholder="수량" value={newQty} onChange={e => setNewQty(e.target.value)} className="bg-white" min="1" />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsManualOrderModalOpen(false)}>취소</Button>
+                            <Button onClick={() => { handleAddOrder(); setIsManualOrderModalOpen(false); }} className="bg-indigo-600 hover:bg-indigo-700 text-white">등록</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 {/* 숨겨진 픽업일 변경 모달 (Trigger 없이 수동 제어) */}
                 <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
@@ -1774,10 +1875,10 @@ export default function PickupCalendarPage() {
             ) : (
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
                 <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 240px)" }}>
-                    <table className="w-full text-sm text-center border-collapse min-w-max relative">
+                    <table className="w-max text-sm text-center border-collapse relative">
                         <thead className="bg-muted/90 sticky top-0 z-30 shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
-                                <th rowSpan={6} className={`border-b border-r p-3 whitespace-nowrap text-xs sm:text-sm ${getStickyClasses('name').th}`}>
+                                <th rowSpan={4} className={`border-b border-r p-3 whitespace-nowrap text-xs sm:text-sm ${getStickyClasses('name').th}`}>
                                     <div className="flex items-center gap-2 font-semibold">
                                         {posSyncEnabled && (
                                             <Checkbox 
@@ -1791,9 +1892,9 @@ export default function PickupCalendarPage() {
                                         <span>고객 닉네임</span>
                                     </div>
                                 </th>
-                                <th rowSpan={6} className={`border-b border-r px-1 sm:px-2 py-3 whitespace-nowrap align-bottom pb-4 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
-                                {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
-                                <th rowSpan={6} className={`border-b border-r px-2 py-0 align-bottom pb-4 ${getStickyClasses('summary').th}`}>
+                                <th rowSpan={4} className={`border-b border-r px-1 sm:px-2 py-3 whitespace-nowrap align-bottom pb-4 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
+                                {isDeleteMode && <th rowSpan={4} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
+                                <th rowSpan={4} className={`border-b border-r px-2 py-0 align-bottom pb-4 ${getStickyClasses('summary').th}`}>
                                     <div className="flex flex-col h-full items-center justify-end pb-0 gap-2">
                                         <div className="flex flex-col gap-0.5 text-[11px] font-medium text-slate-600 bg-slate-50/80 px-2 py-1.5 rounded w-full min-w-[70px] border shadow-sm ring-1 ring-slate-900/5 mt-2">
                                             <div className="text-slate-800 font-bold border-b border-slate-200 pb-0.5 mb-0.5 tracking-tight">총 {filteredCustomers.length}건</div>
@@ -1805,86 +1906,82 @@ export default function PickupCalendarPage() {
                                 </th>
                                 <th rowSpan={2} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
                                 <th rowSpan={2} className={`border-b border-r p-0 align-bottom bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
-                                    <GuideBadge text="고객이 수령일 변경을 원할 경우 고객찜에 입력을 하면 남은+미체크에 숫자가 변경이 되요." className="w-full h-full p-2 pb-4">
-                                        <div className="flex flex-col items-center justify-end h-full gap-1 font-bold text-indigo-900 leading-none">
-                                            <span>고객 비고 1</span>
-                                            <span className="text-[11px] text-indigo-700/80">(고객찜)</span>
+                                    <GuideBadge text="고객이 수령일 변경을 원할 경우 고객찜에 입력을 하면 매장재고에 숫자가 변경이 되요." className="w-full h-full p-1 pb-3">
+                                        <div className="flex items-center justify-center h-full gap-1 font-bold text-indigo-900 leading-none">
+                                            <span className="text-[11px]">비고</span>
+                                            <span className="text-[11px] text-indigo-700/80">찜</span>
                                         </div>
                                     </GuideBadge>
                                 </th>
-                                {displayProducts.map((p, i) => <th key={p.id || i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors" /></th>)}
+                                {displayProducts.map((p, i) => <th key={p.id || i} className="border-b border-r p-0.5 bg-amber-50/80 font-normal"><Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="비고" className="h-6 w-full min-w-0 text-[11px] text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors px-1" /></th>)}
                             </tr>
                             <tr>
                                 {displayProducts.map((p, i) => (
-                                    <th key={p.id || i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
-                                        <div className="flex flex-col items-center justify-center gap-0.5">
+                                    <th key={p.id || i} className="border-b border-r px-1 py-1.5 font-bold text-[13px] whitespace-nowrap bg-muted/80">
+                                        <div className="flex flex-col items-center justify-center gap-0">
                                             <span>{p.name}</span>
-                                        </div>
-                                        <div className="flex items-center justify-center gap-1 mt-1.5">
-                                            <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-6 w-[70px] text-[12px] font-mono text-center px-1 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
-                                            <span className="text-[12px] text-muted-foreground font-normal">원</span>
+                                            <div className="flex items-center justify-center gap-0.5 mt-1">
+                                                <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-5 w-[60px] text-[11px] font-mono text-center px-0.5 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
+                                                <span className="text-[11px] text-muted-foreground font-normal">원</span>
+                                            </div>
                                         </div>
                                     </th>
                                 ))}
                             </tr>
                             <tr>
-                                <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-blue-900 bg-white ${getStickyClasses('price').th}`}>
-                                    {displayProducts.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}
+                                <th className={`border-b border-r py-1.5 px-1 bg-white ${getStickyClasses('price').th}`}>
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className="text-[12px] font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded">{displayProducts.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}</span>
+                                        <span className="text-[12px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0), 0).toLocaleString()}</span>
+                                    </div>
                                 </th>
-                                <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-blue-900 tracking-tight bg-blue-100/95 ${getStickyClasses('memo').th}`}>발주수량</th>
-                                {displayProducts.map((p, di) => (
-                                    <th key={p.id || di} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
-                                        <Input type="number" defaultValue={p.stock} onBlur={(e) => handleUpdateProductField(p.id, 'allocated_stock', e.target.value)} className="h-6 w-[50px] text-[13px] font-bold text-center px-1 py-0 mx-auto border-blue-200 bg-white text-blue-800 shadow-sm" title="수량을 수정하고 바깥을 클릭하면 저장됩니다" />
-                                    </th>
-                                ))}
-                            </tr>
-                            <tr>
-                                <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-slate-800 bg-white ${getStickyClasses('price').th}`}>
-                                    {activeProductIndices.reduce((acc, oi) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0), 0).toLocaleString()}
+                                <th className={`border-b border-r py-1.5 px-1 ${getStickyClasses('memo').th}`}>
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-1.5 py-0.5 rounded">발주</span>
+                                        <span className="text-[11px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.5 rounded">주문</span>
+                                    </div>
                                 </th>
-                                <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-slate-800 tracking-tight bg-slate-200/95 ${getStickyClasses('memo').th}`}>합계수량</th>
                                 {activeProductIndices.map((oi, di) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                     return (
-                                        <th key={di} className="border-b border-r py-2 px-1 bg-slate-50/80 text-[13px] font-semibold text-slate-700">
-                                            {orderSum}
+                                        <th key={di} className="border-b border-r py-1 px-0.5 bg-white">
+                                            <div className="flex items-center justify-center gap-0">
+                                                <Input type="number" defaultValue={products[oi].stock} onBlur={(e) => handleUpdateProductField(displayProducts[di].id, 'allocated_stock', e.target.value)} className="h-5 w-[50px] text-[11px] font-bold text-center px-0.5 py-0 border-blue-200 bg-blue-50/60 text-blue-800 shadow-sm" title="발주수량 수정" />
+                                                <span className="text-[12px] font-semibold text-slate-700 bg-slate-100 px-0.5 py-0.5 rounded min-w-[20px] text-center">{orderSum}</span>
+                                            </div>
                                         </th>
                                     )
                                 })}
                             </tr>
                             <tr>
-                                <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-amber-900 bg-white ${getStickyClasses('price').th}`}>
-                                    {activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0).toLocaleString()}
+                                <th className={`border-b border-r py-1.5 px-1 bg-white ${getStickyClasses('price').th}`}>
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className="text-[12px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0).toLocaleString()}</span>
+                                        <span className="text-[13px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => {
+                                            const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
+                                            const remaining = products[oi].stock - orderSum;
+                                            const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
+                                            return acc + (remaining + unreceivedSum);
+                                        }, 0).toLocaleString()}</span>
+                                    </div>
                                 </th>
-                                <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-amber-900 tracking-tight bg-amber-100/95 ${getStickyClasses('memo').th}`}>남은수량</th>
-                                {activeProductIndices.map((oi, di) => {
-                                    const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
-                                    const remaining = products[oi].stock - orderSum;
-                                    return (
-                                        <th key={di} className="border-b border-r py-2 px-1 bg-amber-50/40 text-[13px] font-bold text-amber-700">
-                                            {remaining}
-                                        </th>
-                                    )
-                                })}
-                            </tr>
-                            <tr>
-                                <th className={`border-b border-r py-2 px-1 text-[14px] font-extrabold text-emerald-900 bg-white ${getStickyClasses('price').th}`}>
-                                    {activeProductIndices.reduce((acc, oi) => {
-                                        const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
-                                        const remaining = products[oi].stock - orderSum;
-                                        const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
-                                        return acc + (remaining + unreceivedSum);
-                                    }, 0).toLocaleString()}
+                                <th className={`border-b border-r py-1.5 px-1 ${getStickyClasses('memo').th}`}>
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">미예약</span>
+                                        <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">매장재고</span>
+                                    </div>
                                 </th>
-                                <th className={`border-b border-r py-2 px-1 text-[11px] font-bold text-emerald-900 tracking-tighter leading-tight bg-emerald-100/95 ${getStickyClasses('memo').th}`}>남은+미체크</th>
                                 {activeProductIndices.map((oi, di) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                     const remaining = products[oi].stock - orderSum;
                                     const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                     const physicalTarget = remaining + unreceivedSum;
                                     return (
-                                        <th key={di} className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[14px] font-extrabold text-emerald-800 shadow-inner">
-                                            {physicalTarget}
+                                        <th key={di} className="border-b border-r py-1 px-0.5 bg-white">
+                                            <div className="flex items-center justify-center gap-0">
+                                                <span className="text-[12px] font-bold text-amber-700 bg-amber-50 px-0.5 py-0.5 rounded min-w-[20px] text-center">{remaining}</span>
+                                                <span className="text-[13px] font-extrabold text-emerald-800 bg-emerald-50 px-0.5 py-0.5 rounded min-w-[20px] text-center shadow-inner">{physicalTarget}</span>
+                                            </div>
                                         </th>
                                     )
                                 })}
@@ -1997,21 +2094,20 @@ export default function PickupCalendarPage() {
                                         <td className={`border-b border-r px-2 py-1 font-bold text-blue-900 shadow-inner ${getStickyClasses('price').td}`}>
                                             {activeProductIndices.reduce((total, oi) => total + calculateItemPrice(products[oi], c.items[oi] || 0), 0).toLocaleString()}원
                                         </td>
-                                        <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
-                                            <div className="flex flex-col gap-1 w-full relative">
+                                        <td className={`border-b border-r py-1 px-0.5 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
+                                            <div className="flex gap-0.5 w-full relative">
                                                 {editingMemo?.orderId === c.id && editingMemo?.type === 'memo1' ? (
-                                                    <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고 1" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
+                                                    <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고" className="h-6 text-[11px] bg-white border-primary px-1 text-center shadow-inner flex-1 min-w-0" />
                                                 ) : (
-                                                    <div onClick={() => setEditingMemo({ orderId: c.id, type: 'memo1' })} className={`h-7 text-xs border rounded-sm px-1 flex items-center justify-center cursor-pointer truncate ${c.memo1 ? 'bg-red-50 border-red-300 text-red-700 font-semibold hover:bg-red-100' : 'bg-white/70 border-slate-200 hover:bg-white'}`} title="클릭하여 편집">
-                                                        {c.memo1 || <span className="text-muted-foreground/50">비고 1</span>}
+                                                    <div onClick={() => setEditingMemo({ orderId: c.id, type: 'memo1' })} className={`h-6 text-[11px] border rounded-sm px-1 flex items-center justify-center cursor-pointer truncate flex-1 min-w-0 ${c.memo1 ? 'bg-red-50 border-red-300 text-red-700 font-semibold hover:bg-red-100' : 'bg-white/70 border-slate-200 hover:bg-white'}`} title="클릭하여 편집">
+                                                        {c.memo1 || <span className="text-muted-foreground/50 text-[10px]">비고</span>}
                                                     </div>
                                                 )}
-
                                                 {editingMemo?.orderId === c.id && editingMemo?.type === 'memo2' ? (
-                                                    <Input autoFocus defaultValue={c.memo2} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_2', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="고객찜" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
+                                                    <Input autoFocus defaultValue={c.memo2} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_2', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="찜" className="h-6 text-[11px] bg-white border-primary px-1 text-center shadow-inner flex-1 min-w-0" />
                                                 ) : (
-                                                    <div onClick={() => setEditingMemo({ orderId: c.id, type: 'memo2' })} className={`h-7 text-xs border rounded-sm px-1 flex items-center justify-center cursor-pointer truncate ${c.memo2 ? 'bg-red-50 border-red-300 text-red-700 font-semibold hover:bg-red-100' : 'bg-white/70 border-slate-200 hover:bg-white'}`} title="클릭하여 편집">
-                                                        {c.memo2 || <span className="text-muted-foreground/50">고객찜</span>}
+                                                    <div onClick={() => setEditingMemo({ orderId: c.id, type: 'memo2' })} className={`h-6 text-[11px] border rounded-sm px-1 flex items-center justify-center cursor-pointer truncate flex-1 min-w-0 ${c.memo2 ? 'bg-red-50 border-red-300 text-red-700 font-semibold hover:bg-red-100' : 'bg-white/70 border-slate-200 hover:bg-white'}`} title="클릭하여 편집">
+                                                        {c.memo2 || <span className="text-muted-foreground/50 text-[10px]">찜</span>}
                                                     </div>
                                                 )}
                                             </div>
