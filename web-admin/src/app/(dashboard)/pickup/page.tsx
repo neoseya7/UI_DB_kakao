@@ -1549,7 +1549,7 @@ export default function PickupCalendarPage() {
 
                         {searchScope === "date_range" && focusedDate && (
                             <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-sm font-bold shadow-sm">
-                                <span>🔍 {focusedDate} 만 보기 (기간검색 내 드릴다운)</span>
+                                <span>[{focusedDate}날짜만 검색되고 있습니다.]</span>
                                 <Button
                                     type="button"
                                     size="sm"
@@ -1557,7 +1557,7 @@ export default function PickupCalendarPage() {
                                     onClick={() => setFocusedDate(null)}
                                     className="h-7 px-2 text-xs bg-white border-amber-400 text-amber-800 hover:bg-amber-100"
                                 >
-                                    전체 기간 보기
+                                    설정기간주문보기
                                 </Button>
                             </div>
                         )}
