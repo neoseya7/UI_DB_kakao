@@ -171,6 +171,11 @@ export default function ProductsPage() {
         e.preventDefault()
         if (!storeId) return
 
+        if (!formData.collect_name.trim()) {
+            alert("수집상품명은 필수 입력 항목입니다.")
+            return
+        }
+
         const targetDateValue = formData.target_date || null;
         const isDuplicateName = products.some(p => 
             p.collect_name === formData.collect_name && 
@@ -609,7 +614,7 @@ export default function ProductsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="collect-name">수집상품명 <span className="text-destructive">*</span></Label>
-                                    <Input id="collect-name" placeholder="예: 바닐라마카롱5구" value={formData.collect_name} onChange={e => setFormData({ ...formData, collect_name: e.target.value })} required className="bg-muted/50 focus:bg-background" />
+                                    <Input id="collect-name" placeholder="예: 바닐라마카롱5구" value={formData.collect_name} onChange={e => setFormData({ ...formData, collect_name: e.target.value })} className="bg-muted/50 focus:bg-background" />
                                 </div>
                             </div>
 

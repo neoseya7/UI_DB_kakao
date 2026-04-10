@@ -165,100 +165,65 @@ export default function PickupTable(props: PickupViewProps) {
                                     <span>고객 닉네임</span>
                                 </div>
                             </th>
-                            <th rowSpan={6} className={`border-b border-r px-1 sm:px-2 py-3 whitespace-nowrap align-bottom pb-4 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
-                            {isDeleteMode && <th rowSpan={6} className={`border-b border-r px-2 py-3 whitespace-nowrap align-bottom pb-4 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
-                            <th rowSpan={6} className={`border-b border-r px-2 py-0 align-bottom pb-4 ${getStickyClasses('summary').th}`}>
-                                <div className="flex flex-col h-full items-center justify-end pb-0 gap-2">
-                                    <div className="flex flex-col gap-0.5 text-[11px] font-medium text-slate-600 bg-slate-50/80 px-2 py-1.5 rounded w-full min-w-[70px] border shadow-sm ring-1 ring-slate-900/5 mt-2">
-                                        <div className="text-slate-800 font-bold border-b border-slate-200 pb-0.5 mb-0.5 tracking-tight">총 {filteredCustomers.length}건</div>
-                                        <div className="text-emerald-700 font-semibold tracking-tight">수령: {filteredCustomers.filter(c => c.checked).length}</div>
-                                        <div className="text-rose-600 font-semibold tracking-tight">미수령: {filteredCustomers.filter(c => !c.checked).length}</div>
+                            <th rowSpan={2} className={`border-b border-r px-1 py-1 whitespace-nowrap align-bottom pb-1 text-[11px] sm:text-sm tracking-tighter sm:tracking-normal cursor-help ${getStickyClasses('receive').th}`} title="수령확인">수령</th>
+                            {isDeleteMode && <th rowSpan={2} className={`border-b border-r px-1 py-1 whitespace-nowrap align-bottom pb-1 ${getStickyClasses('delete').th}`}><span className="text-rose-600 font-bold">삭제</span></th>}
+                            <th rowSpan={2} className={`border-b border-r px-1 py-0 align-bottom pb-1 ${getStickyClasses('summary').th}`}>
+                                <div className="flex flex-col h-full items-center justify-end gap-1">
+                                    <div className="flex gap-1.5 text-[10px] font-medium text-slate-600">
+                                        <span className="text-slate-800 font-bold">{filteredCustomers.length}건</span>
+                                        <span className="text-emerald-700">수령{filteredCustomers.filter(c => c.checked).length}</span>
+                                        <span className="text-rose-600">미수령{filteredCustomers.filter(c => !c.checked).length}</span>
                                     </div>
-                                    <span className="text-sm font-bold text-slate-800">주문 상품 요약</span>
+                                    <span className="text-xs font-bold text-slate-800">주문요약</span>
                                 </div>
                             </th>
-                            <th rowSpan={2} className={`border-b border-r px-3 py-3 align-bottom pb-4 text-center ${getStickyClasses('price').th}`}>결제 금액</th>
+                            <th rowSpan={2} className={`border-b border-r px-1 py-1 align-bottom pb-1 text-center text-xs ${getStickyClasses('price').th}`}>결제금액</th>
                             <th rowSpan={2} className={`border-b border-r p-0 align-bottom bg-indigo-100/95 ${getStickyClasses('memo').th}`}>
-                                <GuideBadge text="고객이 수령일 변경을 원할 경우 고객찜에 입력을 하면 남은+미체크에 숫자가 변경이 되요." className="w-full h-full p-2 pb-4">
-                                    <div className="flex flex-col items-center justify-end h-full gap-1 font-bold text-indigo-900 leading-none">
-                                        <span>고객 비고 1</span>
-                                        <span className="text-[11px] text-indigo-700/80">(고객찜)</span>
+                                <GuideBadge text="고객이 수령일 변경을 원할 경우 고객찜에 입력을 하면 남은+미체크에 숫자가 변경이 되요." className="w-full h-full px-1 py-1">
+                                    <div className="flex flex-col items-center justify-end h-full font-bold text-indigo-900 leading-none text-xs">
+                                        <span>고객비고1</span>
+                                        <span className="text-[10px] text-indigo-700/80">(고객찜)</span>
                                     </div>
                                 </GuideBadge>
                             </th>
-                            {displayProducts.map((p, i) => <th key={p.id || i} className="border-b border-r p-1 bg-amber-50/80 font-normal"><Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="상품 비고 1" className="h-7 text-xs text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors" /></th>)}
-                        </tr>
-                        <tr>
                             {displayProducts.map((p, i) => (
-                                <th key={p.id || i} className="border-b border-r p-3 min-w-[140px] max-w-[400px] font-bold text-[15px] whitespace-nowrap bg-muted/80 resize-x overflow-x-auto overflow-y-hidden">
-                                    <div className="flex flex-col items-center justify-center gap-0.5">
-                                        <span>{p.name}</span>
+                                <th key={p.id || i} className="border-b border-r px-1 py-1 min-w-[120px] max-w-[400px] bg-muted/80">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <span className="font-bold text-[13px] whitespace-nowrap">{p.name}</span>
+                                        <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-5 w-[55px] text-[11px] font-mono text-center px-1 py-0 border-slate-300 bg-white shadow-sm" title="가격 수정" />
+                                        <span className="text-[10px] text-muted-foreground font-normal">원</span>
                                     </div>
-                                    <div className="flex items-center justify-center gap-1 mt-1.5">
-                                        <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-6 w-[70px] text-[12px] font-mono text-center px-1 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
-                                        <span className="text-[12px] text-muted-foreground font-normal">원</span>
-                                    </div>
+                                    <Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="비고" className="h-5 text-[10px] text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors px-1 mt-0.5" />
                                 </th>
                             ))}
                         </tr>
                         <tr>
-                            <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-blue-900 bg-white ${getStickyClasses('price').th}`}>
-                                {displayProducts.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}
+                            <th className={`border-b border-r py-0.5 px-1 bg-white ${getStickyClasses('price').th}`}>
+                                <div className="flex items-center justify-center gap-1 text-[10px]">
+                                    <span className="text-blue-800 font-bold">{displayProducts.reduce((acc, p) => acc + Number(p.stock || 0), 0)}</span>
+                                    <span className="text-slate-400">/</span>
+                                    <span className="text-slate-700 font-bold">{activeProductIndices.reduce((acc, oi) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0), 0)}</span>
+                                    <span className="text-slate-400">/</span>
+                                    <span className="text-emerald-800 font-extrabold">{activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0)}</span>
+                                </div>
                             </th>
-                            <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-blue-900 tracking-tight bg-blue-100/95 ${getStickyClasses('memo').th}`}>발주수량</th>
-                            {displayProducts.map((p, di) => (
-                                <th key={p.id || di} className="border-b border-r py-2 px-1 bg-blue-50/40 text-[13px] font-semibold text-blue-800">
-                                    <Input type="number" defaultValue={p.stock} onBlur={(e) => handleUpdateProductField(p.id, 'allocated_stock', e.target.value)} className="h-6 w-[50px] text-[13px] font-bold text-center px-1 py-0 mx-auto border-blue-200 bg-white text-blue-800 shadow-sm" title="수량을 수정하고 바깥을 클릭하면 저장됩니다" />
-                                </th>
-                            ))}
-                        </tr>
-                        <tr>
-                            <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-slate-800 bg-white ${getStickyClasses('price').th}`}>
-                                {activeProductIndices.reduce((acc, oi) => acc + rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0), 0).toLocaleString()}
+                            <th className={`border-b border-r py-0.5 px-0.5 ${getStickyClasses('memo').th}`}>
+                                <div className="flex items-center justify-center gap-1 text-[10px] font-bold">
+                                    <span className="text-blue-800 bg-blue-50 rounded px-1">발주</span>
+                                    <span className="text-slate-700 bg-slate-100 rounded px-1">주문</span>
+                                    <span className="text-emerald-800 bg-emerald-50 rounded px-1">재고</span>
+                                </div>
                             </th>
-                            <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-slate-800 tracking-tight bg-slate-200/95 ${getStickyClasses('memo').th}`}>합계수량</th>
-                            {activeProductIndices.map((oi, di) => {
-                                const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
-                                return (
-                                    <th key={di} className="border-b border-r py-2 px-1 bg-slate-50/80 text-[13px] font-semibold text-slate-700">
-                                        {orderSum}
-                                    </th>
-                                )
-                            })}
-                        </tr>
-                        <tr>
-                            <th className={`border-b border-r py-2 px-1 text-[13px] font-bold text-amber-900 bg-white ${getStickyClasses('price').th}`}>
-                                {activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0).toLocaleString()}
-                            </th>
-                            <th className={`border-b border-r py-2 px-1 text-[12px] font-bold text-amber-900 tracking-tight bg-amber-100/95 ${getStickyClasses('memo').th}`}>남은수량</th>
                             {activeProductIndices.map((oi, di) => {
                                 const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                 const remaining = products[oi].stock - orderSum;
                                 return (
-                                    <th key={di} className="border-b border-r py-2 px-1 bg-amber-50/40 text-[13px] font-bold text-amber-700">
-                                        {remaining}
-                                    </th>
-                                )
-                            })}
-                        </tr>
-                        <tr>
-                            <th className={`border-b border-r py-2 px-1 text-[14px] font-extrabold text-emerald-900 bg-white ${getStickyClasses('price').th}`}>
-                                {activeProductIndices.reduce((acc, oi) => {
-                                    const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
-                                    const remaining = products[oi].stock - orderSum;
-                                    const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
-                                    return acc + (remaining + unreceivedSum);
-                                }, 0).toLocaleString()}
-                            </th>
-                            <th className={`border-b border-r py-2 px-1 text-[11px] font-bold text-emerald-900 tracking-tighter leading-tight bg-emerald-100/95 ${getStickyClasses('memo').th}`}>남은+미체크</th>
-                            {activeProductIndices.map((oi, di) => {
-                                const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
-                                const remaining = products[oi].stock - orderSum;
-                                const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[oi] || 0), 0);
-                                const physicalTarget = remaining + unreceivedSum;
-                                return (
-                                    <th key={di} className="border-b border-r py-2 px-1 bg-emerald-50/60 text-[14px] font-extrabold text-emerald-800 shadow-inner">
-                                        {physicalTarget}
+                                    <th key={di} className="border-b border-r py-0.5 px-1">
+                                        <div className="flex items-center justify-center gap-1 text-[11px]">
+                                            <Input type="number" defaultValue={products[oi].stock} onBlur={(e) => handleUpdateProductField(products[oi].id, 'allocated_stock', e.target.value)} className="h-5 w-[38px] text-[11px] font-bold text-center px-0.5 py-0 border-blue-200 bg-white text-blue-800 shadow-sm" title="발주수량 수정" />
+                                            <span className="text-slate-700 font-semibold">{orderSum}</span>
+                                            <span className="text-emerald-800 font-extrabold">{remaining}</span>
+                                        </div>
                                     </th>
                                 )
                             })}

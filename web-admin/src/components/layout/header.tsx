@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Sidebar } from "./sidebar"
 import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useGuideMode } from "@/components/layout/guide-context"
 
 export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boolean; toggleSidebar?: () => void }) {
@@ -14,8 +14,10 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
     const [userId, setUserId] = useState<string | null>(null)
     const [storeName, setStoreName] = useState<string | null>(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isSheetOpen, setIsSheetOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
+    const pathname = usePathname()
     const { isGuideMode, toggleGuideMode } = useGuideMode()
 
     useEffect(() => {
@@ -33,6 +35,10 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
         }
         fetchUserData()
     }, [])
+
+    useEffect(() => {
+        setIsSheetOpen(false)
+    }, [pathname])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +67,7 @@ export function Header({ isSidebarOpen, toggleSidebar }: { isSidebarOpen?: boole
 
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 shadow-sm">
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                     <Button
                         variant="outline"
