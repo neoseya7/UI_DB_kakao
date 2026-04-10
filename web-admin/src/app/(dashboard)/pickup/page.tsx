@@ -83,6 +83,8 @@ export default function PickupCalendarPage() {
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
     
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false)
+    const isMountedRef = useRef(true)
+    useEffect(() => { return () => { isMountedRef.current = false } }, [])
 
     // Mobile detection
     const [isMobile, setIsMobile] = useState(false)
@@ -198,17 +200,17 @@ export default function PickupCalendarPage() {
     }, [])
 
     useEffect(() => {
-        if (storeId) {
+        if (storeId && isSettingsLoaded) {
             fetchMatrixData()
             setSelectedPosOrders([])
         }
-    }, [storeId, currentDate, searchScope, customSearchDate, customEndDate, activeSearchTerm])
+    }, [storeId, isSettingsLoaded, currentDate, searchScope, customSearchDate, customEndDate, activeSearchTerm])
 
     useEffect(() => {
         if (!storeId || !isTransferModalOpen) return;
         const fetchModalProducts = async () => {
             const date = transferSourceDate || currentDate;
-            const { data } = await supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
+            const { data } = await supabase.from('products').select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
             if (data) {
                 setTransferAvailableProducts(data.map(p => ({
                     id: p.id,
@@ -233,7 +235,7 @@ export default function PickupCalendarPage() {
         const activeDate = newDate || currentDate;
         const fetchManualProducts = async () => {
             const { data } = await supabase.from('products')
-                .select('*')
+                .select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text')
                 .eq('store_id', storeId)
                 .eq('is_hidden', false)
                 .or(`target_date.eq.${activeDate},is_regular_sale.eq.true`)
@@ -304,6 +306,9 @@ export default function PickupCalendarPage() {
             }).limit(5000)
         ])
 
+        // 컴포넌트가 언마운트됐으면 state 업데이트 중단 (페이지 이동 시 불필요한 처리 방지)
+        if (!isMountedRef.current) return
+
         // 날짜 목록 처리
         if (dateResult.data) {
             const uniqueDates = Array.from(new Set(dateResult.data.filter(p => !p.is_regular_sale).map(p => p.target_date))).filter(Boolean).sort() as string[]
@@ -319,7 +324,7 @@ export default function PickupCalendarPage() {
             orders = rpcData || []
         } else {
             console.warn("RPC fetch failed, falling back to legacy:", rpcError);
-            let oQuery = supabase.from('orders').select('*').eq('store_id', storeId).eq('is_hidden', false)
+            let oQuery = supabase.from('orders').select('id,customer_nickname,customer_memo_1,customer_memo_2,is_received,pickup_date,created_at').eq('store_id', storeId).eq('is_hidden', false)
             if (searchScope === "today") {
                 const dbDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
                 oQuery = oQuery.or(`pickup_date.eq.${dbDate},pickup_date.eq.1900-01-01`)
@@ -348,7 +353,7 @@ export default function PickupCalendarPage() {
         const strIdList = Array.from(orderedProductIds).join(',')
 
         // === 2단계: 상품 조회 + CRM 태그를 병렬 실행 ===
-        let pQuery = supabase.from('products').select('*').eq('store_id', storeId).eq('is_hidden', false)
+        let pQuery = supabase.from('products').select('id,collect_name,name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
             if (currentDate === "상시판매") {
                 pQuery = strIdList.length > 0 ? pQuery.or(`is_regular_sale.eq.true,id.in.(${strIdList})`) : pQuery.eq('is_regular_sale', true)
@@ -430,7 +435,7 @@ export default function PickupCalendarPage() {
         const CHUNK_SIZE = 30
         for (let i = 0; i < orderIds.length; i += CHUNK_SIZE) {
             const chunk = orderIds.slice(i, i + CHUNK_SIZE)
-            const { data: chunkData } = await supabase.from('order_items').select('*').in('order_id', chunk)
+            const { data: chunkData } = await supabase.from('order_items').select('order_id,product_id,quantity').in('order_id', chunk)
             if (chunkData) orderItems = orderItems.concat(chunkData)
         }
 
