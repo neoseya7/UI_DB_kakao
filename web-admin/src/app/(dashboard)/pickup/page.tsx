@@ -199,6 +199,18 @@ export default function PickupCalendarPage() {
         initUser()
     }, [])
 
+    // 날짜 버튼 목록을 먼저 빠르게 가져옴 (RPC 대기 없이 즉시 표시)
+    useEffect(() => {
+        if (!storeId) return
+        supabase.from('products').select('target_date, is_regular_sale').eq('store_id', storeId).eq('is_hidden', false).then(({ data }) => {
+            if (data && isMountedRef.current) {
+                const uniqueDates = Array.from(new Set(data.filter(p => !p.is_regular_sale && p.target_date).map(p => p.target_date))).sort() as string[]
+                if (data.some(p => p.is_regular_sale)) uniqueDates.push("상시판매")
+                setAvailableDates(uniqueDates)
+            }
+        })
+    }, [storeId])
+
     useEffect(() => {
         if (storeId && isSettingsLoaded) {
             fetchMatrixData()
