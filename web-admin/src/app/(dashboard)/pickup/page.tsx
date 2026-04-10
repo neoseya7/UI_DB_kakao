@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2, MoreVertical } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
+import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache } from "@/lib/pickupCache"
 import { GuideBadge } from "@/components/ui/guide-badge"
 import PickupTable from "./components/PickupTable"
 import PickupCardList from "./components/PickupCardList"
@@ -255,7 +256,7 @@ export default function PickupCalendarPage() {
         fetchManualProducts()
     }, [storeId, newDate, currentDate])
 
-    const fetchMatrixData = async () => {
+    const fetchMatrixData = async (forceRefresh = false) => {
         if (!storeId) return
         // 모든 날짜 모드에서 검색어가 없으면 데이터를 불러오지 않음 (대용량 보호)
         if (searchScope === "all_dates" && !activeSearchTerm.trim()) {
@@ -264,7 +265,23 @@ export default function PickupCalendarPage() {
             setIsLoading(false)
             return
         }
-        setIsLoading(true)
+
+        // 데이터 변경 후 재조회 시 캐시 무효화
+        if (forceRefresh) clearPickupCache()
+
+        // 메모리 캐시 확인: 캐시가 있으면 즉시 표시 (백그라운드에서 최신 데이터 갱신)
+        const cacheKey = makeCacheKey(storeId, searchScope, currentDate, customSearchDate, customEndDate, activeSearchTerm)
+        const cached = getPickupCache(cacheKey)
+        if (cached) {
+            setRawCustomers(cached.rawCustomers)
+            setProducts(cached.products)
+            setAvailableDates(cached.availableDates)
+            setIsLoading(false)
+            // 캐시가 5분 이내면 갱신 생략
+            if (Date.now() - cached.timestamp < 5 * 60 * 1000) return
+        } else {
+            setIsLoading(true)
+        }
 
         // 세션 토큰을 미리 갱신하여 병렬 호출 시 토큰 충돌 방지
         await supabase.auth.getSession()
@@ -402,6 +419,7 @@ export default function PickupCalendarPage() {
             })
 
             setRawCustomers(mappedCustomers)
+            setPickupCache(cacheKey, mappedCustomers, mappedProducts, availableDates)
             setIsLoading(false)
             return
         }
@@ -446,6 +464,7 @@ export default function PickupCalendarPage() {
         })
 
         setRawCustomers(mappedCustomersLegacy)
+        setPickupCache(cacheKey, mappedCustomersLegacy, mappedProducts, availableDates)
         setIsLoading(false)
     }
 
@@ -469,7 +488,7 @@ export default function PickupCalendarPage() {
         alert(`총 ${selectedDeleteIds.length}개의 주문이 일괄 삭제되었습니다.`);
         setIsDeleteMode(false);
         setSelectedDeleteIds([]);
-        fetchMatrixData();
+        fetchMatrixData(true);
     }
 
     const handleDeleteReceivedOrders = async () => {
@@ -572,7 +591,7 @@ export default function PickupCalendarPage() {
             }
 
             alert(`${dateLabel}의 수령제품 ${receivedOrders.length}건 삭제 완료.\n백업 엑셀이 다운로드됐습니다.\n복원 시 '더보기(⋮) → 엑셀 일괄 등록' 메뉴로 재업로드하세요.`)
-            await fetchMatrixData()
+            await fetchMatrixData(true)
         } catch (e: any) {
             console.error(e)
             alert("삭제 중 오류: " + (e?.message || e))
@@ -749,7 +768,7 @@ export default function PickupCalendarPage() {
 
             setUploadProgress({ current: 100, total: 100, isUploading: true })
             alert(`완료! 총 ${successCount}건의 개별 주문 내역이 묶임 없이 원본 그대로 성공적으로 일괄 업로드되었습니다.`)
-            fetchMatrixData()
+            fetchMatrixData(true)
         } catch (err: any) {
             console.error("Excel import error:", err)
             alert(`처리 중 에러가 발생했습니다: ${err.message}`)
@@ -789,7 +808,7 @@ export default function PickupCalendarPage() {
                     await supabase.from('order_items').insert({ order_id: orderId, product_id: targetProduct.id, quantity: validQty })
                 }
             }
-            await fetchMatrixData()
+            await fetchMatrixData(true)
         } catch (e) {
             console.error("Update quantity error", e)
             alert("수량 변경 중 오류가 발생했습니다.")
@@ -899,7 +918,7 @@ export default function PickupCalendarPage() {
             alert("✅ 이관 및 상품 동기화 반영이 완료되었습니다.")
         }
         setIsTransferModalOpen(false)
-        fetchMatrixData()
+        fetchMatrixData(true)
     }
 
     const handleAddOrder = async () => {
@@ -929,7 +948,7 @@ export default function PickupCalendarPage() {
             })
             setNewNick("")
             setNewQty("")
-            fetchMatrixData()
+            fetchMatrixData(true)
         } else {
             alert("주문 추가 실패: " + oErr?.message)
             setIsLoading(false)
@@ -967,7 +986,7 @@ export default function PickupCalendarPage() {
             setIsAddingRow(false)
             setAddRowNick("")
             setAddRowQtys({})
-            fetchMatrixData()
+            fetchMatrixData(true)
         } else {
             alert("주문 추가 실패: " + oErr?.message)
             setIsLoading(false)
@@ -1032,7 +1051,7 @@ export default function PickupCalendarPage() {
             alert(`${currentDate} 일자 데이터가 성공적으로 숨김 처리되었습니다.`);
             
             // Re-fetch data
-            await fetchMatrixData();
+            await fetchMatrixData(true);
             
         } catch (error: any) {
             console.error("Bulk hide by date error:", error);
@@ -1071,7 +1090,7 @@ export default function PickupCalendarPage() {
             alert(`${currentDate} 일자의 데이터가 성공적으로 복구(숨김 해제)되었습니다.`);
             
             // Re-fetch data
-            await fetchMatrixData();
+            await fetchMatrixData(true);
             
         } catch (error: any) {
             console.error("Bulk unhide by date error:", error);
