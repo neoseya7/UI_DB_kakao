@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2, MoreVertical } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
-import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache } from "@/lib/pickupCache"
+import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache, updatePickupCacheCustomers } from "@/lib/pickupCache"
 import { GuideBadge } from "@/components/ui/guide-badge"
 import PickupTable from "./components/PickupTable"
 import PickupCardList from "./components/PickupCardList"
@@ -1074,6 +1074,8 @@ export default function PickupCalendarPage() {
     }
 
     const toggleCheck = async (id: string, current: boolean, name?: string) => {
+        const cacheSearchTerm = searchScope === "all_dates" ? activeSearchTerm : ""
+        const cacheKey = storeId ? makeCacheKey(storeId, searchScope, currentDate, customSearchDate, customEndDate, cacheSearchTerm) : ""
         try {
             if (isMerged && name) {
                 const targetIds = rawCustomers.filter(rc => rc.name === name).map(rc => rc.id).filter(Boolean) as string[]
@@ -1081,12 +1083,14 @@ export default function PickupCalendarPage() {
                     setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
                     const { error } = await supabase.from('orders').update({ is_received: !current }).in('id', targetIds)
                     if (error) throw error
+                    if (cacheKey) updatePickupCacheCustomers(cacheKey, cs => cs.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
                 }
             } else {
                 if (!id) return
                 setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
                 const { error } = await supabase.from('orders').update({ is_received: !current }).eq('id', id)
                 if (error) throw error
+                if (cacheKey) updatePickupCacheCustomers(cacheKey, cs => cs.map(c => c.id === id ? { ...c, checked: !current } : c))
             }
         } catch (err: any) {
             console.error("수령 체크 변경 오류:", err)

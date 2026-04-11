@@ -57,6 +57,17 @@ export function getPickupCache(key: string): Omit<CacheEntry, 'key'> | null {
     return { rawCustomers: entry.rawCustomers, products: entry.products, availableDates: entry.availableDates, timestamp: entry.timestamp }
 }
 
+/** 캐시 내 고객 데이터 부분 업데이트 (수령 체크 등) */
+export function updatePickupCacheCustomers(
+    key: string,
+    updater: (customers: any[]) => any[],
+) {
+    const entry = cache.get(key)
+    if (!entry) return
+    entry.rawCustomers = updater(entry.rawCustomers)
+    entry.timestamp = Date.now()
+}
+
 /** 캐시 초기화 */
 export function clearPickupCache() {
     cache.clear()
