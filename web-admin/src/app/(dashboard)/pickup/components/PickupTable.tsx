@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, memo } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,7 @@ import type { PickupViewProps } from "./types"
 
 const ROW_HEIGHT = 52 // 각 행의 예상 높이(px)
 
-export default function PickupTable(props: PickupViewProps) {
+function PickupTableImpl(props: PickupViewProps) {
     const {
         products, displayProducts, activeProductIndices, filteredCustomers, rawCustomers,
         isLoading, isMerged, isDeleteMode, selectedDeleteIds,
@@ -318,3 +318,27 @@ export default function PickupTable(props: PickupViewProps) {
         </Card>
     )
 }
+
+// 데이터 props만 비교 (핸들러는 매 렌더 새로 생성되지만 내부 동작엔 영향 X)
+// 검색창 입력 등으로 상위 state만 바뀔 때 무거운 테이블 재렌더 스킵
+export default memo(PickupTableImpl, (prev, next) => {
+    return (
+        prev.filteredCustomers === next.filteredCustomers &&
+        prev.displayProducts === next.displayProducts &&
+        prev.activeProductIndices === next.activeProductIndices &&
+        prev.rawCustomers === next.rawCustomers &&
+        prev.products === next.products &&
+        prev.isLoading === next.isLoading &&
+        prev.isMerged === next.isMerged &&
+        prev.isDeleteMode === next.isDeleteMode &&
+        prev.posSyncEnabled === next.posSyncEnabled &&
+        prev.selectedPosOrders === next.selectedPosOrders &&
+        prev.selectedDeleteIds === next.selectedDeleteIds &&
+        prev.editingQty === next.editingQty &&
+        prev.editingMemo === next.editingMemo &&
+        prev.tempQty === next.tempQty &&
+        prev.isAddingRow === next.isAddingRow &&
+        prev.addRowNick === next.addRowNick &&
+        prev.addRowQtys === next.addRowQtys
+    )
+})

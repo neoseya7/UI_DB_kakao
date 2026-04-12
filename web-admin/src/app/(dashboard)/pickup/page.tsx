@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useTransition } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -60,6 +60,12 @@ export default function PickupCalendarPage() {
     const [customEndDate, setCustomEndDate] = useState("")
     const [focusedDate, setFocusedDate] = useState<string | null>(null)
     const [receiptFilter, setReceiptFilter] = useState("unreceived")
+
+    // 무거운 리렌더를 인터럽트 가능하게 해서 "응답없음" 방지 (#1)
+    const [, startTransition] = useTransition()
+
+    // 가상화 테이블 토글 (문제 시 false로 바꾸면 원본 테이블로 즉시 원복)
+    const useVirtualizedTable = true
 
     const [newNick, setNewNick] = useState("")
     const [newDate, setNewDate] = useState("")
@@ -1325,49 +1331,59 @@ export default function PickupCalendarPage() {
     }
 
     // 기간검색 드릴다운: focusedDate 가 설정되어 있으면 그 날짜의 주문만 남김 (병합 전 선-필터링)
-    const dateFilteredRaw = (searchScope === "date_range" && focusedDate)
-        ? rawCustomers.filter(c => {
+    const dateFilteredRaw = useMemo(() => {
+        if (searchScope === "date_range" && focusedDate) {
             const target = focusedDate === "상시판매" ? "1900-01-01" : focusedDate
-            return c.pickup_date === target
-        })
-        : rawCustomers
-
-    const customers = isMerged
-        ? dateFilteredRaw.reduce((acc, current) => {
-            const existing = acc.find(item => item.name === current.name)
-            if (existing) {
-                const mergedItems = existing.items.map((qty, idx) => qty + current.items[idx])
-                const mergedMemo1 = Array.from(new Set([existing.memo1, current.memo1].filter(Boolean))).join(", ")
-                const mergedMemo2 = Array.from(new Set([existing.memo2, current.memo2].filter(Boolean))).join(", ")
-                return acc.map(item => item.name === current.name ? {
-                    ...item, items: mergedItems, memo1: mergedMemo1, memo2: mergedMemo2, checked: existing.checked && current.checked
-                } : item)
-            } else {
-                return [...acc, { ...current }]
-            }
-        }, [] as Order[])
-        : dateFilteredRaw
-
-    const filteredCustomers = customers.filter(c => {
-        const lowerTerm = (activeSearchTerm || "").toLowerCase()
-        const custName = (c.name || "").toLowerCase()
-        const summaryText = getDisplaySummary(c.items).toLowerCase()
-        const memo1 = (c.memo1 || "").toLowerCase()
-        const memo2 = (c.memo2 || "").toLowerCase()
-
-        let matchSearch = true
-        if (lowerTerm) {
-            if (searchField === "nickname") matchSearch = custName.includes(lowerTerm)
-            else if (searchField === "product") matchSearch = summaryText.includes(lowerTerm)
-            else if (searchField === "memo") matchSearch = memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
-            else matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+            return rawCustomers.filter(c => c.pickup_date === target)
         }
-        const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
-        return matchSearch && matchReceipt
-    }).sort((a, b) => {
-        if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
-        return (a.originalIndex || 0) - (b.originalIndex || 0)
-    })
+        return rawCustomers
+    }, [rawCustomers, searchScope, focusedDate])
+
+    // 병합: Map 기반 O(n)으로 교체 (기존 O(n²) reduce 대체, 결과 순서/로직 동일)
+    const customers = useMemo(() => {
+        if (!isMerged) return dateFilteredRaw
+        const map = new Map<string | undefined, Order>()
+        for (const cur of dateFilteredRaw) {
+            const key = cur.name
+            const ex = map.get(key)
+            if (ex) {
+                map.set(key, {
+                    ...ex,
+                    items: ex.items.map((qty, idx) => qty + cur.items[idx]),
+                    memo1: Array.from(new Set([ex.memo1, cur.memo1].filter(Boolean))).join(", "),
+                    memo2: Array.from(new Set([ex.memo2, cur.memo2].filter(Boolean))).join(", "),
+                    checked: ex.checked && cur.checked,
+                })
+            } else {
+                map.set(key, { ...cur })
+            }
+        }
+        return Array.from(map.values())
+    }, [dateFilteredRaw, isMerged])
+
+    const filteredCustomers = useMemo(() => {
+        return customers.filter(c => {
+            const lowerTerm = (activeSearchTerm || "").toLowerCase()
+            const custName = (c.name || "").toLowerCase()
+            const summaryText = getDisplaySummary(c.items).toLowerCase()
+            const memo1 = (c.memo1 || "").toLowerCase()
+            const memo2 = (c.memo2 || "").toLowerCase()
+
+            let matchSearch = true
+            if (lowerTerm) {
+                if (searchField === "nickname") matchSearch = custName.includes(lowerTerm)
+                else if (searchField === "product") matchSearch = summaryText.includes(lowerTerm)
+                else if (searchField === "memo") matchSearch = memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+                else matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
+            }
+            const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
+            return matchSearch && matchReceipt
+        }).sort((a, b) => {
+            if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
+            return (a.originalIndex || 0) - (b.originalIndex || 0)
+        })
+        // getDisplaySummary는 activeProductIndices, products에 의존 → deps로 추적
+    }, [customers, activeSearchTerm, searchField, receiptFilter, sortOrder, activeProductIndices, products])
 
     const calculateItemPrice = (product: Product | undefined, qty: number) => {
         if (!product || qty <= 0) return 0;
@@ -1497,10 +1513,14 @@ export default function PickupCalendarPage() {
                                     onClick={() => {
                                         if (searchScope === "date_range") {
                                             // 기간검색 유지 상태에서는 focusedDate 토글 (드릴다운)
-                                            setFocusedDate(prev => prev === date ? null : date)
+                                            startTransition(() => {
+                                                setFocusedDate(prev => prev === date ? null : date)
+                                            })
                                         } else {
-                                            setCurrentDate(date)
-                                            setSearchScope("today")
+                                            startTransition(() => {
+                                                setCurrentDate(date)
+                                                setSearchScope("today")
+                                            })
                                         }
                                     }}
                                     className={`rounded-full shadow-sm transition-all whitespace-nowrap px-4 h-10 font-bold ${
@@ -1525,13 +1545,15 @@ export default function PickupCalendarPage() {
                                     if (!v) return
                                     if (searchScope === "date_range" && customSearchDate && customEndDate && v >= customSearchDate && v <= customEndDate) {
                                         // 기간 내: focusedDate 설정 (기간검색 유지)
-                                        setFocusedDate(v)
+                                        startTransition(() => setFocusedDate(v))
                                     } else if (searchScope === "date_range" && customSearchDate && !customEndDate && v === customSearchDate) {
-                                        setFocusedDate(v)
+                                        startTransition(() => setFocusedDate(v))
                                     } else {
                                         // 기간 밖 또는 다른 scope: scope 전환
-                                        setCurrentDate(v)
-                                        setSearchScope("today")
+                                        startTransition(() => {
+                                            setCurrentDate(v)
+                                            setSearchScope("today")
+                                        })
                                     }
                                 }}
                                 title={searchScope === "date_range" ? "기간 내 날짜는 드릴다운, 기간 밖 날짜는 이동" : "달력에서 날짜 직접 지정"}
@@ -1541,7 +1563,7 @@ export default function PickupCalendarPage() {
 
                     <div className="flex flex-col gap-2 w-full bg-muted/30 p-1.5 rounded-md border shrink-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <Select value={searchScope} onValueChange={setSearchScope}>
+                            <Select value={searchScope} onValueChange={(v) => startTransition(() => setSearchScope(v))}>
                                 <SelectTrigger className="w-[120px] h-9 bg-white border-muted shadow-sm font-medium text-xs shrink-0">
                                     <SelectValue placeholder="검색 범위" />
                                 </SelectTrigger>
@@ -1701,7 +1723,7 @@ export default function PickupCalendarPage() {
                                     type="button"
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => setFocusedDate(null)}
+                                    onClick={() => startTransition(() => setFocusedDate(null))}
                                     className="h-7 px-2 text-xs bg-white border-amber-400 text-amber-800 hover:bg-amber-100"
                                 >
                                     설정기간주문보기
@@ -1875,6 +1897,44 @@ export default function PickupCalendarPage() {
                     handleAddOrder={handleAddOrder}
                     searchScope={searchScope}
                     activeSearchTerm={activeSearchTerm}
+                />
+            ) : useVirtualizedTable ? (
+                <PickupTable
+                    products={products}
+                    displayProducts={displayProducts}
+                    activeProductIndices={activeProductIndices}
+                    filteredCustomers={filteredCustomers}
+                    rawCustomers={rawCustomers}
+                    isLoading={isLoading}
+                    isMerged={isMerged}
+                    isDeleteMode={isDeleteMode}
+                    selectedDeleteIds={selectedDeleteIds}
+                    posSyncEnabled={posSyncEnabled}
+                    selectedPosOrders={selectedPosOrders}
+                    editingQty={editingQty}
+                    tempQty={tempQty}
+                    editingMemo={editingMemo}
+                    isAddingRow={isAddingRow}
+                    addRowNick={addRowNick}
+                    addRowQtys={addRowQtys}
+                    toggleCheck={toggleCheck}
+                    toggleDeleteSelect={toggleDeleteSelect}
+                    togglePosSelect={togglePosSelect}
+                    togglePosSelectAll={togglePosSelectAll}
+                    handleUpdateQuantity={handleUpdateQuantity}
+                    handleUpdateMemo={handleUpdateMemo}
+                    handleUpdateProductField={handleUpdateProductField}
+                    handleDeleteOrder={handleDeleteOrder}
+                    handleAddRowSave={handleAddRowSave}
+                    getDisplaySummary={getDisplaySummary}
+                    calculateItemPrice={calculateItemPrice}
+                    setEditingQty={setEditingQty}
+                    setTempQty={setTempQty}
+                    setEditingMemo={setEditingMemo}
+                    setIsAddingRow={setIsAddingRow}
+                    setAddRowNick={setAddRowNick}
+                    setAddRowQtys={setAddRowQtys}
+                    getStickyClasses={getStickyClasses}
                 />
             ) : (
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
