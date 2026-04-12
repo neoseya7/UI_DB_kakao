@@ -52,28 +52,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, error: error?.message || "Failed to generate link" })
         }
 
-        // 1) Extract the actual origin from the request headers
-        const hostHeader = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
-        const protocol = req.headers.get('x-forwarded-proto') || 'http';
-        const realOrigin = `${protocol}://${hostHeader}`;
-        
-        let actionLink = data.properties.action_link;
-
-        // 2) Replace only the redirect_to parameter with the current request origin.
-        // The base URL (Supabase auth server) must stay unchanged.
-        // Only the redirect_to value should point to the current app environment.
-        const url = new URL(actionLink);
-        const redirectTo = url.searchParams.get('redirect_to');
-        if (redirectTo) {
-            const redirectOrigin = new URL(redirectTo).origin;
-            if (redirectOrigin !== realOrigin) {
-                const newRedirectTo = redirectTo.replace(redirectOrigin, realOrigin);
-                url.searchParams.set('redirect_to', newRedirectTo);
-                actionLink = url.toString();
-            }
-        }
-
-        return NextResponse.json({ success: true, link: actionLink })
+        // redirect_to는 Supabase Site URL 설정을 그대로 사용
+        // (Vercel이 요청 헤더에 deployment URL을 넘겨주는 이슈 때문에 rewrite 로직 제거)
+        return NextResponse.json({ success: true, link: data.properties.action_link })
 
     } catch (e: any) {
         return NextResponse.json({ success: false, error: e.message }, { status: 500 })
