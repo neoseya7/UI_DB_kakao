@@ -221,7 +221,7 @@ export default function SettingsPage() {
 
         setOgImageUploading(true)
         const fileName = `${storeId}/og_image_${Date.now()}.${file.name.split('.').pop()}`
-        const { error: uploadErr } = await supabase.storage.from('product-images').upload(fileName, file, { upsert: true })
+        const { error: uploadErr } = await supabase.storage.from('product-images').upload(fileName, file, { upsert: true, cacheControl: '31536000' })
         if (uploadErr) {
             alert("이미지 업로드 실패: " + uploadErr.message)
             setOgImageUploading(false)

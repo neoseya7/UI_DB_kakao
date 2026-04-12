@@ -229,7 +229,9 @@ export default function ProductsPage() {
 
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('product-images')
-                    .upload(filePath, fileToUpload)
+                    .upload(filePath, fileToUpload, {
+                        cacheControl: '31536000', // 1년 캐시 — Supabase egress 절감 (파일명은 timestamp+random으로 매번 새 URL)
+                    })
 
                 if (uploadError) {
                     alert(`이미지 업로드 실패 (${file.name}): ` + uploadError.message)

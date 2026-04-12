@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    minimumCacheTTL: 3600, // 1시간 캐시 — Supabase 이그레스 절감
+    minimumCacheTTL: 31536000, // 1년 캐시 — Supabase egress 절감 (신규 이미지는 새 URL이라 영향 없음)
     remotePatterns: [
       {
         protocol: 'https',
