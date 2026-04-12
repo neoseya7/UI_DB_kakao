@@ -121,14 +121,19 @@ export async function POST(request: Request) {
             promptA += `\n\n[REGISTERED PRODUCT LIST]: The store has these products: [${productNameList.join(', ')}]. IMPORTANT: When a number follows a product name (e.g. '석류즙30', '석류즙 60'), check if it matches a registered product variant (e.g. '석류즙(30포)', '석류즙(60포)'). If so, the number is a VARIANT IDENTIFIER, NOT a quantity. Output the matched product name exactly as registered with quantity 1. Example: '석류즙30' → {"product": "석류즙(30포)", "quantity": 1}, NOT {"product": "석류즙", "quantity": 30}.`;
         }
 
-        const callGemini = async (sysPrompt: string, userText: string) => {
+        const callGemini = async (sysPrompt: string, userText: string, jsonMode: boolean = false) => {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`
+            const generationConfig: any = { temperature: 0 }
+            if (jsonMode) {
+                generationConfig.responseMimeType = "application/json"
+            }
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     systemInstruction: { parts: [{ text: sysPrompt }] },
-                    contents: [{ parts: [{ text: userText }] }]
+                    contents: [{ parts: [{ text: userText }] }],
+                    generationConfig,
                 })
             })
             if (!res.ok) {
@@ -178,7 +183,7 @@ export async function POST(request: Request) {
         }
 
         // 3. Step 1: Execute Full AI Analysis (Intent & Output JSON) using Prompt A
-        const extractedRaw = await callGemini(promptA, chat_content)
+        const extractedRaw = await callGemini(promptA, chat_content, true)
 
         console.log("---- DEBUG LOGS ----")
         console.log("Extracted Raw output:", extractedRaw)

@@ -96,14 +96,19 @@ export async function POST(request: Request) {
             } catch (e) { /* silent */ }
         }
 
-        const callGeminiWithKey = async (sysPrompt: string, userText: string, apiKey: string) => {
+        const callGeminiWithKey = async (sysPrompt: string, userText: string, apiKey: string, jsonMode: boolean = false) => {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`
+            const generationConfig: any = { temperature: 0 }
+            if (jsonMode) {
+                generationConfig.responseMimeType = "application/json"
+            }
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     systemInstruction: { parts: [{ text: sysPrompt }] },
-                    contents: [{ parts: [{ text: userText }] }]
+                    contents: [{ parts: [{ text: userText }] }],
+                    generationConfig,
                 })
             })
             if (!res.ok) {
@@ -114,18 +119,22 @@ export async function POST(request: Request) {
             return json.candidates?.[0]?.content?.parts?.[0]?.text || ""
         }
 
-        const callOpenAIWithKey = async (sysPrompt: string, userText: string, apiKey: string) => {
+        const callOpenAIWithKey = async (sysPrompt: string, userText: string, apiKey: string, jsonMode: boolean = false) => {
+            const body: any = {
+                model: openaiModel,
+                messages: [
+                    { role: 'system', content: sysPrompt },
+                    { role: 'user', content: userText }
+                ],
+                temperature: 0.1
+            }
+            if (jsonMode) {
+                body.response_format = { type: "json_object" }
+            }
             const res = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: openaiModel,
-                    messages: [
-                        { role: 'system', content: sysPrompt },
-                        { role: 'user', content: userText }
-                    ],
-                    temperature: 0.1
-                })
+                body: JSON.stringify(body)
             })
             if (!res.ok) {
                 const errText = await res.text()
@@ -135,10 +144,11 @@ export async function POST(request: Request) {
             return json.choices?.[0]?.message?.content || ""
         }
 
-        const callAIWithFallback = async (sysPrompt: string, userText: string): Promise<string> => {
+        const callAIWithFallback = async (sysPrompt: string, userText: string, jsonMode: boolean = false): Promise<string> => {
             const providers: { name: string; fn: () => Promise<string> }[] = []
-            if (geminiKey) providers.push({ name: 'gemini', fn: () => callGeminiWithKey(sysPrompt, userText, geminiKey) })
-            if (geminiKeyBackup) providers.push({ name: 'gemini-backup', fn: () => callGeminiWithKey(sysPrompt, userText, geminiKeyBackup) })
+            if (geminiKey) providers.push({ name: 'gemini', fn: () => callGeminiWithKey(sysPrompt, userText, geminiKey, jsonMode) })
+            if (geminiKeyBackup) providers.push({ name: 'gemini-backup', fn: () => callGeminiWithKey(sysPrompt, userText, geminiKeyBackup, jsonMode) })
+            // OpenAI json_object 모드는 최상위 객체만 허용해 배열 응답과 충돌하므로 JSON 모드 미적용 (프롬프트 + 기존 정규식 추출에 의존)
             if (openaiKey) providers.push({ name: 'openai', fn: () => callOpenAIWithKey(sysPrompt, userText, openaiKey) })
             if (openaiKeyBackup) providers.push({ name: 'openai-backup', fn: () => callOpenAIWithKey(sysPrompt, userText, openaiKeyBackup) })
 
@@ -245,7 +255,7 @@ export async function POST(request: Request) {
                 }
 
                 // AI Intent Analysis
-                const extractedRaw = await callGemini(promptA, chat_content)
+                const extractedRaw = await callGemini(promptA, chat_content, true)
                 let jsonMatch = extractedRaw.match(/\[[\s\S]*\]/)
                 let extractedItems: any[] = []
 
