@@ -1353,14 +1353,11 @@ export default function PickupCalendarPage() {
             if (arr.length < 2) continue
             const len = arr[0].items?.length || 0
             for (let i = 0; i < len; i++) {
-                let count = 0
-                for (const o of arr) {
-                    if ((o.items?.[i] || 0) > 0) count++
-                    if (count >= 2) break
-                }
-                if (count >= 2) {
-                    arr.forEach(o => suspects.add(o.id))
-                    break
+                // 이 상품(i)을 주문한 orders만 모음
+                const ordersWithItem = arr.filter(o => (o.items?.[i] || 0) > 0)
+                if (ordersWithItem.length >= 2) {
+                    // 중복된 상품을 가진 주문들만 의심 대상에 추가 (그룹 전체 X)
+                    ordersWithItem.forEach(o => suspects.add(o.id))
                 }
             }
         }
