@@ -13,7 +13,7 @@ export async function POST(req: Request) {
         
         const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-        const { store_email } = await req.json()
+        const { store_email, redirect_origin } = await req.json()
 
         if (!store_email) {
             return NextResponse.json({ success: false, error: "Store email is required" }, { status: 400 })
@@ -42,10 +42,12 @@ export async function POST(req: Request) {
         }
 
         // Generate a magic link for the target user using Supabase Admin Auth API
-        // This generates a one-time use URL that instantly logs the viewer in as the target email.
+        // 클라이언트가 전달한 현재 origin을 redirectTo로 사용
+        // (Vercel 요청 헤더는 deployment URL을 주므로 클라이언트 전달값이 더 정확)
         const { data, error } = await supabaseAdmin.auth.admin.generateLink({
             type: 'magiclink',
             email: store_email,
+            options: redirect_origin ? { redirectTo: `${redirect_origin}/` } : undefined,
         })
 
         if (error || !data?.properties?.action_link) {

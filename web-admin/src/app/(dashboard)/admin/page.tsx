@@ -372,7 +372,7 @@ export default function AdminPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session?.access_token}`
                 },
-                body: JSON.stringify({ store_email: email })
+                body: JSON.stringify({ store_email: email, redirect_origin: window.location.origin })
             })
             const data = await res.json()
             if (data.success && data.link) {
