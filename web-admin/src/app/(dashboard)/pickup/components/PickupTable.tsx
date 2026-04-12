@@ -89,7 +89,8 @@ function PickupTableImpl(props: PickupViewProps) {
                 {activeProductIndices.reduce((total, oi) => total + calculateItemPrice(products[oi], c.items[oi] || 0), 0).toLocaleString()}원
             </td>
             <td className={`border-b border-r py-1 px-1 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
-                <div className="flex flex-col gap-1 w-full relative">
+                <div className="flex flex-row gap-1 w-full relative">
+                    <div className="flex-[3] min-w-0">
                     {editingMemo?.orderId === c.id && editingMemo?.type === 'memo1' ? (
                         <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고 1" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
                     ) : (
@@ -97,7 +98,9 @@ function PickupTableImpl(props: PickupViewProps) {
                             {c.memo1 || <span className="text-muted-foreground/50">비고 1</span>}
                         </div>
                     )}
+                    </div>
 
+                    <div className="flex-[1] min-w-0">
                     {editingMemo?.orderId === c.id && editingMemo?.type === 'memo2' ? (
                         <Input autoFocus defaultValue={c.memo2} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_2', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="고객찜" className="h-7 text-xs bg-white border-primary px-1 text-center shadow-inner" />
                     ) : (
@@ -105,6 +108,7 @@ function PickupTableImpl(props: PickupViewProps) {
                             {c.memo2 || <span className="text-muted-foreground/50">고객찜</span>}
                         </div>
                     )}
+                    </div>
                 </div>
             </td>
             {activeProductIndices.map((oi, di) => {

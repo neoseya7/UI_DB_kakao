@@ -35,7 +35,8 @@ export function OrderDeadlineProvider({ children }: { children: React.ReactNode 
             }
 
             // Fetch Products
-            const { data: pData } = await supabase.from('products').select('*').eq('store_id', user.id).not('deadline_time', 'is', null)
+            // 마감 알림에 필요한 컬럼만 select (egress 절감)
+            const { data: pData } = await supabase.from('products').select('id, deadline_date, deadline_time, display_name, collect_name').eq('store_id', user.id).not('deadline_time', 'is', null)
             if (pData) setProducts(pData)
 
             // Listen to real-time changes for settings & products
@@ -45,7 +46,7 @@ export function OrderDeadlineProvider({ children }: { children: React.ReactNode 
                     setSettings({ enabled: newS.order_alert_enabled, minutes: newS.alert_minutes_before })
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=eq.${user.id}` }, async () => {
-                    const { data } = await supabase.from('products').select('*').eq('store_id', user.id).not('deadline_time', 'is', null)
+                    const { data } = await supabase.from('products').select('id, deadline_date, deadline_time, display_name, collect_name').eq('store_id', user.id).not('deadline_time', 'is', null)
                     if (data) setProducts(data)
                 })
                 .subscribe()

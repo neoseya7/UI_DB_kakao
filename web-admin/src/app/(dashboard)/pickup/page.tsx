@@ -54,6 +54,7 @@ export default function PickupCalendarPage() {
 
     const [searchTerm, setSearchTerm] = useState("")
     const [activeSearchTerm, setActiveSearchTerm] = useState("")
+    const [showDupSuspects, setShowDupSuspects] = useState(false)
     const [searchField, setSearchField] = useState<"all" | "nickname" | "product" | "memo">("all")
     const [searchScope, setSearchScope] = useState("today")
     const [customSearchDate, setCustomSearchDate] = useState("")
@@ -1339,6 +1340,55 @@ export default function PickupCalendarPage() {
         return rawCustomers
     }, [rawCustomers, searchScope, focusedDate])
 
+    // 중복의심 감지: 같은 (pickup_date + nickname) 그룹 내에서 겹치는 상품이 있는 주문들의 ID 집합
+    const dupSuspectIds = useMemo(() => {
+        const suspects = new Set<string>()
+        const groups = new Map<string, Order[]>()
+        for (const c of dateFilteredRaw) {
+            const key = `${c.pickup_date}|${c.name}`
+            if (!groups.has(key)) groups.set(key, [])
+            groups.get(key)!.push(c)
+        }
+        for (const arr of groups.values()) {
+            if (arr.length < 2) continue
+            const len = arr[0].items?.length || 0
+            for (let i = 0; i < len; i++) {
+                let count = 0
+                for (const o of arr) {
+                    if ((o.items?.[i] || 0) > 0) count++
+                    if (count >= 2) break
+                }
+                if (count >= 2) {
+                    arr.forEach(o => suspects.add(o.id))
+                    break
+                }
+            }
+        }
+        return suspects
+    }, [dateFilteredRaw])
+
+    // 중복의심 모드 켤 때 병합은 자동 해제 (병합 상태에서는 중복이 합쳐져 감지 불가)
+    useEffect(() => {
+        if (showDupSuspects && isMerged) setIsMerged(false)
+    }, [showDupSuspects, isMerged])
+
+    // 중복의심 켜짐: 정렬을 가나다순으로 자동 전환 / 꺼짐: 이전 정렬로 복구
+    const prevSortRef = useRef<"entered" | "name" | null>(null)
+    useEffect(() => {
+        if (showDupSuspects) {
+            if (prevSortRef.current === null) {
+                prevSortRef.current = sortOrder
+                setSortOrder("name")
+            }
+        } else {
+            if (prevSortRef.current !== null) {
+                setSortOrder(prevSortRef.current)
+                prevSortRef.current = null
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showDupSuspects])
+
     // 병합: Map 기반 O(n)으로 교체 (기존 O(n²) reduce 대체, 결과 순서/로직 동일)
     const customers = useMemo(() => {
         if (!isMerged) return dateFilteredRaw
@@ -1377,13 +1427,14 @@ export default function PickupCalendarPage() {
                 else matchSearch = custName.includes(lowerTerm) || summaryText.includes(lowerTerm) || memo1.includes(lowerTerm) || memo2.includes(lowerTerm)
             }
             const matchReceipt = receiptFilter === "unreceived" ? !c.checked : (receiptFilter === "received" ? c.checked : true)
-            return matchSearch && matchReceipt
+            const matchDup = !showDupSuspects || dupSuspectIds.has(c.id)
+            return matchSearch && matchReceipt && matchDup
         }).sort((a, b) => {
             if (sortOrder === "name") return (a.name || "").localeCompare(b.name || "", 'ko')
             return (a.originalIndex || 0) - (b.originalIndex || 0)
         })
         // getDisplaySummary는 activeProductIndices, products에 의존 → deps로 추적
-    }, [customers, activeSearchTerm, searchField, receiptFilter, sortOrder, activeProductIndices, products])
+    }, [customers, activeSearchTerm, searchField, receiptFilter, sortOrder, activeProductIndices, products, showDupSuspects, dupSuspectIds])
 
     const calculateItemPrice = (product: Product | undefined, qty: number) => {
         if (!product || qty <= 0) return 0;
@@ -1636,6 +1687,20 @@ export default function PickupCalendarPage() {
                                     초기화
                                 </Button>
                             )}
+
+                            <Button
+                                type="button"
+                                variant={showDupSuspects ? "default" : "outline"}
+                                onClick={() => setShowDupSuspects(v => !v)}
+                                className={`h-9 px-2 shrink-0 shadow-sm text-xs gap-1 font-semibold ${
+                                    showDupSuspects
+                                        ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-600'
+                                        : (dupSuspectIds.size > 0 ? 'border-rose-300 text-rose-700 hover:bg-rose-50 bg-white' : 'bg-white text-slate-600')
+                                }`}
+                                title="같은 날짜+닉네임으로 동일 상품이 중복 주문된 건만 표시 (토글)"
+                            >
+                                🔍 중복의심{dupSuspectIds.size > 0 ? ` (${dupSuspectIds.size}건)` : ''}
+                            </Button>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

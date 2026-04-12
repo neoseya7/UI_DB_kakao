@@ -37,13 +37,32 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchLogs()
-    
-    // Auto-refresh every 10 minutes to save Supabase bandwidth
-    const intervalId = setInterval(() => {
-      fetchLogs()
-    }, 10 * 60 * 1000)
 
-    return () => clearInterval(intervalId)
+    // 10분 주기 폴링 — 탭이 보이는 동안만 동작 (백그라운드 시 일시정지, 복귀 시 즉시 갱신)
+    let intervalId: any = null
+    const startPolling = () => {
+      if (intervalId) return
+      intervalId = setInterval(() => { fetchLogs() }, 10 * 60 * 1000)
+    }
+    const stopPolling = () => {
+      if (intervalId) { clearInterval(intervalId); intervalId = null }
+    }
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling()
+      } else {
+        fetchLogs()
+        startPolling()
+      }
+    }
+
+    if (!document.hidden) startPolling()
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      stopPolling()
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [dateFilter]) // Added dateFilter to dependency array to re-fetch when it changes
 
   const fetchLogs = async () => {
@@ -64,8 +83,8 @@ export default function Dashboard() {
       }, {})
       setCrmDict(crmMap)
 
-      // Fetch active products mapping to append target dates
-      const { data: productsData } = await supabase.from('products').select('*').eq('store_id', user.id).eq('is_hidden', false).order('created_at', { ascending: false }).limit(5000)
+      // Fetch active products mapping to append target dates (필요한 컬럼만 — egress 절감)
+      const { data: productsData } = await supabase.from('products').select('id, collect_name, display_name, target_date, allocated_stock, unit_text, is_regular_sale').eq('store_id', user.id).eq('is_hidden', false).order('created_at', { ascending: false }).limit(5000)
       const currentProducts = productsData?.map(p => ({
         ...p,
         collect_name: p.collect_name ? p.collect_name.trim() : "",
@@ -75,7 +94,7 @@ export default function Dashboard() {
 
       let query = supabase
         .from('chat_logs')
-        .select('*')
+        .select('id, created_at, collect_date, chat_content, chat_time, nickname, category, classification, product_name, quantity, is_processed')
         .eq('store_id', user.id)
         .order('created_at', { ascending: false })
         .limit(2000)

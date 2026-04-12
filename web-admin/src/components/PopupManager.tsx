@@ -63,20 +63,40 @@ export function PopupManager() {
     useEffect(() => {
         if (!storeId) return
 
-        // 2. Chat check Every 10 mins
-        if (chatIntervalRef.current) clearInterval(chatIntervalRef.current)
-        chatIntervalRef.current = setInterval(() => {
-            if (settingsRef.current.chat_enabled) {
-                checkChatDelay(storeId)
+        // 2. Chat check 10분 주기 — 탭이 보이는 동안만 (백그라운드 시 정지, 복귀 시 즉시 1회)
+        const startChatPolling = () => {
+            if (chatIntervalRef.current) return
+            chatIntervalRef.current = setInterval(() => {
+                if (settingsRef.current.chat_enabled) {
+                    checkChatDelay(storeId)
+                }
+            }, 10 * 60 * 1000)
+        }
+        const stopChatPolling = () => {
+            if (chatIntervalRef.current) { clearInterval(chatIntervalRef.current); chatIntervalRef.current = null }
+        }
+        const handleVisibility = () => {
+            if (document.hidden) {
+                stopChatPolling()
+            } else {
+                if (settingsRef.current.chat_enabled) checkChatDelay(storeId)
+                startChatPolling()
             }
-        }, 10 * 60 * 1000)
+        }
+        if (!document.hidden) startChatPolling()
+        document.addEventListener('visibilitychange', handleVisibility)
 
-        // 3. Realtime listening for order_items if deadline alert is enabled
+        // 3. Realtime — orders INSERT를 해당 매장 것만 구독 (order_items에는 store_id 필터 불가하여 변경)
         let channel: any = null
         if (settingsRef.current.deadline_enabled) {
-            channel = supabase.channel('order_items_realtime')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_items' }, (payload) => {
-                    // Debounce the check so bulk inserts don't overwhelm the DB
+            channel = supabase.channel(`popup_deadline_${storeId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'orders',
+                    filter: `store_id=eq.${storeId}`
+                }, () => {
+                    // 주문 생성 후 order_items 삽입까지 여유 시간 확보 (3s debounce)
                     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
                     debounceTimerRef.current = setTimeout(() => {
                         checkProductDeadlines(storeId)
@@ -86,7 +106,8 @@ export function PopupManager() {
         }
 
         return () => {
-            if (chatIntervalRef.current) clearInterval(chatIntervalRef.current)
+            stopChatPolling()
+            document.removeEventListener('visibilitychange', handleVisibility)
             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
             if (channel) supabase.removeChannel(channel)
         }

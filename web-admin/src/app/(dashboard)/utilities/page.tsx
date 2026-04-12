@@ -34,23 +34,30 @@ export default function UtilitiesPage() {
                 }
             }
 
+            // products — 필요한 컬럼만 (egress 절감)
             const { data: pData } = await supabase
                 .from('products')
-                .select('*')
+                .select('id, collect_name, display_name, target_date, is_regular_sale, allocated_stock, box_quantity')
                 .eq('store_id', user.id)
                 .eq('is_hidden', false)
                 .order('created_at', { ascending: false })
-            
+
             if (pData) setProducts(pData)
 
-            const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received, customer_memo_2').eq('store_id', user.id).eq('is_hidden', false).limit(3000)
+            // orders — 최근 30일 이후만 (재고/노쇼 메시지는 임박 주문 대상이라 과거 주문은 불필요)
+            const fromDate = new Date()
+            fromDate.setDate(fromDate.getDate() - 30)
+            const sinceDate = fromDate.toISOString().split('T')[0]
+
+            const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received, customer_memo_2').eq('store_id', user.id).eq('is_hidden', false).gte('pickup_date', sinceDate).limit(3000)
             if (oData && oData.length > 0) {
                 const orderIds = oData.map(o => o.id)
                 const chunkSize = 250
                 let allItems: any[] = []
                 for (let i = 0; i < orderIds.length; i += chunkSize) {
                     const chunk = orderIds.slice(i, i + chunkSize)
-                    const { data: itemsData } = await supabase.from('order_items').select('*').in('order_id', chunk)
+                    // order_items — 실제 쓰는 3개 컬럼만
+                    const { data: itemsData } = await supabase.from('order_items').select('order_id, product_id, quantity').in('order_id', chunk)
                     if (itemsData) allItems = allItems.concat(itemsData)
                 }
                 setOrders(oData)
