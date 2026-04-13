@@ -298,65 +298,95 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                         )}
                                     </div>
                                     <div className="space-y-3">
-                                        {queriedOrders.filter((order: any) => order.customer_nickname === selectedNickname).map((order: any) => (
-                                            <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 relative overflow-hidden group hover:border-blue-200 transition-colors">
-                                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
-                                                <div className="flex justify-between items-start mb-3 pl-2">
-                                                    <div>
-                                                        <span className="text-xs font-bold text-slate-400 block mb-1">
-                                                            접수일: {new Date(order.created_at).toLocaleDateString()}
-                                                        </span>
-                                                        <strong className="text-lg font-black text-slate-800 tracking-tight">픽업 예약일: {order.pickup_date}</strong>
-                                                    </div>
-                                                    {(() => {
-                                                        const isAllItemsStocked = order.order_items?.length > 0 && order.order_items.every((item: any) => item.product?.is_stocked);
-                                                        return isAllItemsStocked ? (
-                                                            <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-200 font-black px-2 py-0.5 shadow-none">입고</Badge>
-                                                        ) : (
-                                                            <Badge className="bg-slate-50 text-slate-500 border border-slate-200 font-bold px-2 py-0.5 shadow-none">미입고</Badge>
-                                                        );
-                                                    })()}
-                                                </div>
-                                                <ul className="space-y-3 border-t border-slate-100 pt-3 pl-2">
-                                                    {order.order_items?.map((item: any) => {
-                                                        const itemPrice = item.product?.price || 0;
-                                                        const totalItemPrice = itemPrice * item.quantity;
-                                                        const showPrice = settings?.show_price ?? true;
-                                                        
-                                                        return (
-                                                            <li key={item.id} className="flex justify-between items-start text-[15px]">
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-bold text-slate-700">
-                                                                        {item.product?.display_name || item.product?.collect_name || "알 수 없는 상품"}
+                                        {(() => {
+                                            // 선택된 닉네임의 주문들을 픽업일별로 그룹핑 (오름차순)
+                                            const ownOrders = queriedOrders.filter((order: any) => order.customer_nickname === selectedNickname)
+                                            const groups = new Map<string, { pickup_date: string, items: any[], created_dates: Date[] }>()
+                                            ownOrders.forEach((order: any) => {
+                                                const key = order.pickup_date || ''
+                                                if (!groups.has(key)) groups.set(key, { pickup_date: key, items: [], created_dates: [] })
+                                                const g = groups.get(key)!
+                                                ;(order.order_items || []).forEach((it: any) => g.items.push(it))
+                                                if (order.created_at) g.created_dates.push(new Date(order.created_at))
+                                            })
+                                            const sortedGroups = Array.from(groups.values()).sort((a, b) => (a.pickup_date || '').localeCompare(b.pickup_date || ''))
+
+                                            const formatPickupDate = (d: string) => {
+                                                if (!d) return ''
+                                                const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+                                                if (!m) return d
+                                                const dObj = new Date(d)
+                                                if (isNaN(dObj.getTime())) return d
+                                                const days = ['일', '월', '화', '수', '목', '금', '토']
+                                                return `${m[2]}-${m[3]}(${days[dObj.getDay()]})`
+                                            }
+
+                                            return sortedGroups.map((g, gi) => {
+                                                const showPrice = settings?.show_price ?? true
+                                                const isAllItemsStocked = g.items.length > 0 && g.items.every((item: any) => item.product?.is_stocked)
+                                                const earliestCreated = g.created_dates.length > 0
+                                                    ? new Date(Math.min(...g.created_dates.map(d => d.getTime())))
+                                                    : null
+                                                const totalPrice = g.items.reduce((acc: number, item: any) => acc + (item.quantity * (item.product?.price || 0)), 0)
+
+                                                return (
+                                                    <div key={`${g.pickup_date}-${gi}`} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 relative overflow-hidden group hover:border-blue-200 transition-colors">
+                                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
+                                                        <div className="flex justify-between items-start mb-3 pl-2">
+                                                            <div>
+                                                                {earliestCreated && (
+                                                                    <span className="text-xs font-bold text-slate-400 block mb-1">
+                                                                        접수일: {earliestCreated.toLocaleDateString()}
                                                                     </span>
-                                                                    {showPrice && (
-                                                                        <span className="text-[12px] font-semibold text-slate-400 mt-0.5 tracking-tight">
-                                                                            개당 {itemPrice.toLocaleString()}원
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex flex-col items-end gap-1.5 mt-0.5">
-                                                                    <span className="font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{item.quantity}개</span>
-                                                                    {showPrice && (
-                                                                        <span className="text-[13px] font-bold text-slate-600">
-                                                                            {totalItemPrice.toLocaleString()}원
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </li>
-                                                        );
-                                                    })}
-                                                </ul>
-                                                {(settings?.show_price ?? true) && (
-                                                    <div className="border-t border-slate-100 mt-3 pt-3 pl-2 flex justify-between items-center bg-slate-50/50 rounded-b-xl -mx-4 -mb-4 px-4 pb-4">
-                                                        <span className="text-[14px] font-bold text-slate-500">총 결제 추정 금액</span>
-                                                        <span className="text-[18px] font-black text-slate-800">
-                                                            {order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity * (item.product?.price || 0)), 0).toLocaleString()}원
-                                                        </span>
+                                                                )}
+                                                                <strong className="text-lg font-black text-slate-800 tracking-tight">픽업일: {formatPickupDate(g.pickup_date)}</strong>
+                                                            </div>
+                                                            {isAllItemsStocked ? (
+                                                                <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-200 font-black px-2 py-0.5 shadow-none">입고</Badge>
+                                                            ) : (
+                                                                <Badge className="bg-slate-50 text-slate-500 border border-slate-200 font-bold px-2 py-0.5 shadow-none">미입고</Badge>
+                                                            )}
+                                                        </div>
+                                                        <ul className="space-y-3 border-t border-slate-100 pt-3 pl-2">
+                                                            {g.items.map((item: any) => {
+                                                                const itemPrice = item.product?.price || 0
+                                                                const totalItemPrice = itemPrice * item.quantity
+                                                                return (
+                                                                    <li key={item.id} className="flex justify-between items-start text-[15px]">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-bold text-slate-700">
+                                                                                {item.product?.display_name || item.product?.collect_name || "알 수 없는 상품"}
+                                                                            </span>
+                                                                            {showPrice && (
+                                                                                <span className="text-[12px] font-semibold text-slate-400 mt-0.5 tracking-tight">
+                                                                                    개당 {itemPrice.toLocaleString()}원
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex flex-col items-end gap-1.5 mt-0.5">
+                                                                            <span className="font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{item.quantity}개</span>
+                                                                            {showPrice && (
+                                                                                <span className="text-[13px] font-bold text-slate-600">
+                                                                                    {totalItemPrice.toLocaleString()}원
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </li>
+                                                                )
+                                                            })}
+                                                        </ul>
+                                                        {showPrice && (
+                                                            <div className="border-t border-slate-100 mt-3 pt-3 pl-2 flex justify-between items-center bg-slate-50/50 rounded-b-xl -mx-4 -mb-4 px-4 pb-4">
+                                                                <span className="text-[14px] font-bold text-slate-500">총 결제 추정 금액</span>
+                                                                <span className="text-[18px] font-black text-slate-800">
+                                                                    {totalPrice.toLocaleString()}원
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        ))}
+                                                )
+                                            })
+                                        })()}
                                     </div>
                                 </div>
                             )}

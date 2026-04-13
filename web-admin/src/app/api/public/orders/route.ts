@@ -47,7 +47,7 @@ export async function POST(request: Request) {
             .ilike('customer_nickname', `%${nickname.trim()}%`)
             .eq('is_received', false)
             .eq('is_hidden', false)
-            .order('pickup_date', { ascending: false })
+            .order('pickup_date', { ascending: true })
 
         if (ordersError) {
             console.error("Order fetch error:", ordersError)
