@@ -1164,21 +1164,23 @@ export default function PickupCalendarPage() {
         try {
             setIsLoading(true);
             
-            // 1. Unhide Products for the target_date
+            // 1. Unhide Products for the target_date (숨겨진 것만 대상으로 좁혀 타임아웃 방지)
             const { error: pErr } = await supabase
                 .from('products')
                 .update({ is_hidden: false })
                 .eq('store_id', storeId)
-                .eq('target_date', currentDate);
-            
+                .eq('target_date', currentDate)
+                .eq('is_hidden', true);
+
             if (pErr) throw pErr;
 
-            // 2. Unhide Orders for the pickup_date
+            // 2. Unhide Orders for the pickup_date (숨겨진 것만 대상으로 좁혀 타임아웃 방지)
             const { error: oErr } = await supabase
                 .from('orders')
                 .update({ is_hidden: false })
                 .eq('store_id', storeId)
-                .eq('pickup_date', currentDate);
+                .eq('pickup_date', currentDate)
+                .eq('is_hidden', true);
             
             if (oErr) throw oErr;
 
