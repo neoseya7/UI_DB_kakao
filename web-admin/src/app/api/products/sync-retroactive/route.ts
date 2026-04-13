@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 export async function POST(request: Request) {
     try {
         const payload = await request.json()
-        const { store_id, product_id, product_name, target_date } = payload
+        const { store_id, product_id, product_name, target_date, is_regular_sale } = payload
 
         if (!store_id || !product_id || !product_name) {
             return NextResponse.json({ success: false, error: 'Missing parameters' }, { status: 400 })
@@ -45,8 +45,8 @@ export async function POST(request: Request) {
                 }
             }
 
-            // Order lookup mechanism
-            const orderDate = target_date || log.collect_date || new Date().toISOString().split('T')[0]
+            // Order lookup mechanism (상시판매 상품이면 1900-01-01로 고정)
+            const orderDate = is_regular_sale ? '1900-01-01' : (target_date || log.collect_date || new Date().toISOString().split('T')[0])
             
             const { data: orders } = await supabase.from('orders')
                 .select('id')

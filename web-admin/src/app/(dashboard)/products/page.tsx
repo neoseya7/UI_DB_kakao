@@ -310,11 +310,12 @@ export default function ProductsPage() {
                     const res = await fetch('/api/products/sync-retroactive', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            store_id: storeId, 
-                            product_id: newProd.id, 
+                        body: JSON.stringify({
+                            store_id: storeId,
+                            product_id: newProd.id,
                             product_name: newProd.collect_name,
-                            target_date: newProd.target_date
+                            target_date: newProd.target_date,
+                            is_regular_sale: newProd.is_regular_sale
                         })
                     })
                     const result = await res.json()

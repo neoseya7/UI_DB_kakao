@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         const [{ data: config }, { data: settings }, { data: productsRaw }] = await Promise.all([
             supabase.from('super_admin_config').select('*').eq('id', 1).single(),
             supabase.from('store_settings').select('crm_tags').eq('store_id', store_id).single(),
-            supabase.from('products').select('id, collect_name, allocated_stock, target_date').eq('store_id', store_id).eq('is_hidden', false)
+            supabase.from('products').select('id, collect_name, allocated_stock, target_date, is_regular_sale').eq('store_id', store_id).eq('is_hidden', false)
         ])
 
         const productIds = productsRaw?.map((p: any) => p.id) || [];
@@ -348,7 +348,9 @@ export async function POST(request: Request) {
 
                         // Determine pickup date for this item
                         let finalDateStr = collect_date;
-                        if (matchedProduct.target_date) {
+                        if (matchedProduct.is_regular_sale) {
+                            finalDateStr = '1900-01-01';
+                        } else if (matchedProduct.target_date) {
                             finalDateStr = matchedProduct.target_date;
                         } else if (item.pickup_date && item.pickup_date !== "날짜미지정") {
                             if (item.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -425,7 +427,7 @@ export async function POST(request: Request) {
 
                 // Save to Orders DB
                 if (isActualOrder && item.matchedProduct) {
-                    let targetDateStr = item.matchedProduct.target_date || item.finalDateStr || collect_date;
+                    let targetDateStr = item.matchedProduct.is_regular_sale ? '1900-01-01' : (item.matchedProduct.target_date || item.finalDateStr || collect_date);
                     if (targetDateStr === "날짜미지정") targetDateStr = collect_date;
                     if (!targetDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
                         targetDateStr = collect_date;
