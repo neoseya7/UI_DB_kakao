@@ -68,6 +68,17 @@ export function updatePickupCacheCustomers(
     entry.timestamp = Date.now()
 }
 
+/** 캐시 내 상품 데이터 부분 업데이트 (가격/발주수량/비고 등) */
+export function updatePickupCacheProducts(
+    key: string,
+    updater: (products: any[]) => any[],
+) {
+    const entry = cache.get(key)
+    if (!entry) return
+    entry.products = updater(entry.products)
+    entry.timestamp = Date.now()
+}
+
 /** 캐시 초기화 */
 export function clearPickupCache() {
     cache.clear()

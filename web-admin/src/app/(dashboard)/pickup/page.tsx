@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar as CalendarIcon, Printer, ListCollapse, Search, PlusCircle, ArrowRightLeft, UploadCloud, DownloadCloud, Trash2, MoreVertical } from "lucide-react"
 import { useRef } from "react"
 import * as XLSX from 'xlsx'
-import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache, updatePickupCacheCustomers } from "@/lib/pickupCache"
+import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache, updatePickupCacheCustomers, updatePickupCacheProducts } from "@/lib/pickupCache"
 import { GuideBadge } from "@/components/ui/guide-badge"
 import PickupTable from "./components/PickupTable"
 import PickupCardList from "./components/PickupCardList"
@@ -1220,6 +1220,8 @@ export default function PickupCalendarPage() {
 
     const handleUpdateMemo = async (id: string, field: 'customer_memo_1' | 'customer_memo_2', val: string, customerName?: string) => {
         const memoKey = field === 'customer_memo_1' ? 'memo1' : 'memo2'
+        const cacheSearchTerm = searchScope === "all_dates" ? activeSearchTerm : ""
+        const cacheKey = storeId ? makeCacheKey(storeId, searchScope, currentDate, customSearchDate, customEndDate, cacheSearchTerm) : ""
         if (isMerged && customerName) {
             // 합치기 모드: 같은 닉네임의 모든 주문에 동일 값 저장
             const targetIds = rawCustomers.filter(c => c.name === customerName).map(c => c.id).filter(Boolean)
@@ -1227,6 +1229,9 @@ export default function PickupCalendarPage() {
                 const { error } = await supabase.from('orders').update({ [field]: val }).in('id', targetIds)
                 if (!error) {
                     setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, [memoKey]: val } : c))
+                    if (cacheKey) updatePickupCacheCustomers(cacheKey, cs =>
+                        cs.map(c => targetIds.includes(c.id) ? { ...c, [memoKey]: val } : c)
+                    )
                 }
             }
             return
@@ -1236,6 +1241,9 @@ export default function PickupCalendarPage() {
             setRawCustomers(prev => prev.map(c =>
                 c.id === id ? { ...c, [memoKey]: val } : c
             ))
+            if (cacheKey) updatePickupCacheCustomers(cacheKey, cs =>
+                cs.map(c => c.id === id ? { ...c, [memoKey]: val } : c)
+            )
         }
     }
 
@@ -1244,13 +1252,17 @@ export default function PickupCalendarPage() {
         const finalValue = field === 'product_memo' ? value : (parseInt(value) || 0)
         const { error } = await supabase.from('products').update({ [field]: finalValue }).eq('id', productId)
         if (!error) {
-            setProducts(prev => prev.map(p => {
+            const mapProduct = (p: any) => {
                 if (p.id !== productId) return p;
                 if (field === 'allocated_stock') return { ...p, stock: finalValue as number };
                 if (field === 'price') return { ...p, price: finalValue as number };
                 if (field === 'product_memo') return { ...p, product_memo: finalValue as string };
                 return p;
-            }))
+            }
+            setProducts(prev => prev.map(mapProduct))
+            const cacheSearchTerm = searchScope === "all_dates" ? activeSearchTerm : ""
+            const cacheKey = storeId ? makeCacheKey(storeId, searchScope, currentDate, customSearchDate, customEndDate, cacheSearchTerm) : ""
+            if (cacheKey) updatePickupCacheProducts(cacheKey, ps => ps.map(mapProduct))
         } else {
             console.error(error)
             alert("상품 정보 업데이트 실패: " + error.message)
