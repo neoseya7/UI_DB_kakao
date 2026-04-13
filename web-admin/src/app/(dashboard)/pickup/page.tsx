@@ -88,6 +88,10 @@ export default function PickupCalendarPage() {
 
     const [availableDates, setAvailableDates] = useState<string[]>([])
     const [products, setProducts] = useState<Product[]>([])
+    // 편집 중인 값만 보관하는 버퍼(편집 종료 시 clear). 캐시→fresh 덮어쓰기 후에도 defaultValue 고착으로 값이 틀어지는 이슈 방지용 controlled 패턴.
+    const [stockEditBuffer, setStockEditBuffer] = useState<Record<string, string>>({})
+    const [priceEditBuffer, setPriceEditBuffer] = useState<Record<string, string>>({})
+    const [memoEditBuffer, setMemoEditBuffer] = useState<Record<string, string>>({})
     const [manualOrderProducts, setManualOrderProducts] = useState<Product[]>([])
     const [rawCustomers, setRawCustomers] = useState<Order[]>([])
     
@@ -2039,7 +2043,18 @@ export default function PickupCalendarPage() {
                                         </div>
                                     </GuideBadge>
                                 </th>
-                                {displayProducts.map((p, i) => <th key={p.id || i} className="border-b border-r p-0.5 bg-amber-50/80 font-normal"><Input key={`memo-${p.id}`} defaultValue={p.product_memo} onBlur={(e) => handleUpdateProductField(p.id, 'product_memo', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} placeholder="비고" className="h-6 w-full min-w-0 text-[11px] text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors px-1" /></th>)}
+                                {displayProducts.map((p, i) => <th key={p.id || i} className="border-b border-r p-0.5 bg-amber-50/80 font-normal"><Input
+                                    key={`memo-${p.id}`}
+                                    value={memoEditBuffer[p.id] ?? (p.product_memo ?? "")}
+                                    onChange={(e) => setMemoEditBuffer(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                    onBlur={(e) => {
+                                        handleUpdateProductField(p.id, 'product_memo', e.target.value);
+                                        setMemoEditBuffer(prev => { const n = { ...prev }; delete n[p.id]; return n; });
+                                    }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                                    placeholder="비고"
+                                    className="h-6 w-full min-w-0 text-[11px] text-center border-transparent bg-transparent focus:bg-white focus:border-amber-300 transition-colors px-1"
+                                /></th>)}
                             </tr>
                             <tr>
                                 {displayProducts.map((p, i) => (
@@ -2047,7 +2062,17 @@ export default function PickupCalendarPage() {
                                         <div className="flex flex-col items-center justify-center gap-0">
                                             <span>{p.name}</span>
                                             <div className="flex items-center justify-center gap-0.5 mt-1">
-                                                <Input type="number" defaultValue={p.price} onBlur={(e) => handleUpdateProductField(p.id, 'price', e.target.value)} className="h-5 w-[60px] text-[11px] font-mono text-center px-0.5 py-0 border-slate-300 bg-white shadow-sm" title="가격을 수정하고 바깥을 클릭하면 저장됩니다" />
+                                                <Input
+                                                    type="number"
+                                                    value={priceEditBuffer[p.id] ?? String(p.price ?? 0)}
+                                                    onChange={(e) => setPriceEditBuffer(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                                    onBlur={(e) => {
+                                                        handleUpdateProductField(p.id, 'price', e.target.value);
+                                                        setPriceEditBuffer(prev => { const n = { ...prev }; delete n[p.id]; return n; });
+                                                    }}
+                                                    className="h-5 w-[60px] text-[11px] font-mono text-center px-0.5 py-0 border-slate-300 bg-white shadow-sm"
+                                                    title="가격을 수정하고 바깥을 클릭하면 저장됩니다"
+                                                />
                                                 <span className="text-[11px] text-muted-foreground font-normal">원</span>
                                             </div>
                                         </div>
@@ -2072,7 +2097,22 @@ export default function PickupCalendarPage() {
                                     return (
                                         <th key={di} className="border-b border-r py-1 px-0.5 bg-white">
                                             <div className="flex items-center justify-center gap-0">
-                                                <Input type="number" defaultValue={products[oi].stock} onBlur={(e) => handleUpdateProductField(displayProducts[di].id, 'allocated_stock', e.target.value)} className="h-5 w-[50px] text-[11px] font-bold text-center px-0.5 py-0 border-blue-200 bg-blue-50/60 text-blue-800 shadow-sm" title="발주수량 수정" />
+                                                <Input
+                                                    type="number"
+                                                    value={stockEditBuffer[displayProducts[di].id] ?? String(products[oi].stock ?? 0)}
+                                                    onChange={(e) => {
+                                                        const id = displayProducts[di].id;
+                                                        const v = e.target.value;
+                                                        setStockEditBuffer(prev => ({ ...prev, [id]: v }));
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        const id = displayProducts[di].id;
+                                                        handleUpdateProductField(id, 'allocated_stock', e.target.value);
+                                                        setStockEditBuffer(prev => { const n = { ...prev }; delete n[id]; return n; });
+                                                    }}
+                                                    className="h-5 w-[50px] text-[11px] font-bold text-center px-0.5 py-0 border-blue-200 bg-blue-50/60 text-blue-800 shadow-sm"
+                                                    title="발주수량 수정"
+                                                />
                                                 <span className="text-[12px] font-semibold text-slate-700 bg-slate-100 px-0.5 py-0.5 rounded min-w-[20px] text-center">{orderSum}</span>
                                             </div>
                                         </th>
