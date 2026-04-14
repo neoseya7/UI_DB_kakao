@@ -40,10 +40,12 @@ export async function GET(request: Request) {
         // Use 'pickup_date' for business logic correctness (or 'created_at' if fallback)
         // Since pickup_date is a DATE type string YYYY-MM-DD
         const thresholdDateStr = thresholdISO.split('T')[0];
+        // pickup_date='1900-01-01'은 상시판매 주문의 sentinel 값이므로 삭제 제외
         const { error: orderErr } = await supabase
             .from('orders')
             .delete()
-            .lt('pickup_date', thresholdDateStr);
+            .lt('pickup_date', thresholdDateStr)
+            .neq('pickup_date', '1900-01-01');
 
         if (orderErr) throw new Error(`Orders Delete Error: ${orderErr.message}`);
 
