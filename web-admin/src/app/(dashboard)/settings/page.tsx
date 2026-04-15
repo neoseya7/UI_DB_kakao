@@ -386,7 +386,7 @@ export default function SettingsPage() {
                     <CardContent className="space-y-4">
                         {ogImageUrl ? (
                             <div className="relative inline-block">
-                                <img src={ogImageUrl} alt="미리보기 이미지" className="w-64 h-40 object-cover rounded-lg border shadow-sm" />
+                                <img src={ogImageUrl} alt="미리보기 이미지" className="w-64 h-40 object-cover rounded-lg border shadow-sm" loading="lazy" />
                                 <button onClick={handleRemoveOgImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md">
                                     <X className="w-4 h-4" />
                                 </button>

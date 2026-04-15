@@ -14,6 +14,7 @@ import { useRef } from "react"
 import * as XLSX from 'xlsx'
 import { makeCacheKey, getPickupCache, setPickupCache, clearPickupCache, updatePickupCacheCustomers, updatePickupCacheProducts } from "@/lib/pickupCache"
 import { GuideBadge } from "@/components/ui/guide-badge"
+import { onOrdersChanged } from "@/lib/dataChangeBus"
 import PickupTable from "./components/PickupTable"
 import PickupCardList from "./components/PickupCardList"
 import {
@@ -30,6 +31,36 @@ type Order = { id: string, name: string, items: number[], memo1: string, memo2: 
 
 
 export default function PickupCalendarPage() {
+    // 상단/하단 가로 스크롤바 동기화
+    const topScrollRef = useRef<HTMLDivElement>(null)
+    const bottomScrollRef = useRef<HTMLDivElement>(null)
+    const tableRef = useRef<HTMLTableElement>(null)
+    const [tableWidth, setTableWidth] = useState(0)
+    const scrollSyncingRef = useRef(false)
+    useEffect(() => {
+        if (!tableRef.current) return
+        const update = () => setTableWidth(tableRef.current?.scrollWidth || 0)
+        update()
+        const ro = new ResizeObserver(update)
+        ro.observe(tableRef.current)
+        return () => ro.disconnect()
+    }, [])
+    const handleTopScroll = () => {
+        if (scrollSyncingRef.current) return
+        scrollSyncingRef.current = true
+        if (bottomScrollRef.current && topScrollRef.current) {
+            bottomScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft
+        }
+        scrollSyncingRef.current = false
+    }
+    const handleBottomScroll = () => {
+        if (scrollSyncingRef.current) return
+        scrollSyncingRef.current = true
+        if (topScrollRef.current && bottomScrollRef.current) {
+            topScrollRef.current.scrollLeft = bottomScrollRef.current.scrollLeft
+        }
+        scrollSyncingRef.current = false
+    }
     const [storeId, setStoreId] = useState<string | null>(null)
     const [isMerged, setIsMerged] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
@@ -186,8 +217,8 @@ export default function PickupCalendarPage() {
             case 'memo':
                 const mLeft = isDeleteMode ? "left-[430px] sm:left-[640px]" : "left-[385px] sm:left-[580px]"
                 return {
-                    td: `sticky z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-r-indigo-200 ${mLeft} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px]`,
-                    th: `sticky z-40 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-r-indigo-300 ${mLeft} w-[100px] sm:w-[130px] min-w-[100px] sm:min-w-[130px] max-w-[100px] sm:max-w-[130px]`
+                    td: `sticky z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-r-indigo-200 ${mLeft} w-[200px] sm:w-[260px] min-w-[200px] sm:min-w-[260px] max-w-[200px] sm:max-w-[260px]`,
+                    th: `sticky z-40 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-r-indigo-300 ${mLeft} w-[200px] sm:w-[260px] min-w-[200px] sm:min-w-[260px] max-w-[200px] sm:max-w-[260px]`
                 }
         }
     }
@@ -240,6 +271,60 @@ export default function PickupCalendarPage() {
             fetchMatrixData()
         }
     }, [activeSearchTerm])
+
+    // Cross-PC auto-refresh:
+    //  - Supabase Realtime (cross-device, primary)
+    //  - BroadcastChannel (same-browser, fastest)
+    //  - visibility fallback (defensive, 5min cooldown — handles Realtime disconnect)
+    // All triggers share a 500ms debounce to absorb thundering herd bursts.
+    useEffect(() => {
+        if (!storeId) return
+        let refreshTimer: ReturnType<typeof setTimeout> | null = null
+        let lastRefresh = Date.now()
+        const scheduleRefresh = () => {
+            if (refreshTimer) clearTimeout(refreshTimer)
+            refreshTimer = setTimeout(() => {
+                lastRefresh = Date.now()
+                fetchMatrixData(true)
+            }, 500)
+        }
+
+        // 1) Same-browser cross-tab
+        const unsubscribe = onOrdersChanged(scheduleRefresh)
+
+        // 2) Supabase Realtime — orders + order_items, filtered by store_id for orders
+        //    order_items has no store_id column; unfiltered but payload is tiny and store isolation
+        //    is maintained by the subsequent RLS-scoped refetch.
+        const channel = supabase
+            .channel(`pickup-orders-${storeId}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
+                scheduleRefresh
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'order_items' },
+                scheduleRefresh
+            )
+            .subscribe()
+
+        // 3) Visibility fallback (5min cooldown) — covers Realtime disconnect edge cases
+        const onVisible = () => {
+            if (!document.hidden && Date.now() - lastRefresh > 5 * 60 * 1000) {
+                lastRefresh = Date.now()
+                fetchMatrixData(true)
+            }
+        }
+        document.addEventListener('visibilitychange', onVisible)
+
+        return () => {
+            if (refreshTimer) clearTimeout(refreshTimer)
+            unsubscribe()
+            supabase.removeChannel(channel)
+            document.removeEventListener('visibilitychange', onVisible)
+        }
+    }, [storeId, currentDate])
 
     useEffect(() => {
         if (!storeId || !isTransferModalOpen) return;
@@ -336,7 +421,7 @@ export default function PickupCalendarPage() {
             if (currentDate === "상시판매") {
                 pQuery = pQuery.eq('is_regular_sale', true)
             } else {
-                pQuery = pQuery.or(`target_date.eq.${currentDate},is_regular_sale.eq.true`)
+                pQuery = pQuery.eq('target_date', currentDate)
             }
         } else if (searchScope === "date_range") {
             pQuery = pQuery.eq('is_regular_sale', true)
@@ -377,7 +462,7 @@ export default function PickupCalendarPage() {
             let oQuery = supabase.from('orders').select('id,customer_nickname,customer_memo_1,customer_memo_2,is_received,pickup_date,created_at').eq('store_id', storeId).eq('is_hidden', false)
             if (searchScope === "today") {
                 const dbDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
-                oQuery = oQuery.or(`pickup_date.eq.${dbDate},pickup_date.eq.1900-01-01`)
+                oQuery = oQuery.eq('pickup_date', dbDate)
             } else if (searchScope === "date_range" && customSearchDate && customEndDate) {
                 oQuery = oQuery.or(`and(pickup_date.gte.${customSearchDate},pickup_date.lte.${customEndDate}),pickup_date.eq.1900-01-01`)
             } else if (searchScope === "date_range" && customSearchDate && !customEndDate) {
@@ -568,14 +653,46 @@ export default function PickupCalendarPage() {
         if (!confirm(`선택된 ${selectedDeleteIds.length}개의 주문을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
 
         setIsLoading(true);
-        // Delete items from order_items first
+
+        // 0. 삭제 전에 (nickname, collect_name) 튜플을 확보해둠 — 대응되는 chat_logs를 나중에 되돌리기 위함
+        const { data: ordersToDelete } = await supabase
+            .from('orders')
+            .select('id, customer_nickname, order_items(products(collect_name))')
+            .in('id', selectedDeleteIds)
+        const revertTargets = new Map<string, Set<string>>() // nickname -> Set<collect_name>
+        for (const o of ordersToDelete || []) {
+            if (!o.customer_nickname) continue
+            const set = revertTargets.get(o.customer_nickname) || new Set<string>()
+            for (const oi of o.order_items || []) {
+                const name = (oi as any).products?.collect_name
+                if (name) set.add(name)
+            }
+            revertTargets.set(o.customer_nickname, set)
+        }
+
+        // 1. order_items → orders 삭제
         const { error: itemsErr } = await supabase.from('order_items').delete().in('order_id', selectedDeleteIds);
         if (itemsErr) console.error("Failed deleting items:", itemsErr);
-        
-        // Delete orders
+
         const { error: ordersErr } = await supabase.from('orders').delete().in('id', selectedDeleteIds);
         if (ordersErr) console.error("Failed deleting orders:", ordersErr);
-        
+
+        // 2. 대응되는 chat_logs 되돌리기 (is_processed=false, UNKNOWN)
+        if (storeId && revertTargets.size > 0) {
+            for (const [nick, names] of revertTargets.entries()) {
+                if (names.size === 0) continue
+                const { error: revErr } = await supabase.from('chat_logs').update({
+                    is_processed: false,
+                    category: 'UNKNOWN',
+                    classification: null,
+                }).eq('store_id', storeId)
+                  .eq('nickname', nick)
+                  .eq('is_processed', true)
+                  .in('product_name', Array.from(names))
+                if (revErr) console.error("Failed reverting chat_logs:", revErr)
+            }
+        }
+
         alert(`총 ${selectedDeleteIds.length}개의 주문이 일괄 삭제되었습니다.`);
         setIsDeleteMode(false);
         setSelectedDeleteIds([]);
@@ -2018,8 +2135,11 @@ export default function PickupCalendarPage() {
                 />
             ) : (
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
-                <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 240px)" }}>
-                    <table className="w-max text-sm text-center border-collapse relative">
+                <div ref={topScrollRef} onScroll={handleTopScroll} className="overflow-x-auto overflow-y-hidden w-full hidden sm:block">
+                    <div style={{ width: tableWidth, height: 1 }} />
+                </div>
+                <div ref={bottomScrollRef} onScroll={handleBottomScroll} className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 255px)" }}>
+                    <table ref={tableRef} className="w-max text-sm text-center border-collapse relative">
                         <thead className="bg-muted/90 sticky top-0 z-30 shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
                             <tr>
                                 <th rowSpan={4} className={`border-b border-r p-3 whitespace-nowrap text-xs sm:text-sm ${getStickyClasses('name').th}`}>
@@ -2275,7 +2395,7 @@ export default function PickupCalendarPage() {
                                             {activeProductIndices.reduce((total, oi) => total + calculateItemPrice(products[oi], c.items[oi] || 0), 0).toLocaleString()}원
                                         </td>
                                         <td className={`border-b border-r py-1 px-0.5 bg-indigo-50/95 ${getStickyClasses('memo').td}`}>
-                                            <div className="flex gap-0.5 w-full relative">
+                                            <div className="grid grid-cols-2 gap-0.5 w-full relative">
                                                 {editingMemo?.orderId === c.id && editingMemo?.type === 'memo1' ? (
                                                     <Input autoFocus defaultValue={c.memo1} onBlur={(e) => { handleUpdateMemo(c.id, 'customer_memo_1', e.target.value, c.name); setEditingMemo(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingMemo(null) }} placeholder="비고" className="h-6 text-[11px] bg-white border-primary px-1 text-center shadow-inner flex-1 min-w-0" />
                                                 ) : (

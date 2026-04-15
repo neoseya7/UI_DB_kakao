@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, memo, useState } from "react"
+import { useRef, memo, useState, useEffect } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -35,6 +35,36 @@ function PickupTableImpl(props: PickupViewProps) {
     const [memoEditBuffer, setMemoEditBuffer] = useState<Record<string, string>>({})
 
     const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const topScrollRef = useRef<HTMLDivElement>(null)
+    const tableRef = useRef<HTMLTableElement>(null)
+    const scrollSyncingRef = useRef(false)
+    const [tableWidth, setTableWidth] = useState(0)
+
+    useEffect(() => {
+        if (!tableRef.current) return
+        const update = () => setTableWidth(tableRef.current?.scrollWidth || 0)
+        update()
+        const ro = new ResizeObserver(update)
+        ro.observe(tableRef.current)
+        return () => ro.disconnect()
+    }, [])
+
+    const handleTopScroll = () => {
+        if (scrollSyncingRef.current) return
+        scrollSyncingRef.current = true
+        if (scrollContainerRef.current && topScrollRef.current) {
+            scrollContainerRef.current.scrollLeft = topScrollRef.current.scrollLeft
+        }
+        scrollSyncingRef.current = false
+    }
+    const handleMainScroll = () => {
+        if (scrollSyncingRef.current) return
+        scrollSyncingRef.current = true
+        if (topScrollRef.current && scrollContainerRef.current) {
+            topScrollRef.current.scrollLeft = scrollContainerRef.current.scrollLeft
+        }
+        scrollSyncingRef.current = false
+    }
 
     const rowVirtualizer = useVirtualizer({
         count: filteredCustomers.length,
@@ -156,8 +186,11 @@ function PickupTableImpl(props: PickupViewProps) {
 
     return (
         <Card className="overflow-hidden border-border/60 shadow-md bg-card">
-            <div ref={scrollContainerRef} className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 240px)" }}>
-                <table className="w-max text-sm text-center border-collapse relative">
+            <div ref={topScrollRef} onScroll={handleTopScroll} className="overflow-x-auto overflow-y-hidden w-full hidden sm:block">
+                <div style={{ width: tableWidth, height: 1 }} />
+            </div>
+            <div ref={scrollContainerRef} onScroll={handleMainScroll} className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 240px)" }}>
+                <table ref={tableRef} className="w-max text-sm text-center border-collapse relative">
                     <thead className="bg-muted/90 sticky top-0 z-30 shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
                         <tr>
                             <th rowSpan={4} className={`border-b border-r p-3 whitespace-nowrap text-xs sm:text-sm ${getStickyClasses('name').th}`}>

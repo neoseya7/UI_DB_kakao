@@ -381,49 +381,15 @@ export async function POST(request: Request) {
                                     matchedProduct.remaining_stock -= qty;
                                 }
 
-                                let finalDateStr = collect_date;
-                                if (matchedProduct.is_regular_sale) {
-                                    finalDateStr = '1900-01-01';
-                                } else if (matchedProduct.target_date) {
-                                    finalDateStr = matchedProduct.target_date;
-                                } else if (item.pickup_date && item.pickup_date !== "날짜미지정") {
-                                    if (item.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                        finalDateStr = item.pickup_date;
-                                    } else {
-                                        const year = collect_date.split('-')[0]
-                                        const mmdd = item.pickup_date.replace('/', '-')
-                                        if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                                            const parts = mmdd.split('-')
-                                            finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
-                                        }
-                                    }
-                                } else if (extractedItems[0].pickup_date && extractedItems[0].pickup_date !== "날짜미지정") {
-                                    const firstPD = extractedItems[0].pickup_date;
-                                    if (firstPD.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                        finalDateStr = firstPD;
-                                    } else {
-                                        const year = collect_date.split('-')[0]
-                                        const mmdd = firstPD.replace('/', '-')
-                                        if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                                            const parts = mmdd.split('-')
-                                            finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
-                                        }
-                                    }
-                                }
-                                item.finalDateStr = finalDateStr;
-
-                                if (!item.pickup_date || item.pickup_date === "날짜미지정" || item.pickup_date.trim() === "") {
-                                    if (!matchedProduct.target_date) {
-                                        if (!isOutOfStock) classifications.push("날짜미지정");
-                                    }
-                                }
+                                // 픽업일은 오직 매칭된 상품에서 결정됨 (상품 등록 시 target_date 필수)
+                                item.finalDateStr = matchedProduct.is_regular_sale ? '1900-01-01' : matchedProduct.target_date;
 
                                 if (isOutOfStock) classifications.push("재고초과주문");
 
                                 const { data: existingOrders } = await supabase.from('orders')
                                     .select('id, order_items(product_id)')
                                     .eq('store_id', store_id)
-                                    .eq('pickup_date', finalDateStr)
+                                    .eq('pickup_date', item.finalDateStr)
                                     .eq('customer_nickname', nickname);
                                 
                                 if (existingOrders && existingOrders.length > 0) {
@@ -437,9 +403,6 @@ export async function POST(request: Request) {
                                 
                             } else {
                                 classifications.push("상품미등록");
-                                if (!item.pickup_date || item.pickup_date === "날짜미지정" || item.pickup_date.trim() === "") {
-                                    classifications.push("날짜미지정");
-                                }
                             }
                         } else {
                             classifications.push("상품미등록");
@@ -459,10 +422,10 @@ export async function POST(request: Request) {
 
                         // Save to Orders DB
                         if (shouldSaveToOrders && item.matchedProduct) {
-                            let targetDateStr = item.finalDateStr || collect_date;
-                            if (targetDateStr === "날짜미지정") targetDateStr = collect_date;
-                            if (!targetDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                targetDateStr = collect_date;
+                            const targetDateStr = item.matchedProduct.is_regular_sale ? '1900-01-01' : item.matchedProduct.target_date;
+                            if (!targetDateStr) {
+                                console.error("[collect-bulk] matchedProduct has no target_date and is not regular_sale — skipping order insert", item.matchedProduct.id);
+                                continue;
                             }
 
                             const { data: orderData } = await supabase.from('orders').insert({

@@ -46,28 +46,14 @@ export async function POST(request: Request) {
             supabase.from('products').select('id, collect_name, allocated_stock, target_date, is_regular_sale').eq('store_id', store_id).eq('is_hidden', false)
         ])
 
-        const productIds = productsRaw?.map((p: any) => p.id) || [];
-        let qtyMap: Record<string, number> = {};
-        if (productIds.length > 0) {
-            const { data: rpcData, error: rpcErr } = await supabase.rpc('get_product_sales_sum', {
-                p_store_id: store_id,
-                p_product_ids: productIds
-            });
-
-            if (rpcData && !rpcErr) {
-                for (const item of rpcData) {
-                    qtyMap[item.product_id] = parseInt(item.total_quantity, 10) || 0;
-                }
-            } else {
-                console.error("RPC Error:", rpcErr);
-            }
-        }
-
-        const products = productsRaw?.map((p: any) => ({
+        // Prepare products without stock-sales calculation (RPC deferred until we know it's an order message)
+        // remaining_stock initialized to allocated_stock — preserves legacy RPC-failure semantics
+        const products: any[] = productsRaw?.map((p: any) => ({
             ...p,
             collect_name: p.collect_name ? p.collect_name.trim() : "",
-            remaining_stock: p.allocated_stock !== null ? Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0)) : null
+            remaining_stock: p.allocated_stock !== null ? p.allocated_stock : null
         })) || []
+        const productIds = productsRaw?.map((p: any) => p.id) || [];
 
         // 2. Filter out Manager and System messages to save AI tokens & DB space
         const managerNicks = settings?.crm_tags?.filter((t: any) => t.type === 'manager').map((t: any) => t.name) || []
@@ -298,6 +284,27 @@ export async function POST(request: Request) {
             }
         }
 
+        // --- OPTIMIZATION: Defer stock RPC until we know it's an actual order message ---
+        if (extractedItems.length > 0 && productIds.length > 0) {
+            const { data: rpcData, error: rpcErr } = await supabase.rpc('get_product_sales_sum', {
+                p_store_id: store_id,
+                p_product_ids: productIds
+            });
+            if (rpcData && !rpcErr) {
+                const qtyMap: Record<string, number> = {};
+                for (const item of rpcData) {
+                    qtyMap[item.product_id] = parseInt(item.total_quantity, 10) || 0;
+                }
+                for (const p of products) {
+                    if (p.allocated_stock !== null) {
+                        p.remaining_stock = Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0));
+                    }
+                }
+            } else if (rpcErr) {
+                console.error("RPC Error:", rpcErr);
+            }
+        }
+
         if (extractedItems.length === 0) {
             // Handle non-order or empty extractions (e.g., 픽업고지, 문의)
             let classifications = [...generalClassifications, `분류:${promptCat}`];
@@ -346,44 +353,8 @@ export async function POST(request: Request) {
                             matchedProduct.remaining_stock -= qty; 
                         }
 
-                        // Determine pickup date for this item
-                        let finalDateStr = collect_date;
-                        if (matchedProduct.is_regular_sale) {
-                            finalDateStr = '1900-01-01';
-                        } else if (matchedProduct.target_date) {
-                            finalDateStr = matchedProduct.target_date;
-                        } else if (item.pickup_date && item.pickup_date !== "날짜미지정") {
-                            if (item.pickup_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                finalDateStr = item.pickup_date;
-                            } else {
-                                const year = collect_date.split('-')[0];
-                                const mmdd = item.pickup_date.replace('/', '-');
-                                if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                                    const parts = mmdd.split('-');
-                                    finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-                                }
-                            }
-                        } else if (extractedItems[0].pickup_date && extractedItems[0].pickup_date !== "날짜미지정") {
-                            // Fallback to first item's date
-                            const firstPD = extractedItems[0].pickup_date;
-                            if (firstPD.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                finalDateStr = firstPD;
-                            } else {
-                                const year = collect_date.split('-')[0];
-                                const mmdd = firstPD.replace('/', '-');
-                                if (mmdd.match(/^\d{1,2}-\d{1,2}$/)) {
-                                    const parts = mmdd.split('-');
-                                    finalDateStr = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-                                }
-                            }
-                        }
-                        item.finalDateStr = finalDateStr;
-
-                        if (!item.pickup_date || item.pickup_date === "날짜미지정" || item.pickup_date.trim() === "") {
-                            if (!matchedProduct.target_date) {
-                                if (!isOutOfStock) classifications.push("날짜미지정");
-                            }
-                        }
+                        // 픽업일은 오직 매칭된 상품에서 결정됨 (상품 등록 시 target_date 필수)
+                        item.finalDateStr = matchedProduct.is_regular_sale ? '1900-01-01' : matchedProduct.target_date;
 
                         if (isOutOfStock) classifications.push("재고초과주문");
 
@@ -391,7 +362,7 @@ export async function POST(request: Request) {
                         const { data: existingOrders } = await supabase.from('orders')
                             .select('id, order_items(product_id)')
                             .eq('store_id', store_id)
-                            .eq('pickup_date', finalDateStr)
+                            .eq('pickup_date', item.finalDateStr)
                             .eq('customer_nickname', nickname);
 
                         if (existingOrders && existingOrders.length > 0) {
@@ -406,9 +377,6 @@ export async function POST(request: Request) {
 
                     } else {
                         classifications.push("상품미등록");
-                        if (!item.pickup_date || item.pickup_date === "날짜미지정" || item.pickup_date.trim() === "") {
-                            classifications.push("날짜미지정");
-                        }
                     }
                 }
 
@@ -427,10 +395,10 @@ export async function POST(request: Request) {
 
                 // Save to Orders DB
                 if (isActualOrder && item.matchedProduct) {
-                    let targetDateStr = item.matchedProduct.is_regular_sale ? '1900-01-01' : (item.matchedProduct.target_date || item.finalDateStr || collect_date);
-                    if (targetDateStr === "날짜미지정") targetDateStr = collect_date;
-                    if (!targetDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        targetDateStr = collect_date;
+                    const targetDateStr = item.matchedProduct.is_regular_sale ? '1900-01-01' : item.matchedProduct.target_date;
+                    if (!targetDateStr) {
+                        console.error("[collect] matchedProduct has no target_date and is not regular_sale — skipping order insert", item.matchedProduct.id);
+                        continue;
                     }
 
                     const { data: orderData } = await supabase.from('orders').insert({

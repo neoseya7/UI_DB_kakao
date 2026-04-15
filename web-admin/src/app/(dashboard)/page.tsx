@@ -17,8 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { GuideBadge } from "@/components/ui/guide-badge"
+import { notifyOrdersChanged } from "@/lib/dataChangeBus"
+import { useRouter } from "next/navigation"
 
 export default function Dashboard() {
+  const router = useRouter()
   const [logs, setLogs] = useState<any[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -131,9 +134,16 @@ export default function Dashboard() {
               }
             }
           } else {
-            displayCat = row.category === "ORDER" ? "픽업고지" :
-              row.category === "COMPLAINT" ? "주문취소" :
-                row.category === "INQUIRY" ? "문의" : "기타";
+            // classification이 null인데 product_name이 살아있으면 "주문"으로 복구 표시
+            // (AI는 주문으로 분류했으나 어딘가에서 classification이 지워진 버그 상태 대응)
+            const hasProduct = row.product_name && row.product_name !== "-" && row.product_name !== "X";
+            if (hasProduct) {
+              displayCat = "주문";
+            } else {
+              displayCat = row.category === "ORDER" ? "픽업고지" :
+                row.category === "COMPLAINT" ? "주문취소" :
+                  row.category === "INQUIRY" ? "문의" : "기타";
+            }
           }
 
           // Generate Multi-Item Match Badges dynamically
@@ -234,57 +244,62 @@ export default function Dashboard() {
     try {
       setIsLoading(true)
 
-      // 1. 매칭된 날짜 추출
-      let assignedDate: string | null = null
+      // 1. 매칭 대상 상품 후보 확보
+      const rawProductName = log.product?.replace(/\(.*?\)$/, '').trim()
+      const productCandidates = (activeProducts || []).filter((p: any) => {
+        const pName = p.unit_text ? `${p.collect_name}(${p.unit_text})` : p.collect_name
+        return pName === log.product || p.collect_name === log.product || p.collect_name === rawProductName
+      })
+
+      // 2. 매칭된 날짜 후보: matchBadges → classification → 모든 상품 target_date
+      const candidateDates = new Set<string>()
       if (log.matchBadges?.length > 0) {
-        const matched = log.matchBadges.find((b: any) => b.isMatched)
-        if (matched) assignedDate = matched.dateText
+        for (const b of log.matchBadges) {
+          if (b.isMatched && b.dateText && b.dateText !== "상시판매") candidateDates.add(b.dateText)
+        }
+      }
+      if (log.classification) {
+        const m = log.classification.match(/\[(20\d{2}-\d{2}-\d{2}) 반영\]/)
+        if (m) candidateDates.add(m[1])
+      }
+      // 폴백: 위에서 아무 날짜도 못 얻으면 후보 상품의 target_date 전부 시도 (UI 뱃지가 isMatched:false여도 historical order가 남아있을 수 있음)
+      if (candidateDates.size === 0) {
+        for (const p of productCandidates) if (p.target_date) candidateDates.add(p.target_date)
       }
 
-      // 2. 해당 주문 찾기 (닉네임 + 날짜 + 상품)
-      if (assignedDate && assignedDate !== "상시판매") {
-        const rawProductName = log.product?.replace(/\(.*?\)$/, '').trim()
-        const matchedProd = activeProducts?.find((p: any) => {
-          const pName = p.unit_text ? `${p.collect_name}(${p.unit_text})` : p.collect_name
-          return (pName === log.product || p.collect_name === log.product || p.collect_name === rawProductName) && p.target_date === assignedDate
-        }) || activeProducts?.find((p: any) => p.collect_name === rawProductName)
+      // 3. 후보 (date × product)로 order_items 찾아 삭제
+      const productIds = productCandidates.map((p: any) => p.id)
+      if (productIds.length > 0 && candidateDates.size > 0) {
+        const { data: orders } = await supabase.from('orders')
+          .select('id, pickup_date, order_items(id, product_id)')
+          .eq('store_id', user.id)
+          .eq('customer_nickname', log.nickname)
+          .in('pickup_date', Array.from(candidateDates))
 
-        if (matchedProd) {
-          const { data: orders } = await supabase.from('orders')
-            .select('id')
-            .eq('store_id', user.id)
-            .eq('pickup_date', assignedDate)
-            .eq('customer_nickname', log.nickname)
-
-          if (orders) {
-            for (const order of orders) {
-              const { data: items } = await supabase.from('order_items')
-                .select('id, product_id')
-                .eq('order_id', order.id)
-                .eq('product_id', matchedProd.id)
-
-              if (items && items.length > 0) {
-                await supabase.from('order_items').delete().eq('id', items[0].id)
-                // 빈 주문 정리
-                const { count } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('order_id', order.id)
-                if (count === 0) {
-                  await supabase.from('orders').delete().eq('id', order.id)
-                }
-                break
-              }
-            }
+        for (const order of orders || []) {
+          const toDelete = (order.order_items || []).filter((oi: any) => productIds.includes(oi.product_id))
+          if (toDelete.length === 0) continue
+          await supabase.from('order_items').delete().in('id', toDelete.map((oi: any) => oi.id))
+          // 빈 주문 정리
+          const { count } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('order_id', order.id)
+          if (count === 0) {
+            await supabase.from('orders').delete().eq('id', order.id)
           }
         }
       }
 
-      // 3. chat_logs 미처리로 되돌리기
+      // 3. chat_logs 미처리로 되돌리기 (product_name/quantity도 비워 "취소 상태" 명시)
       await supabase.from('chat_logs').update({
         is_processed: false,
         category: 'UNKNOWN',
-        classification: null
+        classification: null,
+        product_name: null,
+        quantity: null,
       }).eq('id', log.id)
 
+      notifyOrdersChanged()
       await fetchLogs()
+      router.refresh()
     } catch (err: any) {
       alert("주문 취소 실패: " + err.message)
     }
@@ -336,6 +351,7 @@ export default function Dashboard() {
 
       setLogs(prev => prev.filter(log => !selectedIds.includes(log.id)))
       setSelectedIds([])
+      notifyOrdersChanged()
       alert('삭제되었습니다.')
     } catch (err: any) {
       console.error(err)
@@ -434,6 +450,7 @@ export default function Dashboard() {
       setSelectedIds([])
       setBulkProduct("")
       setBulkDate("")
+      notifyOrdersChanged()
       fetchLogs()
     } catch (err: any) {
       console.error(err)

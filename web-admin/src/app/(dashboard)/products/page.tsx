@@ -407,25 +407,51 @@ export default function ProductsPage() {
     }
 
     const openSharedProductsDialog = async () => {
+        // D안: 팝업 열 때 전체 조회하지 않음. 검색어 입력 시에만 서버 조회.
         setIsSharedDialogOpen(true)
-        setIsLoadingShared(true)
         setSearchSharedQuery("")
-        try {
-            const res = await fetch(`/api/products/shared?store_id=${storeId}`)
-            const json = await res.json()
-            if (json.success) {
-                setSharedProducts(json.products || [])
-                if (json.brand_name) setSharedBrandName(json.brand_name)
-            } else {
-                setSharedProducts([])
-            }
-        } catch (e) {
-            console.error(e)
-            setSharedProducts([])
-        } finally {
-            setIsLoadingShared(false)
+        setSharedProducts([])
+        setIsLoadingShared(false)
+
+        // 브랜드명만 한 번 조회해두기 (헤더 배지 표시용, q 없이 호출)
+        if (!sharedBrandName && storeId) {
+            try {
+                const res = await fetch(`/api/products/shared?store_id=${storeId}`)
+                const json = await res.json()
+                if (json.success && json.brand_name) setSharedBrandName(json.brand_name)
+            } catch {}
         }
     }
+
+    // 검색어 디바운스 → 서버 조회
+    useEffect(() => {
+        if (!isSharedDialogOpen || !storeId) return
+        const q = searchSharedQuery.trim()
+        if (!q) {
+            setSharedProducts([])
+            setIsLoadingShared(false)
+            return
+        }
+        setIsLoadingShared(true)
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/products/shared?store_id=${storeId}&q=${encodeURIComponent(q)}`)
+                const json = await res.json()
+                if (json.success) {
+                    setSharedProducts(json.products || [])
+                    if (json.brand_name) setSharedBrandName(json.brand_name)
+                } else {
+                    setSharedProducts([])
+                }
+            } catch (e) {
+                console.error(e)
+                setSharedProducts([])
+            } finally {
+                setIsLoadingShared(false)
+            }
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [searchSharedQuery, isSharedDialogOpen, storeId])
 
     const handleCloneProduct = async (prod: any) => {
         if (!confirm(`[${prod.display_name || prod.collect_name}] 상품 정보와 이미지를 내 매장으로 복사하시겠습니까?`)) return
@@ -609,6 +635,11 @@ export default function ProductsPage() {
                             <DialogTitle>{editingProductId ? "상품 정보 수정" : "새 상품 등록"}</DialogTitle>
                             <DialogDescription>특정 날짜에 판매할 상품 정보를 {editingProductId ? "수정" : "입력"}합니다.<br /><span className="text-destructive font-medium">수집상품명과 적용 날짜는 필수 정보입니다.</span></DialogDescription>
                         </DialogHeader>
+                        <div className="flex justify-end pt-2">
+                            <Button type="submit" className="font-semibold w-full sm:w-auto" disabled={isSaving}>
+                                {isSaving ? "처리 중..." : "저장하기"}
+                            </Button>
+                        </div>
                         <div className="grid gap-5 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -787,7 +818,7 @@ export default function ProductsPage() {
                                     {/* Existing Uploaded Images */}
                                     {formData.image_urls.map((url, idx) => (
                                         <div key={`exist-${idx}`} className="h-20 w-20 relative bg-muted rounded-md overflow-hidden border shadow-sm group">
-                                            <img src={url} alt={`저장된 이미지 ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <img src={url} alt={`저장된 이미지 ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                                             <button 
                                                 type="button"
                                                 onClick={() => setFormData({...formData, image_urls: formData.image_urls.filter((_, i) => i !== idx)})}
@@ -905,25 +936,22 @@ export default function ProductsPage() {
                     <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-4">
                         {isLoadingShared ? (
                             <div className="py-20 text-center text-muted-foreground animate-pulse font-medium">✨ 브랜드 카탈로그를 조회 중입니다...</div>
+                        ) : !searchSharedQuery.trim() ? (
+                            <div className="py-20 text-center text-muted-foreground">
+                                🔍 상단 검색창에 상품명을 입력하면 브랜드 템플릿을 조회합니다.<br />
+                                <span className="text-sm">불필요한 데이터 전송을 줄이기 위해 검색 시에만 불러옵니다.</span>
+                            </div>
                         ) : sharedProducts.length === 0 ? (
                             <div className="py-20 text-center text-muted-foreground">
-                                현재 등록된 [우리 브랜드] 상품 템플릿이 없습니다.<br />
-                                <span className="text-sm">가맹점 가입 시 브랜드명을 정확히 입력했는지 확인해 주세요.</span>
+                                "{searchSharedQuery}"에 해당하는 상품이 없습니다.
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {sharedProducts
-                                    .filter(p => {
-                                        if (!searchSharedQuery) return true;
-                                        const q = searchSharedQuery.toLowerCase();
-                                        return (p.collect_name && p.collect_name.toLowerCase().includes(q)) || 
-                                               (p.display_name && p.display_name.toLowerCase().includes(q));
-                                    })
-                                    .map(prod => (
+                                {sharedProducts.map(prod => (
                                     <div key={prod.id} className="border rounded-lg overflow-hidden flex flex-col bg-white shadow-sm hover:border-indigo-300 transition-colors">
                                         {prod.image_url || (prod.image_urls && prod.image_urls.length > 0) ? (
                                             <div className="w-full h-32 bg-slate-100 relative">
-                                                <img src={prod.image_urls && prod.image_urls.length > 0 ? prod.image_urls[0] : prod.image_url} alt="상품" className="w-full h-full object-cover" />
+                                                <img src={prod.image_urls && prod.image_urls.length > 0 ? prod.image_urls[0] : prod.image_url} alt="상품" className="w-full h-full object-cover" loading="lazy" />
                                                 {prod.image_urls && prod.image_urls.length > 1 && (
                                                     <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 font-bold shadow-sm backdrop-blur-sm">
                                                        <ImageIcon className="w-3 h-3" /> +{prod.image_urls.length - 1}
