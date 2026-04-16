@@ -64,6 +64,28 @@ export default function PickupCalendarPage() {
     const [storeId, setStoreId] = useState<string | null>(null)
     const [isMerged, setIsMerged] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+
+    // 자기 자신이 일으킨 Realtime echo를 필터링하기 위한 mutation id 추적 (TTL 3s)
+    const recentMutationsRef = useRef<Map<string, number>>(new Map())
+    const recordMutation = (ids: Array<string | null | undefined>, ttlMs = 3000) => {
+        const exp = Date.now() + ttlMs
+        for (const id of ids) if (id) recentMutationsRef.current.set(id, exp)
+    }
+    const isSelfEcho = (payload: any): boolean => {
+        const candidates = [
+            payload?.new?.id, payload?.old?.id,
+            payload?.new?.order_id, payload?.old?.order_id,
+        ].filter(Boolean) as string[]
+        const now = Date.now()
+        for (const c of candidates) {
+            const exp = recentMutationsRef.current.get(c)
+            if (exp !== undefined) {
+                if (now < exp) return true
+                recentMutationsRef.current.delete(c)
+            }
+        }
+        return false
+    }
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, isUploading: false })
     const cancelUploadRef = useRef(false)
 
@@ -295,17 +317,22 @@ export default function PickupCalendarPage() {
         // 2) Supabase Realtime — orders + order_items, filtered by store_id for orders
         //    order_items has no store_id column; unfiltered but payload is tiny and store isolation
         //    is maintained by the subsequent RLS-scoped refetch.
+        //    자기 자신이 일으킨 mutation의 echo는 isSelfEcho로 걸러 불필요한 재조회/깜빡임 방지.
+        const onRealtimeChange = (payload: any) => {
+            if (isSelfEcho(payload)) return
+            scheduleRefresh()
+        }
         const channel = supabase
             .channel(`pickup-orders-${storeId}`)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-                scheduleRefresh
+                onRealtimeChange
             )
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'order_items' },
-                scheduleRefresh
+                onRealtimeChange
             )
             .subscribe()
 
@@ -671,6 +698,7 @@ export default function PickupCalendarPage() {
         }
 
         // 1. order_items → orders 삭제
+        recordMutation(selectedDeleteIds)
         const { error: itemsErr } = await supabase.from('order_items').delete().in('order_id', selectedDeleteIds);
         if (itemsErr) console.error("Failed deleting items:", itemsErr);
 
@@ -787,6 +815,7 @@ export default function PickupCalendarPage() {
             XLSX.writeFile(wb, fname)
 
             // 6) DB 삭제 (order_items → orders 순)
+            recordMutation(orderIds)
             for (let i = 0; i < orderIds.length; i += CHUNK) {
                 const chunk = orderIds.slice(i, i + CHUNK)
                 const { error: iErr } = await supabase.from("order_items").delete().in("order_id", chunk)
@@ -904,6 +933,8 @@ export default function PickupCalendarPage() {
                 return
             }
 
+            recordMutation(insertedOrders.map(o => o.id))
+
             if (cancelUploadRef.current) {
                 await supabase.from('orders').delete().in('id', insertedOrders.map(o => o.id))
                 alert("엑셀 일괄 업로드가 중지되어, 방금 파일에 있던 모든 데이터가 안전하게 삭제(롤백)되었습니다.")
@@ -1006,6 +1037,7 @@ export default function PickupCalendarPage() {
         setIsLoading(true)
 
         try {
+            recordMutation([orderId])
             if (validQty === 0) {
                 await supabase.from('order_items').delete().eq('order_id', orderId).eq('product_id', targetProduct.id)
             } else {
@@ -1093,6 +1125,7 @@ export default function PickupCalendarPage() {
 
                     if (movingCount >= totalItemsInOrder) {
                         // 이 주문에 이동 대상 상품만 있음 → 주문 자체의 pickup_date 변경
+                        recordMutation([oId])
                         const { error: uErr } = await supabase.from('orders').update({ pickup_date: newPickup }).eq('id', oId)
                         if (uErr) errors.push(`주문 ${oId.slice(0,8)} 변경 실패: ${uErr.message}`)
                     } else {
@@ -1109,6 +1142,7 @@ export default function PickupCalendarPage() {
                             errors.push(`주문 분리 실패 (${oId.slice(0,8)}): ${nErr?.message}`)
                             continue
                         }
+                        recordMutation([newOrder.id, oId])
 
                         // order_items를 새 주문으로 이동
                         const moveIds = orderItemsToMove.map((oi: any) => oi.id)
@@ -1149,6 +1183,7 @@ export default function PickupCalendarPage() {
         }).select().single()
 
         if (oData) {
+            recordMutation([oData.id])
             await supabase.from('order_items').insert({
                 order_id: oData.id,
                 product_id: pId,
@@ -1183,6 +1218,7 @@ export default function PickupCalendarPage() {
         }).select().single()
 
         if (oData) {
+            recordMutation([oData.id])
             const orderItems = itemsToAdd.map(e => ({
                 order_id: oData.id,
                 product_id: products[e.productIndex].id,
@@ -1209,6 +1245,7 @@ export default function PickupCalendarPage() {
                 const targetIds = rawCustomers.filter(rc => rc.name === name).map(rc => rc.id).filter(Boolean) as string[]
                 if (targetIds.length > 0) {
                     setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
+                    recordMutation(targetIds)
                     const { error } = await supabase.from('orders').update({ is_received: !current }).in('id', targetIds)
                     if (error) throw error
                     if (cacheKey) updatePickupCacheCustomers(cacheKey, cs => cs.map(c => targetIds.includes(c.id) ? { ...c, checked: !current } : c))
@@ -1216,6 +1253,7 @@ export default function PickupCalendarPage() {
             } else {
                 if (!id) return
                 setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: !current } : c))
+                recordMutation([id])
                 const { error } = await supabase.from('orders').update({ is_received: !current }).eq('id', id)
                 if (error) throw error
                 if (cacheKey) updatePickupCacheCustomers(cacheKey, cs => cs.map(c => c.id === id ? { ...c, checked: !current } : c))
@@ -1343,8 +1381,9 @@ export default function PickupCalendarPage() {
         const cacheKey = storeId ? makeCacheKey(storeId, searchScope, currentDate, customSearchDate, customEndDate, cacheSearchTerm) : ""
         if (isMerged && customerName) {
             // 합치기 모드: 같은 닉네임의 모든 주문에 동일 값 저장
-            const targetIds = rawCustomers.filter(c => c.name === customerName).map(c => c.id).filter(Boolean)
+            const targetIds = rawCustomers.filter(c => c.name === customerName).map(c => c.id).filter(Boolean) as string[]
             if (targetIds.length > 0) {
+                recordMutation(targetIds)
                 const { error } = await supabase.from('orders').update({ [field]: val }).in('id', targetIds)
                 if (!error) {
                     setRawCustomers(prev => prev.map(c => targetIds.includes(c.id) ? { ...c, [memoKey]: val } : c))
@@ -1355,6 +1394,7 @@ export default function PickupCalendarPage() {
             }
             return
         }
+        recordMutation([id])
         const { error } = await supabase.from('orders').update({ [field]: val }).eq('id', id)
         if (!error) {
             setRawCustomers(prev => prev.map(c =>
@@ -1409,6 +1449,7 @@ export default function PickupCalendarPage() {
         alert("✅ POS 결제가 성공적으로 승인되었습니다!\n(실제 VAN사 연동 시 이 시점에 결제완료 데이터가 넘어옵니다.)")
         
         // Mock successful UI update
+        recordMutation(selectedPosOrders)
         for (const id of selectedPosOrders) {
             await supabase.from('orders').update({ is_received: true }).eq('id', id)
             setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, checked: true } : c))
