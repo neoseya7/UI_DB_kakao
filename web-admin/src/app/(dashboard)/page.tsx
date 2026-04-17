@@ -267,23 +267,31 @@ export default function Dashboard() {
         for (const p of productCandidates) if (p.target_date) candidateDates.add(p.target_date)
       }
 
-      // 3. 후보 (date × product)로 order_items 찾아 삭제
+      // 3. 후보 (date × product)로 order_items 찾아 삭제 (수량 매칭 우선, 1건만)
       const productIds = productCandidates.map((p: any) => p.id)
+      const logQty = parseInt(log.quantity, 10) || 1
       if (productIds.length > 0 && candidateDates.size > 0) {
         const { data: orders } = await supabase.from('orders')
-          .select('id, pickup_date, order_items(id, product_id)')
+          .select('id, pickup_date, order_items(id, product_id, quantity)')
           .eq('store_id', user.id)
           .eq('customer_nickname', log.nickname)
           .in('pickup_date', Array.from(candidateDates))
 
-        for (const order of orders || []) {
-          const toDelete = (order.order_items || []).filter((oi: any) => productIds.includes(oi.product_id))
-          if (toDelete.length === 0) continue
+        // 수량까지 일치하는 주문을 우선, 없으면 상품만 일치하는 주문
+        const matchingOrders = (orders || []).filter((o: any) =>
+          (o.order_items || []).some((oi: any) => productIds.includes(oi.product_id))
+        )
+        const exactMatch = matchingOrders.find((o: any) =>
+          (o.order_items || []).some((oi: any) => productIds.includes(oi.product_id) && oi.quantity === logQty)
+        )
+        const targetOrder = exactMatch || matchingOrders[0]
+
+        if (targetOrder) {
+          const toDelete = (targetOrder.order_items || []).filter((oi: any) => productIds.includes(oi.product_id))
           await supabase.from('order_items').delete().in('id', toDelete.map((oi: any) => oi.id))
-          // 빈 주문 정리
-          const { count } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('order_id', order.id)
+          const { count } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('order_id', targetOrder.id)
           if (count === 0) {
-            await supabase.from('orders').delete().eq('id', order.id)
+            await supabase.from('orders').delete().eq('id', targetOrder.id)
           }
         }
       }
