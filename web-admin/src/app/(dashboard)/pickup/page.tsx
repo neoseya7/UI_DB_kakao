@@ -705,19 +705,39 @@ export default function PickupCalendarPage() {
         const { error: ordersErr } = await supabase.from('orders').delete().in('id', selectedDeleteIds);
         if (ordersErr) console.error("Failed deleting orders:", ordersErr);
 
-        // 2. 대응되는 chat_logs 되돌리기 (is_processed=false, UNKNOWN)
+        // 2. 대응되는 chat_logs 되돌리기 (삭제한 주문 수만큼만 되돌림 — 중복 주문 시 초과 되돌림 방지)
         if (storeId && revertTargets.size > 0) {
             for (const [nick, names] of revertTargets.entries()) {
                 if (names.size === 0) continue
-                const { error: revErr } = await supabase.from('chat_logs').update({
-                    is_processed: false,
-                    category: 'UNKNOWN',
-                    classification: null,
-                }).eq('store_id', storeId)
-                  .eq('nickname', nick)
-                  .eq('is_processed', true)
-                  .in('product_name', Array.from(names))
-                if (revErr) console.error("Failed reverting chat_logs:", revErr)
+                // 삭제된 주문 중 이 닉네임의 각 상품별 주문 수 카운트
+                const deletedCountByProduct = new Map<string, number>()
+                for (const o of ordersToDelete || []) {
+                    if (o.customer_nickname !== nick) continue
+                    for (const oi of o.order_items || []) {
+                        const name = (oi as any).products?.collect_name
+                        if (name) deletedCountByProduct.set(name, (deletedCountByProduct.get(name) || 0) + 1)
+                    }
+                }
+                for (const productName of names) {
+                    const deleteCount = deletedCountByProduct.get(productName) || 1
+                    // 대상 chat_logs를 조회한 후 삭제 수만큼만 되돌림
+                    const { data: matchingLogs } = await supabase.from('chat_logs')
+                        .select('id')
+                        .eq('store_id', storeId)
+                        .eq('nickname', nick)
+                        .eq('is_processed', true)
+                        .eq('product_name', productName)
+                        .order('created_at', { ascending: false })
+                        .limit(deleteCount)
+                    if (matchingLogs && matchingLogs.length > 0) {
+                        const { error: revErr } = await supabase.from('chat_logs').update({
+                            is_processed: false,
+                            category: 'UNKNOWN',
+                            classification: null,
+                        }).in('id', matchingLogs.map(l => l.id))
+                        if (revErr) console.error("Failed reverting chat_logs:", revErr)
+                    }
+                }
             }
         }
 
@@ -1095,20 +1115,24 @@ export default function PickupCalendarPage() {
         }).eq('id', targetProduct.id)
         if (pErr) errors.push(`상품 변경 실패: ${pErr.message}`)
 
-        // 2. 해당 날짜의 주문 중 이 상품이 포함된 주문 처리 (주문 분리 방식)
-        const { data: oData, error: oErr } = await supabase.from('orders').select('id, customer_nickname, is_received').eq('store_id', storeId).eq('pickup_date', sourceDate)
-        if (oErr) errors.push(`주문 조회 실패: ${oErr.message}`)
+        // 2. 이 상품을 참조하는 모든 주문 처리 (product_id 기준 — pickup_date 불일치 주문도 포함)
+        const { data: oiData, error: oiErr } = await supabase.from('order_items').select('id, order_id, quantity').eq('product_id', targetProduct.id)
+        if (oiErr) errors.push(`주문항목 조회 실패: ${oiErr.message}`)
 
-        if (oData && oData.length > 0) {
-            const orderIds = oData.map((o: any) => o.id)
-            // 이동 대상 상품의 order_items 조회
-            const { data: oiData, error: oiErr } = await supabase.from('order_items').select('id, order_id, quantity').eq('product_id', targetProduct.id).in('order_id', orderIds)
-            if (oiErr) errors.push(`주문항목 조회 실패: ${oiErr.message}`)
+        if (oiData && oiData.length > 0) {
+            const affectedOrderIds = [...new Set(oiData.map((oi: any) => oi.order_id))]
 
-            if (oiData && oiData.length > 0) {
+            // 해당 주문들의 정보 조회 (store_id 필터 + 이미 목적지 날짜인 주문은 제외)
+            const { data: oData, error: oErr } = await supabase.from('orders').select('id, customer_nickname, is_received, pickup_date').eq('store_id', storeId).neq('pickup_date', newPickup).in('id', affectedOrderIds)
+            if (oErr) errors.push(`주문 조회 실패: ${oErr.message}`)
+
+            if (oData && oData.length > 0) {
+                const validOrderIds = new Set(oData.map((o: any) => o.id))
+                const validOiData = oiData.filter((oi: any) => validOrderIds.has(oi.order_id))
+
                 // 각 주문별로 다른 상품이 있는지 확인
-                const affectedOrderIds = [...new Set(oiData.map((oi: any) => oi.order_id))]
-                const { data: allItems, error: allErr } = await supabase.from('order_items').select('id, order_id').in('order_id', affectedOrderIds)
+                const validAffectedOrderIds = [...new Set(validOiData.map((oi: any) => oi.order_id))]
+                const { data: allItems, error: allErr } = await supabase.from('order_items').select('id, order_id').in('order_id', validAffectedOrderIds)
                 if (allErr) errors.push(`전체 주문항목 조회 실패: ${allErr.message}`)
 
                 const itemCountByOrder: Record<string, number> = {}
@@ -1118,8 +1142,8 @@ export default function PickupCalendarPage() {
                     }
                 }
 
-                for (const oId of affectedOrderIds) {
-                    const orderItemsToMove = oiData.filter((oi: any) => oi.order_id === oId)
+                for (const oId of validAffectedOrderIds) {
+                    const orderItemsToMove = validOiData.filter((oi: any) => oi.order_id === oId)
                     const totalItemsInOrder = itemCountByOrder[oId] || 0
                     const movingCount = orderItemsToMove.length
 
@@ -1272,21 +1296,22 @@ export default function PickupCalendarPage() {
     }
 
     const handleHideDataByDate = async () => {
-        if (!currentDate) return;
-        const confirmMsg = `${currentDate} 일자의 모든 [상품]과 [주문 내역]을 숨김 처리하시겠습니까?\n이 작업 후에는 관리자 화면 및 고객 검색에서 해당 날짜의 데이터가 보이지 않게 됩니다.`;
+        const effectiveDate = (searchScope === "date_range" && focusedDate) ? focusedDate : currentDate;
+        if (!effectiveDate) return;
+        const confirmMsg = `${effectiveDate} 일자의 모든 [상품]과 [주문 내역]을 숨김 처리하시겠습니까?\n이 작업 후에는 관리자 화면 및 고객 검색에서 해당 날짜의 데이터가 보이지 않게 됩니다.`;
         if (!confirm(confirmMsg)) return;
 
         try {
             setIsLoading(true);
-            
+
             // 1. Hide Products for the target_date
             const { error: pErr } = await supabase
                 .from('products')
                 .update({ is_hidden: true })
                 .eq('store_id', storeId)
-                .eq('target_date', currentDate)
+                .eq('target_date', effectiveDate)
                 .eq('is_regular_sale', false); // Do not hide regular items
-            
+
             if (pErr) throw pErr;
 
             // 2. Hide Orders for the pickup_date
@@ -1294,11 +1319,11 @@ export default function PickupCalendarPage() {
                 .from('orders')
                 .update({ is_hidden: true })
                 .eq('store_id', storeId)
-                .eq('pickup_date', currentDate);
-            
+                .eq('pickup_date', effectiveDate);
+
             if (oErr) throw oErr;
 
-            alert(`${currentDate} 일자 데이터가 성공적으로 숨김 처리되었습니다.`);
+            alert(`${effectiveDate} 일자 데이터가 성공적으로 숨김 처리되었습니다.`);
             
             // Re-fetch data
             await fetchMatrixData(true);
@@ -1312,19 +1337,20 @@ export default function PickupCalendarPage() {
     }
 
     const handleUnhideDataByDate = async () => {
-        if (!currentDate) return;
-        const confirmMsg = `${currentDate} 일자의 숨겨진 [상품]과 [주문 내역]을 다시 화면에 보이도록 복구 (숨김 해제)하시겠습니까?`;
+        const effectiveDate = (searchScope === "date_range" && focusedDate) ? focusedDate : currentDate;
+        if (!effectiveDate) return;
+        const confirmMsg = `${effectiveDate} 일자의 숨겨진 [상품]과 [주문 내역]을 다시 화면에 보이도록 복구 (숨김 해제)하시겠습니까?`;
         if (!confirm(confirmMsg)) return;
 
         try {
             setIsLoading(true);
-            
+
             // 1. Unhide Products for the target_date (숨겨진 것만 대상으로 좁혀 타임아웃 방지)
             const { error: pErr } = await supabase
                 .from('products')
                 .update({ is_hidden: false })
                 .eq('store_id', storeId)
-                .eq('target_date', currentDate)
+                .eq('target_date', effectiveDate)
                 .eq('is_hidden', true);
 
             if (pErr) throw pErr;
@@ -1334,12 +1360,12 @@ export default function PickupCalendarPage() {
                 .from('orders')
                 .update({ is_hidden: false })
                 .eq('store_id', storeId)
-                .eq('pickup_date', currentDate)
+                .eq('pickup_date', effectiveDate)
                 .eq('is_hidden', true);
-            
+
             if (oErr) throw oErr;
 
-            alert(`${currentDate} 일자의 데이터가 성공적으로 복구(숨김 해제)되었습니다.`);
+            alert(`${effectiveDate} 일자의 데이터가 성공적으로 복구(숨김 해제)되었습니다.`);
             
             // Re-fetch data
             await fetchMatrixData(true);

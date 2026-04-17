@@ -288,8 +288,27 @@ export default function ProductsPage() {
 
         if (editingProductId) {
             // Edit existing product
+            const originalProduct = products.find(p => p.id === editingProductId)
             const { error } = await supabase.from('products').update(payload).eq('id', editingProductId)
             if (!error) {
+                // target_date 또는 is_regular_sale이 변경된 경우에만 기존 주문의 pickup_date 동기화
+                const oldPickupDate = originalProduct?.is_regular_sale ? '1900-01-01' : originalProduct?.target_date
+                const newPickupDate = payload.is_regular_sale ? '1900-01-01' : payload.target_date
+                if (newPickupDate && newPickupDate !== oldPickupDate) {
+                    const { data: affectedItems } = await supabase
+                        .from('order_items')
+                        .select('order_id')
+                        .eq('product_id', editingProductId)
+                    if (affectedItems && affectedItems.length > 0) {
+                        const orderIds = [...new Set(affectedItems.map((i: any) => i.order_id))]
+                        await supabase
+                            .from('orders')
+                            .update({ pickup_date: newPickupDate })
+                            .in('id', orderIds)
+                            .eq('store_id', storeId)
+                            .eq('is_hidden', false)
+                    }
+                }
                 alert("상품 정보가 성공적으로 수정되었습니다!")
                 setIsDialogOpen(false)
                 setEditingProductId(null)
@@ -299,8 +318,26 @@ export default function ProductsPage() {
             }
         } else {
             // Create new product
-            if (isDuplicate && duplicateProduct) {
-                await supabase.from('products').update({ allocated_stock: 0 }).eq('id', duplicateProduct.id)
+            // DB 전체에서 동일 상품명의 다른 날짜 상품을 찾아 allocated_stock을 0으로 설정
+            {
+                const newTargetDate = formData.target_date || null
+                let dupQuery = supabase
+                    .from('products')
+                    .select('id')
+                    .eq('store_id', storeId)
+                    .eq('collect_name', formData.collect_name)
+                    .eq('is_hidden', false)
+
+                if (newTargetDate) {
+                    dupQuery = dupQuery.neq('target_date', newTargetDate)
+                } else {
+                    dupQuery = dupQuery.not('target_date', 'is', null)
+                }
+
+                const { data: dbDuplicates } = await dupQuery
+                if (dbDuplicates && dbDuplicates.length > 0) {
+                    await supabase.from('products').update({ allocated_stock: 0 }).in('id', dbDuplicates.map(d => d.id))
+                }
             }
 
             const { data: newProd, error } = await supabase.from('products').insert(payload).select().single()
