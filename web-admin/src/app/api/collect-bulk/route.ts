@@ -208,6 +208,7 @@ export async function POST(request: Request) {
 
         // Process sequentially to be safe against Gemini rate limits
         for (const msg of messages) {
+            let logId: string | null = null;
             try {
                 const { hash, nickname, chat_content, chat_time, collect_date } = msg
 
@@ -247,7 +248,7 @@ export async function POST(request: Request) {
                 }).select().single()
 
                 if (logError) throw new Error("Log Insert Fail: " + logError.message)
-                const logId = logData.id
+                logId = logData.id
 
                 if (!geminiKey) {
                     success_hashes.push(hash)
@@ -332,10 +333,21 @@ export async function POST(request: Request) {
                 }
 
                 const isCancellationGlobal = promptCat.includes("취소") || promptCat === "주문취소";
-                
+
                 let generalClassifications: string[] = []
                 const crmMatches = settings?.crm_tags?.filter((t: any) => t.type === 'crm' && (chat_content.includes(t.name) || nickname.includes(t.name))) || []
                 if (crmMatches.length > 0) generalClassifications.push(crmMatches[0].name)
+
+                // AI 분석 직후 chat_log를 즉시 업데이트 (이후 timeout 발생 시에도 분류 결과 보존)
+                const earlyClassifications = [...generalClassifications, `분류:${promptCat}`];
+                const earlyClassificationStr = earlyClassifications.join(", ") || null;
+                const earlyIntent = extractedItems.length > 0 && (promptCat.includes("주문") || promptCat.includes("예약")) && !isCancellationGlobal
+                    ? "ORDER" : isCancellationGlobal ? "COMPLAINT" : promptCat === "픽업고지" ? "픽업고지" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
+                await supabase.from('chat_logs').update({
+                    category: earlyIntent,
+                    classification: earlyClassificationStr,
+                    product_name: extractedItems[0]?.product || "X",
+                }).eq('id', logId);
 
                 if (extractedItems.length === 0) {
                     let classifications = [...generalClassifications, `분류:${promptCat}`];
@@ -490,8 +502,17 @@ export async function POST(request: Request) {
                 // ONLY IF EVERYTHING SUCCEEDS safely push to success hashes
                 success_hashes.push(hash)
 
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Bulk processing error for a message:", err)
+                // chat_log가 이미 삽입된 상태에서 에러 발생 시, 에러 표시를 남겨 "기타"와 구분
+                if (logId) {
+                    try {
+                        await supabase.from('chat_logs').update({
+                            classification: `분류:AI오류 (${(err?.message || 'unknown').slice(0, 100)})`,
+                            product_name: "X",
+                        }).eq('id', logId).eq('classification', null);  // 이미 early update된 경우 덮어쓰지 않음
+                    } catch (_) { /* silent */ }
+                }
                 // Skip success_hashes push on error, so python scraper will re-send this specific msg later!
             }
         }
