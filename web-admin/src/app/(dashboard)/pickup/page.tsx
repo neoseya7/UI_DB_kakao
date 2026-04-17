@@ -428,8 +428,7 @@ export default function PickupCalendarPage() {
             setProducts(cached.products)
             // availableDates는 별도 useEffect에서 관리하므로 캐시에서 덮어쓰지 않음
             setIsLoading(false)
-            // 캐시가 5분 이내면 갱신 생략
-            if (Date.now() - cached.timestamp < 5 * 60 * 1000) return
+            // 캐시 데이터를 즉시 표시 후, 항상 백그라운드에서 최신 데이터 조회 (stale-while-revalidate)
         } else {
             setIsLoading(true)
         }
