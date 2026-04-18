@@ -1294,6 +1294,14 @@ export default function PickupCalendarPage() {
         }
     }
 
+    const batchUpdate = async (table: string, ids: string[], updateData: Record<string, any>, batchSize = 10) => {
+        for (let i = 0; i < ids.length; i += batchSize) {
+            const chunk = ids.slice(i, i + batchSize)
+            const { error } = await supabase.from(table).update(updateData).in('id', chunk)
+            if (error) throw new Error(`${table} 업데이트 실패 (${i+1}~${i+chunk.length}): ${error.message || JSON.stringify(error)}`)
+        }
+    }
+
     const handleHideDataByDate = async () => {
         const effectiveDate = (searchScope === "date_range" && focusedDate) ? focusedDate : currentDate;
         if (!effectiveDate) return;
@@ -1304,32 +1312,41 @@ export default function PickupCalendarPage() {
             setIsLoading(true);
 
             // 1. Hide Products for the target_date
-            const { error: pErr } = await supabase
+            const { data: pIds, error: pSelErr } = await supabase
                 .from('products')
-                .update({ is_hidden: true })
+                .select('id')
                 .eq('store_id', storeId)
                 .eq('target_date', effectiveDate)
-                .eq('is_regular_sale', false); // Do not hide regular items
+                .eq('is_regular_sale', false)
+                .eq('is_hidden', false);
 
-            if (pErr) throw pErr;
+            if (pSelErr) throw new Error(`상품 조회 실패: ${pSelErr.message}`);
+            if (pIds && pIds.length > 0) {
+                await batchUpdate('products', pIds.map(p => p.id), { is_hidden: true });
+            }
 
             // 2. Hide Orders for the pickup_date
-            const { error: oErr } = await supabase
+            const { data: oIds, error: oSelErr } = await supabase
                 .from('orders')
-                .update({ is_hidden: true })
+                .select('id')
                 .eq('store_id', storeId)
-                .eq('pickup_date', effectiveDate);
+                .eq('pickup_date', effectiveDate)
+                .eq('is_hidden', false)
+                .limit(5000);
 
-            if (oErr) throw oErr;
+            if (oSelErr) throw new Error(`주문 조회 실패: ${oSelErr.message}`);
+            if (oIds && oIds.length > 0) {
+                await batchUpdate('orders', oIds.map(o => o.id), { is_hidden: true });
+            }
 
             alert(`${effectiveDate} 일자 데이터가 성공적으로 숨김 처리되었습니다.`);
-            
+
             // Re-fetch data
             await fetchMatrixData(true);
-            
+
         } catch (error: any) {
             console.error("Bulk hide by date error:", error);
-            alert("일괄 숨김 처리 중 오류가 발생했습니다: " + error.message);
+            alert("일괄 숨김 처리 중 오류가 발생했습니다: " + (error.message || JSON.stringify(error)));
         } finally {
             setIsLoading(false);
         }
@@ -1344,34 +1361,41 @@ export default function PickupCalendarPage() {
         try {
             setIsLoading(true);
 
-            // 1. Unhide Products for the target_date (숨겨진 것만 대상으로 좁혀 타임아웃 방지)
-            const { error: pErr } = await supabase
+            // 1. Unhide Products for the target_date
+            const { data: pIds, error: pSelErr } = await supabase
                 .from('products')
-                .update({ is_hidden: false })
+                .select('id')
                 .eq('store_id', storeId)
                 .eq('target_date', effectiveDate)
                 .eq('is_hidden', true);
 
-            if (pErr) throw pErr;
+            if (pSelErr) throw new Error(`상품 조회 실패: ${pSelErr.message}`);
+            if (pIds && pIds.length > 0) {
+                await batchUpdate('products', pIds.map(p => p.id), { is_hidden: false });
+            }
 
-            // 2. Unhide Orders for the pickup_date (숨겨진 것만 대상으로 좁혀 타임아웃 방지)
-            const { error: oErr } = await supabase
+            // 2. Unhide Orders for the pickup_date
+            const { data: oIds, error: oSelErr } = await supabase
                 .from('orders')
-                .update({ is_hidden: false })
+                .select('id')
                 .eq('store_id', storeId)
                 .eq('pickup_date', effectiveDate)
-                .eq('is_hidden', true);
+                .eq('is_hidden', true)
+                .limit(5000);
 
-            if (oErr) throw oErr;
+            if (oSelErr) throw new Error(`주문 조회 실패: ${oSelErr.message}`);
+            if (oIds && oIds.length > 0) {
+                await batchUpdate('orders', oIds.map(o => o.id), { is_hidden: false });
+            }
 
             alert(`${effectiveDate} 일자의 데이터가 성공적으로 복구(숨김 해제)되었습니다.`);
-            
+
             // Re-fetch data
             await fetchMatrixData(true);
-            
+
         } catch (error: any) {
             console.error("Bulk unhide by date error:", error);
-            alert("일괄 숨김 해제 중 오류가 발생했습니다: " + error.message);
+            alert("일괄 숨김 해제 중 오류가 발생했습니다: " + (error.message || JSON.stringify(error)));
         } finally {
             setIsLoading(false);
         }
