@@ -428,7 +428,8 @@ export default function PickupCalendarPage() {
             setProducts(cached.products)
             // availableDates는 별도 useEffect에서 관리하므로 캐시에서 덮어쓰지 않음
             setIsLoading(false)
-            // 캐시 데이터를 즉시 표시 후, 항상 백그라운드에서 최신 데이터 조회 (stale-while-revalidate)
+            // 캐시가 30초 이내면 갱신 생략
+            if (Date.now() - cached.timestamp < 30 * 1000) return
         } else {
             setIsLoading(true)
         }
@@ -526,7 +527,6 @@ export default function PickupCalendarPage() {
             tiered_prices: p.tiered_prices || [],
             unit_text: p.unit_text || ""
         }))
-        setProducts(mappedProducts)
 
         // CRM 태그 처리
         const crmTagsList = settingsResult.data?.crm_tags?.filter((t: any) => t.type === 'crm') || []
@@ -536,6 +536,7 @@ export default function PickupCalendarPage() {
         }, {})
 
         if (orders.length === 0) {
+            setProducts(mappedProducts)
             setRawCustomers([])
             setIsLoading(false)
             return
@@ -568,6 +569,8 @@ export default function PickupCalendarPage() {
                 }
             })
 
+            // products와 rawCustomers를 동시에 업데이트 (중간 상태 깜빡임 방지)
+            setProducts(mappedProducts)
             setRawCustomers(mappedCustomers)
             setPickupCache(cacheKey, mappedCustomers, mappedProducts, availableDates)
             setIsLoading(false)
@@ -615,6 +618,8 @@ export default function PickupCalendarPage() {
             }
         })
 
+        // products와 rawCustomers를 동시에 업데이트 (중간 상태 깜빡임 방지)
+        setProducts(mappedProducts)
         setRawCustomers(mappedCustomersLegacy)
         setPickupCache(cacheKey, mappedCustomersLegacy, mappedProducts, availableDates)
         setIsLoading(false)
