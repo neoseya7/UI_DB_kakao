@@ -313,6 +313,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
 
                                             const formatPickupDate = (d: string) => {
                                                 if (!d) return ''
+                                                if (d === '1900-01-01') return '상시판매'
                                                 const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/)
                                                 if (!m) return d
                                                 const dObj = new Date(d)
