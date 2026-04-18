@@ -328,7 +328,22 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                                 const earliestCreated = g.created_dates.length > 0
                                                     ? new Date(Math.min(...g.created_dates.map(d => d.getTime())))
                                                     : null
-                                                const totalPrice = g.items.reduce((acc: number, item: any) => acc + (item.quantity * (item.product?.price || 0)), 0)
+                                                const calcTieredPrice = (product: any, qty: number) => {
+                                                    const tiers = product?.tiered_prices
+                                                    if (!tiers || tiers.length === 0) return qty * (product?.price || 0)
+                                                    const sorted = [...tiers].sort((a: any, b: any) => b.qty - a.qty)
+                                                    let remaining = qty, total = 0
+                                                    for (const t of sorted) {
+                                                        if (remaining >= t.qty && t.qty > 0) {
+                                                            const chunks = Math.floor(remaining / t.qty)
+                                                            total += chunks * t.price
+                                                            remaining -= chunks * t.qty
+                                                        }
+                                                    }
+                                                    if (remaining > 0) total += remaining * (product?.price || 0)
+                                                    return total
+                                                }
+                                                const totalPrice = g.items.reduce((acc: number, item: any) => acc + calcTieredPrice(item.product, item.quantity), 0)
 
                                                 return (
                                                     <div key={`${g.pickup_date}-${gi}`} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 relative overflow-hidden group hover:border-blue-200 transition-colors">
@@ -350,8 +365,8 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                                         </div>
                                                         <ul className="space-y-3 border-t border-slate-100 pt-3 pl-2">
                                                             {g.items.map((item: any) => {
-                                                                const itemPrice = item.product?.price || 0
-                                                                const totalItemPrice = itemPrice * item.quantity
+                                                                const totalItemPrice = calcTieredPrice(item.product, item.quantity)
+                                                                const unitPrice = item.quantity > 0 ? Math.round(totalItemPrice / item.quantity) : 0
                                                                 return (
                                                                     <li key={item.id} className="flex justify-between items-start text-[15px]">
                                                                         <div className="flex flex-col">
@@ -360,7 +375,7 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                                                             </span>
                                                                             {showPrice && (
                                                                                 <span className="text-[12px] font-semibold text-slate-400 mt-0.5 tracking-tight">
-                                                                                    개당 {itemPrice.toLocaleString()}원
+                                                                                    개당 {unitPrice.toLocaleString()}원
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -488,9 +503,15 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
                                                         {renderConfigPrice ? (
                                                             <>
                                                                 <span className="text-[13px] opacity-80">💰</span>
-                                                                <span className="font-black text-slate-800 tracking-tighter">
-                                                                    {product.price > 0 ? `${product.price.toLocaleString()}원` : '가격 미정'}
-                                                                </span>
+                                                                {product.tiered_prices?.length > 0 ? (
+                                                                    <span className="font-black text-slate-800 tracking-tighter">
+                                                                        {[...product.tiered_prices].sort((a: any, b: any) => a.qty - b.qty).map((t: any) => `${t.qty}개 ${t.price.toLocaleString()}원`).join(' / ')}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="font-black text-slate-800 tracking-tighter">
+                                                                        {product.price > 0 ? `${product.price.toLocaleString()}원` : '가격 미정'}
+                                                                    </span>
+                                                                )}
                                                             </>
                                                         ) : <span className="text-[13px] opacity-0 text-transparent">💰</span>}
                                                     </div>
@@ -593,11 +614,26 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
 
                                     <div className="p-5 flex flex-col gap-4 bg-white pb-8">
                                         {renderConfigPrice && (
-                                            <div className="flex items-center justify-between pb-4 border-b border-slate-100 border-dashed">
-                                                <span className="text-[15px] font-bold text-slate-500">기본 가격</span>
-                                                <span className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tighter">
-                                                    {selectedProduct.price > 0 ? `${selectedProduct.price.toLocaleString()}원` : '가격 미정'}
-                                                </span>
+                                            <div className="pb-4 border-b border-slate-100 border-dashed">
+                                                {selectedProduct.tiered_prices?.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        {[...selectedProduct.tiered_prices].sort((a: any, b: any) => a.qty - b.qty).map((t: any, i: number) => (
+                                                            <div key={i} className="flex items-center justify-between">
+                                                                <span className="text-[15px] font-bold text-slate-500">{t.qty}개 가격</span>
+                                                                <span className="text-xl sm:text-2xl font-black text-slate-800 tracking-tighter">
+                                                                    {t.price.toLocaleString()}원
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[15px] font-bold text-slate-500">기본 가격</span>
+                                                        <span className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tighter">
+                                                            {selectedProduct.price > 0 ? `${selectedProduct.price.toLocaleString()}원` : '가격 미정'}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 

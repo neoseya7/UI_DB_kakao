@@ -46,7 +46,7 @@ export async function GET(request: Request, context: { params: Promise<{ store_i
         // 3. Fetch Visible Products only
         const { data: productsData, error: productsError } = await supabaseAdmin
             .from('products')
-            .select('id, collect_name, display_name, price, allocated_stock, target_date, is_regular_sale, deadline_date, deadline_time, image_urls, image_url, description, is_stocked')
+            .select('id, collect_name, display_name, price, tiered_prices, allocated_stock, target_date, is_regular_sale, deadline_date, deadline_time, image_urls, image_url, description, is_stocked')
             .eq('store_id', storeId)
             .eq('is_visible', true)
             .eq('is_hidden', false)
