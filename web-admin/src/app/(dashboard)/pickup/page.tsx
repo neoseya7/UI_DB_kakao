@@ -314,25 +314,31 @@ export default function PickupCalendarPage() {
         // 1) Same-browser cross-tab
         const unsubscribe = onOrdersChanged(scheduleRefresh)
 
-        // 2) Supabase Realtime — orders + order_items, filtered by store_id for orders
-        //    order_items has no store_id column; unfiltered but payload is tiny and store isolation
-        //    is maintained by the subsequent RLS-scoped refetch.
+        // 2) Supabase Realtime — orders는 store_id 필터, order_items는 내 매장 주문인지 확인 후 갱신
         //    자기 자신이 일으킨 mutation의 echo는 isSelfEcho로 걸러 불필요한 재조회/깜빡임 방지.
-        const onRealtimeChange = (payload: any) => {
+        const onOrdersChange = (payload: any) => {
             if (isSelfEcho(payload)) return
             scheduleRefresh()
+        }
+        // order_items는 store_id 컬럼이 없어 필터 불가 → order_id가 내 매장 주문인지 DB 확인
+        const onOrderItemsChange = async (payload: any) => {
+            if (isSelfEcho(payload)) return
+            const orderId = payload?.new?.order_id || payload?.old?.order_id
+            if (!orderId) return
+            const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('id', orderId).eq('store_id', storeId)
+            if (count && count > 0) scheduleRefresh()
         }
         const channel = supabase
             .channel(`pickup-orders-${storeId}`)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-                onRealtimeChange
+                onOrdersChange
             )
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'order_items' },
-                onRealtimeChange
+                onOrderItemsChange
             )
             .subscribe()
 
@@ -430,7 +436,8 @@ export default function PickupCalendarPage() {
             setIsLoading(false)
             // 캐시가 30초 이내면 갱신 생략
             if (Date.now() - cached.timestamp < 30 * 1000) return
-        } else {
+        } else if (!forceRefresh) {
+            // 최초 로드 시에만 로딩 표시, forceRefresh(Realtime 갱신)는 기존 데이터 유지
             setIsLoading(true)
         }
 
