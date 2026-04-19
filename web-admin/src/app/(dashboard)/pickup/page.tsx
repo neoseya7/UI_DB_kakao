@@ -136,6 +136,7 @@ export default function PickupCalendarPage() {
     const [transferProductIdx, setTransferProductIdx] = useState<string>("")
     const [transferNewDate, setTransferNewDate] = useState("")
     const [isTransferToRegular, setIsTransferToRegular] = useState(false)
+    const [isTransferFromRegular, setIsTransferFromRegular] = useState(false)
     const [transferAvailableProducts, setTransferAvailableProducts] = useState<Product[]>([])
     const [sortOrder, setSortOrder] = useState<"entered" | "name">("entered")
 
@@ -363,7 +364,13 @@ export default function PickupCalendarPage() {
         if (!storeId || !isTransferModalOpen) return;
         const fetchModalProducts = async () => {
             const date = transferSourceDate || currentDate;
-            const { data } = await supabase.from('products').select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false).or(`target_date.eq.${date},is_regular_sale.eq.true`)
+            let query = supabase.from('products').select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
+            if (isTransferFromRegular) {
+                query = query.eq('is_regular_sale', true)
+            } else {
+                query = query.or(`target_date.eq.${date},is_regular_sale.eq.true`)
+            }
+            const { data } = await query
             if (data) {
                 setTransferAvailableProducts(data.map(p => ({
                     id: p.id,
@@ -380,7 +387,7 @@ export default function PickupCalendarPage() {
             }
         }
         fetchModalProducts()
-    }, [storeId, isTransferModalOpen, transferSourceDate, currentDate])
+    }, [storeId, isTransferModalOpen, transferSourceDate, currentDate, isTransferFromRegular])
 
     // Update manual order products when activeDate changes
     useEffect(() => {
@@ -1107,14 +1114,16 @@ export default function PickupCalendarPage() {
     const handleTransferDate = async () => {
         if (!transferProductIdx || !storeId) return alert("상품을 선택해주세요.")
         if (!isTransferToRegular && !transferNewDate) return alert("이동할 새로운 픽업 날짜나 '상시판매' 전환을 선택해주세요.")
+        if (isTransferFromRegular && isTransferToRegular) return alert("이미 상시판매 상품입니다.")
 
         const idx = parseInt(transferProductIdx)
         const targetProduct = transferAvailableProducts[idx]
-        const sourceDate = transferSourceDate || currentDate
+        const sourceLabel = isTransferFromRegular ? '상시판매' : (transferSourceDate || currentDate)
         const newDate_tf = isTransferToRegular ? null : transferNewDate
         const newPickup = isTransferToRegular ? '1900-01-01' : transferNewDate
 
-        if (!confirm(`[${targetProduct.name}] 상품을 ${isTransferToRegular ? '상시판매로 전환' : sourceDate + ' → ' + transferNewDate + '로 이동'}하시겠습니까?`)) return
+        const destLabel = isTransferToRegular ? '상시판매로 전환' : `${sourceLabel} → ${transferNewDate}로 이동`
+        if (!confirm(`[${targetProduct.name}] 상품을 ${destLabel}하시겠습니까?`)) return
 
         setIsLoading(true)
         const errors: string[] = []
@@ -1195,6 +1204,7 @@ export default function PickupCalendarPage() {
             alert("✅ 이관 및 상품 동기화 반영이 완료되었습니다.")
         }
         setIsTransferModalOpen(false)
+        setIsTransferFromRegular(false)
         fetchMatrixData(true)
     }
 
@@ -2105,13 +2115,17 @@ export default function PickupCalendarPage() {
                         <DialogHeader>
                             <DialogTitle>픽업일 일괄 변경 및 상시판매 전환</DialogTitle>
                             <DialogDescription>
-                                기존 날짜에 속한 상품의 주문들을 다른 날짜로 일괄 이동하거나,<br />물품을 '상시판매' 카테고리로 강제 동기화합니다.
+                                상품의 주문들을 다른 날짜로 일괄 이동하거나,<br />상시판매 ↔ 날짜 간 전환을 수행합니다.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-5 py-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">1. 기존 날짜 선택 (From)</label>
-                                <Input type="date" value={transferSourceDate || currentDate} onChange={e => setTransferSourceDate(e.target.value)} className="bg-white border-primary/40 focus-visible:ring-primary/50" />
+                                <Input type="date" value={transferSourceDate || currentDate} onChange={e => setTransferSourceDate(e.target.value)} disabled={isTransferFromRegular} className={`bg-white border-primary/40 focus-visible:ring-primary/50 ${isTransferFromRegular ? "opacity-50" : ""}`} />
+                                <label className="flex items-center gap-2 cursor-pointer p-2 bg-blue-50 rounded border border-blue-100">
+                                    <input type="checkbox" checked={isTransferFromRegular} onChange={e => { setIsTransferFromRegular(e.target.checked); setTransferProductIdx(""); if (e.target.checked) setIsTransferToRegular(false); }} className="rounded border-slate-300" />
+                                    <span className="text-sm font-semibold text-blue-800">상시판매 상품에서 선택</span>
+                                </label>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">2. 대상 상품 선택</label>
@@ -2129,10 +2143,12 @@ export default function PickupCalendarPage() {
                             <div className="space-y-3 border-t pt-4">
                                 <label className="text-sm font-semibold text-primary">3. 목적지 (변경 날짜 / 상시판매)</label>
                                 <div className="flex flex-col gap-3">
-                                    <div className="flex items-center gap-2 mb-1 p-2 bg-emerald-50 rounded border border-emerald-100">
-                                        <Checkbox id="regularSaleToggle" checked={isTransferToRegular} onCheckedChange={(val) => setIsTransferToRegular(!!val)} className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600" />
-                                        <label htmlFor="regularSaleToggle" className="text-sm font-semibold text-emerald-800 cursor-pointer">이 상품을 '상시판매' 모드로 전환합니다.</label>
-                                    </div>
+                                    {!isTransferFromRegular && (
+                                        <div className="flex items-center gap-2 mb-1 p-2 bg-emerald-50 rounded border border-emerald-100">
+                                            <Checkbox id="regularSaleToggle" checked={isTransferToRegular} onCheckedChange={(val) => setIsTransferToRegular(!!val)} className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600" />
+                                            <label htmlFor="regularSaleToggle" className="text-sm font-semibold text-emerald-800 cursor-pointer">이 상품을 '상시판매' 모드로 전환합니다.</label>
+                                        </div>
+                                    )}
                                     <Input type="date" value={transferNewDate} onChange={e => setTransferNewDate(e.target.value)} disabled={isTransferToRegular} className="bg-white border-primary/40 focus-visible:ring-primary/50 disabled:opacity-50 disabled:bg-slate-100" />
                                 </div>
                             </div>
