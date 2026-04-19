@@ -57,7 +57,8 @@ export default function ProductsPage() {
         box_quantity: "",
         unit_text: "",
         product_memo: "",
-        tiered_prices: [] as {qty: number, price: number}[]
+        tiered_prices: [] as {qty: number, price: number}[],
+        is_regular_sale: false
     })
     const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([])
     const [isSaving, setIsSaving] = useState(false)
@@ -266,8 +267,8 @@ export default function ProductsPage() {
 
         const payload = {
             store_id: storeId,
-            target_date: formData.target_date || null,
-            is_regular_sale: !formData.target_date,
+            target_date: formData.is_regular_sale ? null : (formData.target_date || null),
+            is_regular_sale: formData.is_regular_sale,
             collect_name: formData.collect_name,
             display_name: formData.display_name || formData.collect_name,
             unit_text: formData.unit_text || "",
@@ -369,7 +370,7 @@ export default function ProductsPage() {
                 setIsDialogOpen(false)
                 setFormData({
                     target_date: new Date().toISOString().split('T')[0],
-                    collect_name: "", display_name: "", unit_text: "", product_memo: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
+                    collect_name: "", display_name: "", unit_text: "", product_memo: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: [], is_regular_sale: false
                 })
                 setSelectedImageFiles([])
                 fetchProducts(storeId)
@@ -384,7 +385,7 @@ export default function ProductsPage() {
         setEditingProductId(null)
         setFormData({
             target_date: new Date().toISOString().split('T')[0],
-            collect_name: "", display_name: "", unit_text: "", product_memo: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: []
+            collect_name: "", display_name: "", unit_text: "", product_memo: "", price: "", incoming_price: "", allocated_stock: "", box_quantity: "", deadline_date: "", deadline_time: "", description: "", image_url: "", image_urls: [], is_visible: true, is_stocked: false, tiered_prices: [], is_regular_sale: false
         })
         setSelectedImageFiles([])
         setIsDialogOpen(true)
@@ -417,7 +418,8 @@ export default function ProductsPage() {
             image_urls: loadedUrls,
             is_visible: product.is_visible !== false,
             is_stocked: product.is_stocked === true,
-            box_quantity: product.box_quantity?.toString() || ""
+            box_quantity: product.box_quantity?.toString() || "",
+            is_regular_sale: product.is_regular_sale === true
         })
         setSelectedImageFiles([])
         setIsDialogOpen(true)
@@ -680,8 +682,12 @@ export default function ProductsPage() {
                         <div className="grid gap-5 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="date">적용 날짜 <span className="text-destructive">*</span></Label>
-                                    <Input id="date" type="date" value={formData.target_date} onChange={e => setFormData({ ...formData, target_date: e.target.value })} />
+                                    <Label htmlFor="date">적용 날짜 {!formData.is_regular_sale && <span className="text-destructive">*</span>}</Label>
+                                    <Input id="date" type="date" value={formData.target_date} onChange={e => setFormData({ ...formData, target_date: e.target.value })} disabled={formData.is_regular_sale} className={formData.is_regular_sale ? "opacity-50" : ""} />
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={formData.is_regular_sale} onChange={e => setFormData({ ...formData, is_regular_sale: e.target.checked, target_date: e.target.checked ? "" : new Date().toISOString().split('T')[0] })} className="rounded border-slate-300" />
+                                        <span className="text-sm font-medium text-blue-600">상시판매로 등록</span>
+                                    </label>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="collect-name">수집상품명 <span className="text-destructive">*</span></Label>
