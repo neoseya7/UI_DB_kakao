@@ -278,7 +278,7 @@ export default function UtilitiesPage() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">재고 상태 기준</Label>
+                                <Label className="text-sm font-semibold text-slate-700">상태 기준</Label>
                                 <Select value={filterType} onValueChange={setFilterType}>
                                     <SelectTrigger className="w-full bg-slate-50 border-input h-10 shadow-sm font-bold text-sm">
                                         <SelectValue placeholder="재고 상태" />
@@ -297,20 +297,14 @@ export default function UtilitiesPage() {
 
                     <GuideBadge text="템플릿을 추가하거나 삭제할 수 있습니다. 템플릿 지정 후 문구를 생성해 카톡에 복사해 원활히 소통하세요." className="block h-full">
                     <Card className="shadow-sm border-indigo-100 bg-white h-full flex flex-col">
-                        <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100 flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
-                                    <MessageCircle className="w-5 h-5 text-indigo-500" />
-                                    2. 메시지 템플릿 저장소
-                                </CardTitle>
-                                <CardDescription className="text-xs mt-1">
-                                    자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[주문수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[노쇼고객]</strong>
-                                </CardDescription>
-                            </div>
-                            <Button onClick={saveTemplatesToDB} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm h-8 px-3 text-xs gap-1.5 flex-shrink-0">
-                                {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Blocks className="w-3.5 h-3.5" />}
-                                설정 영구 저장
-                            </Button>
+                        <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100">
+                            <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
+                                <MessageCircle className="w-5 h-5 text-indigo-500" />
+                                2. 메시지 템플릿 저장소
+                            </CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                                자동 치환 가능한 변수: <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[상품명]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[주문수량]</strong>, <strong className="text-indigo-700 font-mono bg-indigo-100 px-1 rounded">[노쇼고객]</strong>
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-4 grid gap-3">
                             {templates.map((t, i) => (
@@ -344,6 +338,10 @@ export default function UtilitiesPage() {
                             <Button variant="outline" className="w-full mt-2 border-dashed border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700" onClick={addTemplate}>
                                 <Plus className="w-4 h-4 mr-2" />
                                 템플릿 추가하기
+                            </Button>
+                            <Button onClick={saveTemplatesToDB} disabled={isSaving} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm gap-1.5">
+                                {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Blocks className="w-3.5 h-3.5" />}
+                                템플릿 저장
                             </Button>
                         </CardContent>
                     </Card>
