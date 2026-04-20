@@ -68,4 +68,8 @@ export interface PickupViewProps {
 
     // Table-specific
     getStickyClasses?: (colName: 'name' | 'receive' | 'delete' | 'summary' | 'price' | 'memo') => { td: string; th: string }
+
+    // Search state (for auto-scrolling to matched product column)
+    activeSearchTerm?: string
+    searchField?: "all" | "nickname" | "product" | "memo"
 }

@@ -24,7 +24,8 @@ function PickupTableImpl(props: PickupViewProps) {
         handleDeleteOrder, handleAddRowSave, getDisplaySummary, calculateItemPrice,
         setEditingQty, setTempQty, setEditingMemo,
         setIsAddingRow, setAddRowNick, setAddRowQtys,
-        getStickyClasses: getStickyClassesProp
+        getStickyClasses: getStickyClassesProp,
+        activeSearchTerm, searchField
     } = props
 
     const getStickyClasses = getStickyClassesProp!
@@ -65,6 +66,50 @@ function PickupTableImpl(props: PickupViewProps) {
         }
         scrollSyncingRef.current = false
     }
+
+    // 상품명 검색 시 해당 상품 열로 자동 가로 스크롤 + 하이라이트
+    useEffect(() => {
+        const term = (activeSearchTerm || "").trim().toLowerCase()
+        if (!term) return
+        if (searchField !== "product" && searchField !== "all") return
+        const matchIdx = displayProducts.findIndex(p => (p.name || "").toLowerCase().includes(term))
+        if (matchIdx === -1) return
+        const t = setTimeout(() => {
+            const scroller = scrollContainerRef.current
+            const tableEl = tableRef.current
+            if (!scroller || !tableEl) return
+            if (scroller.scrollWidth <= scroller.clientWidth) return
+            const ths = tableEl.querySelectorAll<HTMLTableCellElement>('th[data-product-col]')
+            if (ths.length === 0) return
+            const targetTh = ths[matchIdx]
+            const firstTh = ths[0]
+            if (!targetTh || !firstTh) return
+            const stickyRightEdge = firstTh.offsetLeft
+            const targetLeft = targetTh.offsetLeft - stickyRightEdge
+            const maxScroll = scroller.scrollWidth - scroller.clientWidth
+            const finalLeft = Math.max(0, Math.min(targetLeft, maxScroll))
+
+            // 스크롤 싱크 루프가 smooth 애니메이션을 끊지 않도록 직접 할당 (instant)
+            scrollSyncingRef.current = true
+            scroller.scrollLeft = finalLeft
+            if (topScrollRef.current) topScrollRef.current.scrollLeft = finalLeft
+            requestAnimationFrame(() => { scrollSyncingRef.current = false })
+
+            // 인라인 스타일로 하이라이트 (Tailwind JIT 우회)
+            const origBg = targetTh.style.backgroundColor
+            const origOutline = targetTh.style.outline
+            const origOutlineOffset = targetTh.style.outlineOffset
+            targetTh.style.backgroundColor = '#fef08a'
+            targetTh.style.outline = '2px solid #facc15'
+            targetTh.style.outlineOffset = '-2px'
+            setTimeout(() => {
+                targetTh.style.backgroundColor = origBg
+                targetTh.style.outline = origOutline
+                targetTh.style.outlineOffset = origOutlineOffset
+            }, 1800)
+        }, 50)
+        return () => clearTimeout(t)
+    }, [activeSearchTerm, searchField, displayProducts])
 
     const rowVirtualizer = useVirtualizer({
         count: filteredCustomers.length,
@@ -243,7 +288,7 @@ function PickupTableImpl(props: PickupViewProps) {
                         </tr>
                         <tr>
                             {displayProducts.map((p, i) => (
-                                <th key={p.id || i} className="border-b border-r px-1 py-1.5 font-bold text-[13px] whitespace-nowrap bg-muted/80">
+                                <th key={p.id || i} data-product-col={p.id} className="border-b border-r px-1 py-1.5 font-bold text-[13px] whitespace-nowrap bg-muted/80 transition-colors">
                                     <div className="flex flex-col items-center justify-center gap-0">
                                         <span>{p.name}</span>
                                         <div className="flex items-center justify-center gap-0.5 mt-1">

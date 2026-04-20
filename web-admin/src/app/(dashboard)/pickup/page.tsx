@@ -365,7 +365,7 @@ export default function PickupCalendarPage() {
         const fetchModalProducts = async () => {
             const date = transferSourceDate || currentDate;
             let query = supabase.from('products').select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
-            if (isTransferFromRegular) {
+            if (isTransferFromRegular || date === "상시판매") {
                 query = query.eq('is_regular_sale', true)
             } else {
                 query = query.or(`target_date.eq.${date},is_regular_sale.eq.true`)
@@ -394,12 +394,17 @@ export default function PickupCalendarPage() {
         if (!storeId) return;
         const activeDate = newDate || currentDate;
         const fetchManualProducts = async () => {
-            const { data } = await supabase.from('products')
+            let query = supabase.from('products')
                 .select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text')
                 .eq('store_id', storeId)
                 .eq('is_hidden', false)
-                .or(`target_date.eq.${activeDate},is_regular_sale.eq.true`)
-            
+            if (activeDate === "상시판매") {
+                query = query.eq('is_regular_sale', true)
+            } else {
+                query = query.or(`target_date.eq.${activeDate},is_regular_sale.eq.true`)
+            }
+            const { data } = await query
+
             if (data) {
                 setManualOrderProducts(data.map(p => ({
                     id: p.id,
@@ -2250,6 +2255,8 @@ export default function PickupCalendarPage() {
                     setAddRowNick={setAddRowNick}
                     setAddRowQtys={setAddRowQtys}
                     getStickyClasses={getStickyClasses}
+                    activeSearchTerm={activeSearchTerm}
+                    searchField={searchField}
                 />
             ) : (
             <Card className="overflow-hidden border-border/60 shadow-md bg-card">
@@ -2310,7 +2317,7 @@ export default function PickupCalendarPage() {
                             </tr>
                             <tr>
                                 {displayProducts.map((p, i) => (
-                                    <th key={p.id || i} className="border-b border-r px-1 py-1.5 font-bold text-[13px] whitespace-nowrap bg-muted/80">
+                                    <th key={p.id || i} data-product-col={p.id} className="border-b border-r px-1 py-1.5 font-bold text-[13px] whitespace-nowrap bg-muted/80 transition-colors">
                                         <div className="flex flex-col items-center justify-center gap-0">
                                             <span>{p.name}</span>
                                             <div className="flex items-center justify-center gap-0.5 mt-1">
