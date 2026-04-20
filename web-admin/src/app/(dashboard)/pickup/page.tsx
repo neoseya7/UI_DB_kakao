@@ -748,12 +748,12 @@ export default function PickupCalendarPage() {
                         .order('created_at', { ascending: false })
                         .limit(deleteCount)
                     if (matchingLogs && matchingLogs.length > 0) {
+                        // classification sentinel로 마킹 — cron이 재분류 pick up 하지 않도록.
+                        // is_processed=true 유지하여 AI 재처리 방지.
                         const { error: revErr } = await supabase.from('chat_logs').update({
-                            is_processed: false,
-                            category: 'UNKNOWN',
-                            classification: null,
+                            classification: '분류:관리자삭제',
                         }).in('id', matchingLogs.map(l => l.id))
-                        if (revErr) console.error("Failed reverting chat_logs:", revErr)
+                        if (revErr) console.error("Failed marking chat_logs as admin-deleted:", revErr)
                     }
                 }
             }

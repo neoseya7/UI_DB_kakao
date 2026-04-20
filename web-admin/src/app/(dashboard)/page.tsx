@@ -296,13 +296,10 @@ export default function Dashboard() {
         }
       }
 
-      // 3. chat_logs 미처리로 되돌리기 (product_name/quantity도 비워 "취소 상태" 명시)
+      // 3. chat_logs에 관리자삭제 이력 마킹 — cron이 재분류로 pick up 하지 않도록.
+      //    is_processed=true, product_name/quantity 유지 (UI에서 어떤 주문이 삭제됐는지 추적 가능)
       await supabase.from('chat_logs').update({
-        is_processed: false,
-        category: 'UNKNOWN',
-        classification: null,
-        product_name: null,
-        quantity: null,
+        classification: '분류:관리자삭제',
       }).eq('id', log.id)
 
       notifyOrdersChanged()
