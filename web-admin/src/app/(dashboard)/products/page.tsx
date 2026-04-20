@@ -161,7 +161,7 @@ export default function ProductsPage() {
             const enhancedProducts = data.map(p => ({
                 ...p,
                 orderSum: qtyMap[p.id] || 0,
-                remainingStock: p.allocated_stock !== null ? Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0)) : null
+                remainingStock: p.allocated_stock !== null ? p.allocated_stock - (qtyMap[p.id] || 0) : null
             }))
 
             setProducts(enhancedProducts)
@@ -431,7 +431,7 @@ export default function ProductsPage() {
             setProducts(products.map(p => p.id === id ? { 
                 ...p, 
                 allocated_stock: newStock,
-                remainingStock: Math.max(0, newStock - (p.orderSum || 0))
+                remainingStock: newStock - (p.orderSum || 0)
             } : p))
         }
     }
@@ -503,7 +503,7 @@ export default function ProductsPage() {
             unit_text: prod.unit_text || "",
             price: prod.price,
             incoming_price: prod.incoming_price,
-            allocated_stock: null, // Reset stock logic on clone
+            allocated_stock: 500,
             deadline_date: prod.deadline_date,
             deadline_time: prod.deadline_time,
             description: prod.description,
@@ -1067,7 +1067,7 @@ export default function ProductsPage() {
                                     <CardHeader className="pb-1 pt-3 flex flex-row items-start justify-between gap-1.5 px-3">
                                         <div className="flex flex-col gap-1 w-full">
                                             <CardTitle className="text-[14px] leading-tight font-bold text-slate-800 line-clamp-2" title={product.collect_name}>
-                                                {product.remainingStock === 0 && <span className="inline-flex items-center bg-red-600 text-white border border-red-700 px-1.5 py-0.5 rounded-sm text-[11px] font-extrabold mr-1 shadow-sm leading-tight tracking-widest align-middle animate-in fade-in zoom-in duration-300">🚨마감</span>}
+                                                {product.remainingStock !== null && product.remainingStock <= 0 && <span className="inline-flex items-center bg-red-600 text-white border border-red-700 px-1.5 py-0.5 rounded-sm text-[11px] font-extrabold mr-1 shadow-sm leading-tight tracking-widest align-middle animate-in fade-in zoom-in duration-300">🚨마감</span>}
                                                 {product.is_visible === false && <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0 rounded-sm text-[9px] font-bold mr-1 align-middle shadow-sm"><EyeOff className="w-2.5 h-2.5" />숨김</span>}
                                                 {product.is_stocked && <span className="inline-flex items-center gap-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 px-1 py-0 rounded-sm text-[10px] font-extrabold mr-1 align-middle shadow-sm tracking-tight">입고🟢</span>}
                                                 {product.collect_name}
@@ -1084,7 +1084,7 @@ export default function ProductsPage() {
                                         {product.allocated_stock === 0 && <Badge variant="destructive" className="shadow-sm shrink-0 whitespace-nowrap text-[10px] px-1.5 py-0">품절</Badge>}
                                     </CardHeader>
                                     <CardContent className="mt-auto px-3 pb-3 pt-0">
-                                        <div className={`flex w-full items-center justify-between p-2 rounded-md border ${product.remainingStock === 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-slate-50 border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
+                                        <div className={`flex w-full items-center justify-between p-2 rounded-md border ${product.remainingStock !== null && product.remainingStock <= 0 ? 'bg-red-50/50 border-red-200/50' : 'bg-slate-50 border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
                                             <div className="flex flex-row items-center gap-1.5">
                                                 <span className={`text-[13px] font-bold whitespace-nowrap ${product.allocated_stock === 0 ? 'text-red-700' : 'text-slate-500'}`}>발주</span>
                                                 <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm flex items-center justify-center h-7 px-1 w-[54px] hover:border-slate-300 transition-colors">
@@ -1118,7 +1118,7 @@ export default function ProductsPage() {
                                             <div className="w-[1px] h-6 bg-slate-200"></div>
                                             <div className="flex flex-row items-center gap-1.5 pr-1">
                                                 <span className="text-[13px] text-slate-500 font-bold whitespace-nowrap items-center gap-0.5">잔여</span>
-                                                <span className={`text-[16px] font-extrabold tracking-tight ${product.remainingStock === 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                <span className={`text-[16px] font-extrabold tracking-tight ${product.remainingStock !== null && product.remainingStock <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                                                     {product.remainingStock ?? '-'}
                                                 </span>
                                             </div>
