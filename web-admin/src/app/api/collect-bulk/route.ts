@@ -243,27 +243,29 @@ export async function POST(request: Request) {
                 }
 
                 // Dedup 1차: msg_hash (동일 닉네임 재수집 차단)
+                // .limit(1) 사용: 기존 중복 row가 2개 이상이어도 안전하게 match 판정
                 if (hash) {
                     const { data: byHash } = await supabase.from('chat_logs')
                         .select('id')
                         .eq('store_id', store_id)
                         .eq('msg_hash', hash)
-                        .maybeSingle()
-                    if (byHash) {
+                        .limit(1)
+                    if (byHash && byHash.length > 0) {
                         success_hashes.push(hash)
                         continue
                     }
                 }
 
                 // Dedup 2차: content fallback (닉네임 변경 케이스 차단)
+                // .limit(1) 사용: 기존 중복 row가 2개 이상이어도 안전하게 match 판정
                 const { data: byContent } = await supabase.from('chat_logs')
                     .select('id')
                     .eq('store_id', store_id)
                     .eq('collect_date', collect_date)
                     .eq('chat_time', parsedTime)
                     .eq('chat_content', chat_content)
-                    .maybeSingle()
-                if (byContent) {
+                    .limit(1)
+                if (byContent && byContent.length > 0) {
                     success_hashes.push(hash)
                     continue
                 }

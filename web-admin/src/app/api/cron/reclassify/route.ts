@@ -213,6 +213,28 @@ export async function GET(request: Request) {
                         continue;
                     }
 
+                    // 형제 row 체크: 같은 (store, date, time, content) 중 이미 is_processed=true인 row가 있으면
+                    // 이 row는 재수집된 중복이므로 주문 생성하지 않고 중복으로 마킹 후 skip
+                    const { data: siblings } = await supabase.from('chat_logs')
+                        .select('id')
+                        .eq('store_id', storeId)
+                        .eq('collect_date', row.collect_date)
+                        .eq('chat_time', row.chat_time)
+                        .eq('chat_content', chat_content)
+                        .eq('is_processed', true)
+                        .neq('id', logId)
+                        .limit(1);
+                    if (siblings && siblings.length > 0) {
+                        await supabase.from('chat_logs').update({
+                            classification: '분류:중복(처리된 형제 존재)',
+                            is_processed: false,
+                            product_name: 'X',
+                            retry_count: nextRetry
+                        }).eq('id', logId);
+                        processed++;
+                        continue;
+                    }
+
                     const extractedRaw = await callAIWithFallback(storeId, promptA, chat_content, true);
                     let jsonMatch = extractedRaw.match(/\[[\s\S]*\]/);
                     let extractedItems: any[] = [];
