@@ -22,6 +22,8 @@ export async function GET(request: Request) {
         const supabase = createClient(supabaseUrl, serviceKey);
 
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        // collect-bulk가 아직 AI 처리 중인 건을 선점하지 않도록 10분 레이스 버퍼
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
         const { data: targets, error: fetchErr } = await supabase
             .from('chat_logs')
@@ -30,6 +32,7 @@ export async function GET(request: Request) {
             .eq('category', 'UNKNOWN')
             .lt('retry_count', 3)
             .gte('created_at', twentyFourHoursAgo)
+            .lt('created_at', tenMinutesAgo)
             .order('created_at', { ascending: true })
             .limit(20);
 

@@ -242,9 +242,35 @@ export async function POST(request: Request) {
                     continue
                 }
 
+                // Dedup 1차: msg_hash (동일 닉네임 재수집 차단)
+                if (hash) {
+                    const { data: byHash } = await supabase.from('chat_logs')
+                        .select('id')
+                        .eq('store_id', store_id)
+                        .eq('msg_hash', hash)
+                        .maybeSingle()
+                    if (byHash) {
+                        success_hashes.push(hash)
+                        continue
+                    }
+                }
+
+                // Dedup 2차: content fallback (닉네임 변경 케이스 차단)
+                const { data: byContent } = await supabase.from('chat_logs')
+                    .select('id')
+                    .eq('store_id', store_id)
+                    .eq('collect_date', collect_date)
+                    .eq('chat_time', parsedTime)
+                    .eq('chat_content', chat_content)
+                    .maybeSingle()
+                if (byContent) {
+                    success_hashes.push(hash)
+                    continue
+                }
+
                 // Initial chat log insert
                 const { data: logData, error: logError } = await supabase.from('chat_logs').insert({
-                    store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN'
+                    store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN', msg_hash: hash || null
                 }).select().single()
 
                 if (logError) throw new Error("Log Insert Fail: " + logError.message)
