@@ -10,6 +10,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'Store ID and Nickname are required' }, { status: 400 })
         }
 
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        if (!UUID_RE.test(store_id)) {
+            return NextResponse.json({ success: false, error: '매장 주소가 올바르지 않습니다.' }, { status: 400 })
+        }
+
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
         if (!serviceKey) {
             return NextResponse.json({ success: false, error: 'Server misconfiguration: Service Role Key missing' }, { status: 500 })

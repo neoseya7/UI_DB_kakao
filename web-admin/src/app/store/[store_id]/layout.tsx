@@ -13,7 +13,8 @@ export async function generateMetadata(
     let storeName = '매장'
     let ogImageUrl: string | null = null
 
-    if (supabaseUrl && serviceKey && store_id) {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (supabaseUrl && serviceKey && store_id && UUID_RE.test(store_id)) {
         const supabaseAdmin = createClient(supabaseUrl, serviceKey)
         const [{ data: storeData }, { data: settingsData }] = await Promise.all([
             supabaseAdmin.from('stores').select('name').eq('id', store_id).single(),
