@@ -155,7 +155,6 @@ export default function Dashboard() {
 
           if (isOrderType && row.product_name && row.product_name !== "-") {
             const rawName = row.product_name;
-            const itemQty = row.quantity && row.quantity > 0 ? row.quantity : 1;
 
             let assignedDate = null;
             if (row.classification) {
@@ -163,24 +162,28 @@ export default function Dashboard() {
               if (dateMatch) assignedDate = dateMatch[1];
             }
 
-            const matchedProd = 
-              (assignedDate ? currentProducts.find((p: any) => p.collect_name === rawName && p.target_date === assignedDate) : null)
-              || currentProducts.find((p: any) => p.collect_name === rawName && (p.allocated_stock === null || p.allocated_stock >= itemQty))
-              || currentProducts.find((p: any) => p.collect_name === rawName);
-            
-            if (matchedProd) {
-              const badgeName = matchedProd.unit_text ? `${rawName}(${matchedProd.unit_text})` : rawName;
-              finalProductName = badgeName;
-              if (!row.is_processed) {
-                matchBadges.push({ name: badgeName, isMatched: false, dateText: "연동 대기" })
-              } else if (matchedProd.allocated_stock !== null && matchedProd.allocated_stock < itemQty) {
-                matchBadges.push({ name: badgeName, isMatched: false, dateText: "재고초과주문" })
-              } else {
-                const dateStr = matchedProd.target_date || "상시판매"
-                matchBadges.push({ name: badgeName, isMatched: true, dateText: dateStr })
-              }
-            } else {
+            // 배지는 저장된 classification 기준. 상품 lookup은 unit_text/target_date 폴백용.
+            const matchedProd = currentProducts.find((p: any) => p.collect_name === rawName);
+            const badgeName = matchedProd?.unit_text ? `${rawName}(${matchedProd.unit_text})` : rawName;
+            finalProductName = badgeName;
+
+            const hasUnregistered = otherClassifications.includes("상품미등록");
+            const hasOutOfStock = otherClassifications.includes("재고초과주문");
+
+            if (hasUnregistered) {
               matchBadges.push({ name: rawName, isMatched: false, dateText: "상품미등록" })
+            } else if (hasOutOfStock) {
+              matchBadges.push({ name: badgeName, isMatched: false, dateText: "재고초과주문" })
+            } else if (!row.is_processed) {
+              matchBadges.push({ name: badgeName, isMatched: false, dateText: "연동 대기" })
+            } else {
+              let dateStr = "상시판매";
+              if (assignedDate) {
+                dateStr = assignedDate;
+              } else if (matchedProd?.target_date && matchedProd.target_date !== '1900-01-01') {
+                dateStr = matchedProd.target_date;
+              }
+              matchBadges.push({ name: badgeName, isMatched: true, dateText: dateStr })
             }
           } else if (!isOrderType) {
             // Hide completely if it's not an order classification

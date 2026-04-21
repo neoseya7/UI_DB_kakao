@@ -3,9 +3,11 @@ export const maxDuration = 300; // 5 minutes (Pro plan)
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// 주기적으로 classification=null 상태의 chat_logs를 재분류
+// 주기적으로 재분류가 필요한 chat_logs를 재처리
 // 대상: 최근 24h, category='UNKNOWN', retry_count<3
-// 원인: collect-bulk의 maxDuration 초과/AI 타임아웃으로 catch 블록도 못 탄 건
+//   (a) classification IS NULL — collect-bulk의 maxDuration 초과/AI 타임아웃
+//   (b) classification LIKE '%재고초과주문%' — 재고 회복 시 주문관리 자동 반영
+//   (c) classification LIKE '%상품미등록%' — 상품 등록 시 주문관리 자동 반영
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
@@ -28,7 +30,7 @@ export async function GET(request: Request) {
         const { data: targets, error: fetchErr } = await supabase
             .from('chat_logs')
             .select('id, store_id, nickname, chat_content, chat_time, collect_date, retry_count')
-            .is('classification', null)
+            .or('classification.is.null,classification.ilike.%재고초과주문%,classification.ilike.%상품미등록%')
             .eq('category', 'UNKNOWN')
             .lt('retry_count', 3)
             .gte('created_at', twentyFourHoursAgo)
