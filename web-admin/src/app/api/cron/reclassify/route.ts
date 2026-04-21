@@ -378,7 +378,8 @@ export async function GET(request: Request) {
                                 && !isCancellation && !promptCat.includes("문의")
                                 && !classifications.includes("재고초과주문")
                                 && !classifications.includes("상품미등록");
-                            const shouldSaveToOrders = isActualOrder || (isCancellation && !classifications.includes("상품미등록"));
+                            // 자동 취소반영 중단: 취소 분류는 chat_logs.classification 태그로만 기록, orders 테이블에 음수 insert 하지 않음. 관리자 수동 삭제로 처리.
+                            const shouldSaveToOrders = isActualOrder;
                             const finalIntent = isActualOrder ? "ORDER" : (classifications.includes("재고초과주문") || classifications.includes("상품미등록")) ? "UNKNOWN" : isCancellation ? "COMPLAINT" : promptCat.includes("문의") ? "INQUIRY" : "UNKNOWN";
 
                             if (shouldSaveToOrders && item.matchedProduct) {
