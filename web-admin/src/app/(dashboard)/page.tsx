@@ -167,10 +167,13 @@ export default function Dashboard() {
             const badgeName = matchedProd?.unit_text ? `${rawName}(${matchedProd.unit_text})` : rawName;
             finalProductName = badgeName;
 
+            const isRevoked = displayCat === "관리자삭제";
             const hasUnregistered = otherClassifications.includes("상품미등록");
             const hasOutOfStock = otherClassifications.includes("재고초과주문");
 
-            if (hasUnregistered) {
+            if (isRevoked) {
+              matchBadges.push({ name: badgeName, isMatched: false, dateText: "관리자삭제" })
+            } else if (hasUnregistered) {
               matchBadges.push({ name: rawName, isMatched: false, dateText: "상품미등록" })
             } else if (hasOutOfStock) {
               matchBadges.push({ name: badgeName, isMatched: false, dateText: "재고초과주문" })
