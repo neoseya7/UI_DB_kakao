@@ -15,6 +15,7 @@ export default function UtilitiesPage() {
     const [products, setProducts] = useState<any[]>([])
     const [orders, setOrders] = useState<any[]>([])
     const [orderItems, setOrderItems] = useState<any[]>([])
+    const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
     const [crmTags, setCrmTags] = useState<any[]>([])
     const [isSaving, setIsSaving] = useState(false)
     
@@ -44,23 +45,48 @@ export default function UtilitiesPage() {
 
             if (pData) setProducts(pData)
 
-            // orders — 최근 30일 이후만 (재고/노쇼 메시지는 임박 주문 대상이라 과거 주문은 불필요)
+            // 재고 합계는 서버사이드 RPC로 정확히 집계 (target_date=pickup_date 매칭, 상시판매는 전기간)
+            if (pData && pData.length > 0) {
+                const { data: rpcData } = await supabase.rpc('get_product_sales_sum', {
+                    p_store_id: user.id,
+                    p_product_ids: pData.map(p => p.id)
+                })
+                const map: Record<string, number> = {}
+                for (const r of (rpcData || [])) map[r.product_id] = Number(r.total_quantity) || 0
+                setQtyMap(map)
+            }
+
+            // orders — 노쇼/[노쇼고객] 계산용. 최근 30일 이후만 (임박 주문 대상)
+            // range() 페이지네이션으로 매장 규모와 무관하게 전량 수집
             const fromDate = new Date()
             fromDate.setDate(fromDate.getDate() - 30)
             const sinceDate = fromDate.toISOString().split('T')[0]
 
-            const { data: oData } = await supabase.from('orders').select('id, pickup_date, customer_nickname, is_received, customer_memo_2').eq('store_id', user.id).eq('is_hidden', false).gte('pickup_date', sinceDate).limit(3000)
-            if (oData && oData.length > 0) {
-                const orderIds = oData.map(o => o.id)
+            let allOrders: any[] = []
+            const PAGE = 1000
+            let ofrom = 0
+            while (true) {
+                const { data } = await supabase.from('orders')
+                    .select('id, pickup_date, customer_nickname, is_received, customer_memo_2')
+                    .eq('store_id', user.id).eq('is_hidden', false)
+                    .gte('pickup_date', sinceDate)
+                    .range(ofrom, ofrom + PAGE - 1)
+                if (!data || data.length === 0) break
+                allOrders = allOrders.concat(data)
+                if (data.length < PAGE) break
+                ofrom += PAGE
+            }
+
+            if (allOrders.length > 0) {
+                const orderIds = allOrders.map(o => o.id)
                 const chunkSize = 250
                 let allItems: any[] = []
                 for (let i = 0; i < orderIds.length; i += chunkSize) {
                     const chunk = orderIds.slice(i, i + chunkSize)
-                    // order_items — 실제 쓰는 3개 컬럼만
                     const { data: itemsData } = await supabase.from('order_items').select('order_id, product_id, quantity').in('order_id', chunk)
                     if (itemsData) allItems = allItems.concat(itemsData)
                 }
-                setOrders(oData)
+                setOrders(allOrders)
                 setOrderItems(allItems)
             }
         }
@@ -121,10 +147,12 @@ export default function UtilitiesPage() {
             
             const noshowString = noshowNames.length > 0 ? noshowNames.map(n => `@${n}`).join(" ") : "(미수령고객 없음)"
             
-            const relevantItems = orderItems.filter(oi => oi.product_id === p.id && relevantOrderIds.includes(oi.order_id))
-            const orderSum = relevantItems.reduce((acc, curr) => acc + (curr.quantity || 0), 0)
+            // 재고: RPC가 target_date=pickup_date 매칭(일반) + 전기간(상시판매)로 정확히 집계
+            const orderSum = qtyMap[p.id] || 0
             const remaining = Math.max(0, (p.allocated_stock || 0) - orderSum)
-            
+
+            // 노쇼 매핑: 상품별 주문 id는 여전히 order_items로 계산 (선택 날짜 범위 내)
+            const relevantItems = orderItems.filter(oi => oi.product_id === p.id && relevantOrderIds.includes(oi.order_id))
             const prodOrderIds = relevantItems.map(oi => oi.order_id);
             const prodNoshowOrders = orders.filter(o => prodOrderIds.includes(o.id) && isNoshow(o));
             const prodNoshowNames = Array.from(new Set(prodNoshowOrders.map(o => o.customer_nickname || "알수없음")));
@@ -182,7 +210,7 @@ export default function UtilitiesPage() {
 
         setEditableText(result);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterType, activeTemplateIdx, templates, selectedDate, products, orders, orderItems]);
+    }, [filterType, activeTemplateIdx, templates, selectedDate, products, orders, orderItems, qtyMap]);
 
     const updateTemplate = (idx: number, val: string) => {
         const newT = [...templates]
