@@ -31,6 +31,7 @@ export async function GET(request: Request) {
             .from('chat_logs')
             .select('id, store_id, nickname, chat_content, chat_time, collect_date, retry_count')
             .or('classification.is.null,classification.ilike.%재고초과주문%,classification.ilike.%상품미등록%')
+            .or('classification.is.null,classification.not.ilike.%주문취소%')
             .eq('category', 'UNKNOWN')
             .lt('retry_count', 3)
             .gte('created_at', twentyFourHoursAgo)
@@ -422,18 +423,28 @@ export async function GET(request: Request) {
                                     retry_count: nextRetry
                                 }).eq('id', logId);
                             } else {
-                                await supabase.from('chat_logs').insert({
-                                    store_id: storeId,
-                                    nickname,
-                                    chat_content,
-                                    chat_time: row.chat_time,
-                                    collect_date: row.collect_date,
-                                    category: finalIntent,
-                                    is_processed: shouldSaveToOrders,
-                                    product_name: fixedProductName,
-                                    quantity: isNaN(q) ? null : q,
-                                    classification: classificationStr
-                                });
+                                // 파생 row 증식 차단: 같은 (store, date, time, content, product_name) 조합이 이미 있으면 insert skip
+                                const { data: dupRow } = await supabase.from('chat_logs').select('id')
+                                    .eq('store_id', storeId)
+                                    .eq('collect_date', row.collect_date)
+                                    .eq('chat_time', row.chat_time)
+                                    .eq('chat_content', chat_content)
+                                    .eq('product_name', fixedProductName)
+                                    .limit(1);
+                                if (!dupRow || dupRow.length === 0) {
+                                    await supabase.from('chat_logs').insert({
+                                        store_id: storeId,
+                                        nickname,
+                                        chat_content,
+                                        chat_time: row.chat_time,
+                                        collect_date: row.collect_date,
+                                        category: finalIntent,
+                                        is_processed: shouldSaveToOrders,
+                                        product_name: fixedProductName,
+                                        quantity: isNaN(q) ? null : q,
+                                        classification: classificationStr
+                                    });
+                                }
                             }
                         }
                     }
