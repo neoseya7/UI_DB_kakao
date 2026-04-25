@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Loader2, Trash2, ImagePlus, X, CheckCircle2, XCircle, ChevronDown, ChevronUp, Sheet } from "lucide-react"
+import { Save, Loader2, Trash2, ImagePlus, X, CheckCircle2, XCircle, ChevronDown, ChevronUp, Sheet, KeyRound } from "lucide-react"
 import { GuideBadge } from "@/components/ui/guide-badge"
 
 export default function SettingsPage() {
@@ -23,6 +23,11 @@ export default function SettingsPage() {
     const [backupTestMessage, setBackupTestMessage] = useState("")
     const [backupGuideOpen, setBackupGuideOpen] = useState(false)
     const [backupSaving, setBackupSaving] = useState(false)
+
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [isChangingPw, setIsChangingPw] = useState(false)
+    const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'fail', text: string } | null>(null)
 
     // Main Master State matching Supabase `store_settings`
     const [settings, setSettings] = useState({
@@ -193,6 +198,28 @@ export default function SettingsPage() {
             alert(`저장 중 오류: ${err.message}`)
         }
         setBackupSaving(false)
+    }
+
+    const handleChangePassword = async () => {
+        setPwMessage(null)
+        if (newPassword.length < 6) {
+            setPwMessage({ type: 'fail', text: '비밀번호는 6자 이상이어야 합니다.' })
+            return
+        }
+        if (newPassword !== confirmPassword) {
+            setPwMessage({ type: 'fail', text: '두 비밀번호가 일치하지 않습니다.' })
+            return
+        }
+        setIsChangingPw(true)
+        const { error } = await supabase.auth.updateUser({ password: newPassword })
+        setIsChangingPw(false)
+        if (error) {
+            setPwMessage({ type: 'fail', text: `변경 실패: ${error.message}` })
+            return
+        }
+        setNewPassword("")
+        setConfirmPassword("")
+        setPwMessage({ type: 'success', text: '✅ 비밀번호가 변경되었습니다. 다음 로그인부터 새 비밀번호를 사용하세요.' })
     }
 
     // Handlers for dynamic array state
@@ -750,6 +777,64 @@ export default function SettingsPage() {
                             </div>
                         )}
 
+                    </CardContent>
+                </Card>
+                </GuideBadge>
+
+                {/* 9. Password Change */}
+                <GuideBadge text="현재 로그인된 본인 계정의 비밀번호를 변경합니다. 매직링크로 임시 접속한 경우 즉시 본인 비밀번호를 설정할 수 있습니다." className="block">
+                <Card>
+                    <CardHeader className="text-left">
+                        <CardTitle className="flex items-center gap-2">
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md text-sm">9</span>
+                            <KeyRound className="w-4 h-4" />
+                            비밀번호 변경
+                        </CardTitle>
+                        <CardDescription>현재 로그인된 본인 계정의 비밀번호를 변경합니다. 본인 명의 계정에서만 진행하세요.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="new-password" className="font-bold text-[13px]">새 비밀번호 (6자 이상)</Label>
+                            <Input
+                                id="new-password"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => { setNewPassword(e.target.value); setPwMessage(null) }}
+                                placeholder="새 비밀번호 입력"
+                                className="bg-white shadow-sm max-w-md"
+                                autoComplete="new-password"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirm-password" className="font-bold text-[13px]">새 비밀번호 확인</Label>
+                            <Input
+                                id="confirm-password"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => { setConfirmPassword(e.target.value); setPwMessage(null) }}
+                                placeholder="새 비밀번호 다시 입력"
+                                className="bg-white shadow-sm max-w-md"
+                                autoComplete="new-password"
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleChangePassword() }}
+                            />
+                        </div>
+                        <Button
+                            onClick={handleChangePassword}
+                            disabled={isChangingPw || !newPassword || !confirmPassword}
+                            className="font-bold bg-indigo-600 hover:bg-indigo-700 gap-2"
+                        >
+                            {isChangingPw ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                            비밀번호 변경
+                        </Button>
+                        {pwMessage && (
+                            <div className={`flex items-center gap-2 p-3 rounded-lg text-sm font-bold ${pwMessage.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                                {pwMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                {pwMessage.text}
+                            </div>
+                        )}
+                        <p className="text-xs text-muted-foreground pt-2 border-t">
+                            💡 비밀번호를 잊어버린 경우, 관리자에게 매직링크 발송을 요청하세요. 매직링크로 접속한 직후 이 페이지에서 본인 비밀번호를 설정하면 다음부터 정상 로그인할 수 있습니다.
+                        </p>
                     </CardContent>
                 </Card>
                 </GuideBadge>
