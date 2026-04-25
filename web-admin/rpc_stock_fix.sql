@@ -15,10 +15,8 @@ BEGIN
     SELECT oi.product_id, SUM(oi.quantity)::bigint AS total_quantity
     FROM public.order_items oi
     INNER JOIN public.orders o ON o.id = oi.order_id
-    INNER JOIN public.products p ON p.id = oi.product_id
     WHERE o.store_id = p_store_id
       AND oi.product_id = ANY(p_product_ids)
-      AND (p.is_regular_sale = true OR p.target_date = o.pickup_date)
     GROUP BY oi.product_id;
 END;
 $$;

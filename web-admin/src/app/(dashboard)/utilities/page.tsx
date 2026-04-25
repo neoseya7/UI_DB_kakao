@@ -45,7 +45,7 @@ export default function UtilitiesPage() {
 
             if (pData) setProducts(pData)
 
-            // 재고 합계는 서버사이드 RPC로 정확히 집계 (target_date=pickup_date 매칭, 상시판매는 전기간)
+            // 재고 합계는 서버사이드 RPC로 정확히 집계 (product_id 단위 전체 합산)
             if (pData && pData.length > 0) {
                 const { data: rpcData } = await supabase.rpc('get_product_sales_sum', {
                     p_store_id: user.id,
@@ -147,7 +147,7 @@ export default function UtilitiesPage() {
             
             const noshowString = noshowNames.length > 0 ? noshowNames.map(n => `@${n}`).join(" ") : "(미수령고객 없음)"
             
-            // 재고: RPC가 target_date=pickup_date 매칭(일반) + 전기간(상시판매)로 정확히 집계
+            // 재고: RPC가 product_id 단위 전체 주문 합산
             const orderSum = qtyMap[p.id] || 0
             const remaining = Math.max(0, (p.allocated_stock || 0) - orderSum)
 
