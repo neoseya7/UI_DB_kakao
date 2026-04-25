@@ -270,6 +270,28 @@ export async function POST(request: Request) {
                     continue
                 }
 
+                // Dedup 3차: 재유입 차단 (3일 윈도우, 닉+시각+내용 정확일치)
+                // 2차는 collect_date=today 한정이라 날짜 경계 넘어 재수집되면 miss됨. 이를 보완.
+                // 관리자삭제 sentinel은 제외 → 사용자가 의도적으로 되살리는 케이스 허용.
+                // length >= 8 가드로 짧은 "네"/"ㅇㅇ" 등 오탐 방지.
+                if (chat_content && chat_content.length >= 8) {
+                    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+                    const { data: byReingestion } = await supabase.from('chat_logs')
+                        .select('id, classification')
+                        .eq('store_id', store_id)
+                        .eq('nickname', nickname)
+                        .eq('chat_time', parsedTime)
+                        .eq('chat_content', chat_content)
+                        .gte('collect_date', threeDaysAgo)
+                        .limit(5)
+                    const blocking = byReingestion?.find(r => r.classification !== '분류:관리자삭제')
+                    if (blocking) {
+                        console.log('[dedup-3] blocked re-ingestion', { store_id, nickname, chat_time: parsedTime, len: chat_content.length, matched_id: blocking.id })
+                        success_hashes.push(hash)
+                        continue
+                    }
+                }
+
                 // Initial chat log insert
                 const { data: logData, error: logError } = await supabase.from('chat_logs').insert({
                     store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN', msg_hash: hash || null
@@ -397,13 +419,21 @@ export async function POST(request: Request) {
                         let fixedProductName = item.product;
 
                         if (products) {
-                            const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
-                            fixedProductName = await matchProductWithAI(item.product, availableCandidates);
+                            // AI 호출 전 전체 products(available+soldout) 정확일치 우선 체크.
+                            // 기존 matchProductWithAI 내 exact match는 전달된 리스트 내에서만 동작하므로,
+                            // soldout 상품에 정확 일치하는 입력이 오면 AI가 유사어로 오매칭할 수 있음.
+                            const exactInAll = products.find(p => p.collect_name === item.product);
+                            if (exactInAll) {
+                                fixedProductName = item.product;
+                            } else {
+                                const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
+                                fixedProductName = await matchProductWithAI(item.product, availableCandidates);
 
-                            if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
-                                const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
-                                if (soldoutCandidates.length > 0) {
-                                    fixedProductName = await matchProductWithAI(item.product, soldoutCandidates);
+                                if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
+                                    const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
+                                    if (soldoutCandidates.length > 0) {
+                                        fixedProductName = await matchProductWithAI(item.product, soldoutCandidates);
+                                    }
                                 }
                             }
 
