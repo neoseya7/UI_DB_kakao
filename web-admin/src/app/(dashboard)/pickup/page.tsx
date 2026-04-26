@@ -519,9 +519,11 @@ export default function PickupCalendarPage() {
         }
 
         // 주문에 포함된 상품 중 1단계에서 누락된 것이 있으면 추가 조회
+        // today 모드는 cross-date 상품을 화면에 끌어오지 않기 위해 skip
+        // (기간/전체 모드는 일반 상품 컬럼이 이 보강에 의존하므로 유지)
         const fetchedProductIds = new Set((pResult.data || []).map((p: any) => p.id))
         const missingIds: string[] = []
-        if (!rpcError && rpcData) {
+        if (!rpcError && rpcData && searchScope !== "today") {
             orders.forEach((o: any) => {
                 if (o.items) o.items.forEach((oi: any) => {
                     if (!fetchedProductIds.has(oi.product_id)) missingIds.push(oi.product_id)
@@ -1255,6 +1257,17 @@ export default function PickupCalendarPage() {
             .filter(e => e.qty > 0)
         if (itemsToAdd.length === 0) return alert("최소 1개 상품의 수량을 입력해주세요.")
 
+        // 안전망: 현재 화면 날짜와 다른 target_date 상품 차단 (cross-date 주문 생성 방지)
+        if (currentDate !== "상시판매") {
+            const invalid = itemsToAdd
+                .map(e => products[e.productIndex])
+                .filter(p => p && !p.is_regular_sale && p.target_date && p.target_date !== currentDate)
+            if (invalid.length > 0) {
+                const names = invalid.map(p => p?.name).filter(Boolean).join(", ")
+                return alert(`다른 날짜의 상품은 등록할 수 없습니다: ${names}`)
+            }
+        }
+
         setIsLoading(true)
         const actualDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
 
@@ -1584,10 +1597,14 @@ export default function PickupCalendarPage() {
     }
 
     // 기간검색 드릴다운: focusedDate 가 설정되어 있으면 그 날짜의 주문만 남김 (병합 전 선-필터링)
+    // today 모드: 해당 날짜 상품이 0개인 cross-date row 숨김 (다른 날짜 상품만 담긴 주문이 화면에 끌려오지 않도록)
     const dateFilteredRaw = useMemo(() => {
         if (searchScope === "date_range" && focusedDate) {
             const target = focusedDate === "상시판매" ? "1900-01-01" : focusedDate
             return rawCustomers.filter(c => c.pickup_date === target)
+        }
+        if (searchScope === "today") {
+            return rawCustomers.filter(c => (c.items || []).some(q => q > 0))
         }
         return rawCustomers
     }, [rawCustomers, searchScope, focusedDate])
