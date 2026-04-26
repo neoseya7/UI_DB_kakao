@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { computeMsgHash } from '@/lib/msgHash'
 
 export async function POST(request: Request) {
     try {
@@ -68,9 +69,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, message: 'Message ignored (System or Manager)' })
         }
 
+        // Server-side hash (1차 dedup용. 클라이언트 hash 의존 제거)
+        const msgHash = computeMsgHash(store_id, nickname || '', parsedTime, chat_content)
+
         // 3. Save Raw Log immediately (safe fallback)
         const { data: logData, error: logError } = await supabase.from('chat_logs').insert({
-            store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN'
+            store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN', msg_hash: msgHash
         }).select().single()
 
         if (logError) throw new Error("Failed to insert chat_log: " + logError.message)
@@ -449,7 +453,8 @@ export async function POST(request: Request) {
                         is_processed: isActualOrder,
                         product_name: fixedProductName,
                         quantity: isNaN(q) ? null : q,
-                        classification: classificationStr
+                        classification: classificationStr,
+                        msg_hash: msgHash
                     });
                     if (splitInsertErr) console.error("SPLIT INSERT ERR:", splitInsertErr);
                 }

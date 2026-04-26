@@ -2,6 +2,7 @@ export const maxDuration = 300; // 5 minutes (Pro plan)
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { computeMsgHash } from '@/lib/msgHash';
 
 // 주기적으로 재분류가 필요한 chat_logs를 재처리
 // 대상: 최근 24h, category='UNKNOWN', retry_count<3
@@ -442,7 +443,8 @@ export async function GET(request: Request) {
                                         is_processed: shouldSaveToOrders,
                                         product_name: fixedProductName,
                                         quantity: isNaN(q) ? null : q,
-                                        classification: classificationStr
+                                        classification: classificationStr,
+                                        msg_hash: computeMsgHash(storeId, nickname || '', row.chat_time, chat_content)
                                     });
                                 }
                             }

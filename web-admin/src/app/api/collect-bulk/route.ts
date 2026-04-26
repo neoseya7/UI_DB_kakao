@@ -2,6 +2,7 @@ export const maxDuration = 300; // 5 minutes max per bulk execution (Pro plan)
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { computeMsgHash } from '@/lib/msgHash'
 
 export async function POST(request: Request) {
     try {
@@ -210,7 +211,7 @@ export async function POST(request: Request) {
         for (const msg of messages) {
             let logId: string | null = null;
             try {
-                const { hash, nickname, chat_content, chat_time, collect_date } = msg
+                const { hash: clientHash, nickname, chat_content, chat_time, collect_date } = msg
 
                 if (!chat_content) continue
 
@@ -231,6 +232,9 @@ export async function POST(request: Request) {
                 }
                 if (!parsedTime || parsedTime.trim() === "") parsedTime = "00:00:00"
 
+                // Server-side hash (DB저장/dedup용). 클라이언트가 hash 안 보내도 1차 dedup가 동작하도록.
+                const hash = computeMsgHash(store_id, nickname || '', parsedTime, chat_content)
+
                 const isSystem = !nickname || nickname === "System" || nickname === "시스템" || nickname === "카카오톡" || nickname === "알림톡" || nickname === "알수없음"
                 
                 const normalizeNick = (n: string) => n ? n.toString().replace(/\[|\]|\s/g, '') : ''
@@ -238,20 +242,22 @@ export async function POST(request: Request) {
                 const isManager = managerNicks.some((n: string) => normalizeNick(n) === cleanNickname)
 
                 if (isSystem || isManager) {
-                    success_hashes.push(hash)
+                    success_hashes.push(clientHash || hash)
                     continue
                 }
 
                 // Dedup 1차: msg_hash (동일 닉네임 재수집 차단)
+                // 서버에서 (store_id, nickname, parsedTime, chat_content)로 hash를 항상 계산하므로
+                // 클라이언트가 hash를 안 보내거나 빈 값을 보내도 1차 dedup가 동작함.
                 // .limit(1) 사용: 기존 중복 row가 2개 이상이어도 안전하게 match 판정
-                if (hash) {
+                {
                     const { data: byHash } = await supabase.from('chat_logs')
                         .select('id')
                         .eq('store_id', store_id)
                         .eq('msg_hash', hash)
                         .limit(1)
                     if (byHash && byHash.length > 0) {
-                        success_hashes.push(hash)
+                        success_hashes.push(clientHash || hash)
                         continue
                     }
                 }
@@ -266,7 +272,7 @@ export async function POST(request: Request) {
                     .eq('chat_content', chat_content)
                     .limit(1)
                 if (byContent && byContent.length > 0) {
-                    success_hashes.push(hash)
+                    success_hashes.push(clientHash || hash)
                     continue
                 }
 
@@ -287,21 +293,21 @@ export async function POST(request: Request) {
                     const blocking = byReingestion?.find(r => r.classification !== '분류:관리자삭제')
                     if (blocking) {
                         console.log('[dedup-3] blocked re-ingestion', { store_id, nickname, chat_time: parsedTime, len: chat_content.length, matched_id: blocking.id })
-                        success_hashes.push(hash)
+                        success_hashes.push(clientHash || hash)
                         continue
                     }
                 }
 
                 // Initial chat log insert
                 const { data: logData, error: logError } = await supabase.from('chat_logs').insert({
-                    store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN', msg_hash: hash || null
+                    store_id, nickname, chat_content, chat_time: parsedTime, collect_date, category: 'UNKNOWN', msg_hash: hash
                 }).select().single()
 
                 if (logError) throw new Error("Log Insert Fail: " + logError.message)
                 logId = logData.id
 
                 if (!geminiKey) {
-                    success_hashes.push(hash)
+                    success_hashes.push(clientHash || hash)
                     continue
                 }
 
@@ -552,14 +558,15 @@ export async function POST(request: Request) {
                                 is_processed: shouldSaveToOrders,
                                 product_name: fixedProductName,
                                 quantity: isNaN(q) ? null : q,
-                                classification: classificationStr
+                                classification: classificationStr,
+                                msg_hash: hash
                             });
                         }
                     }
                 }
 
                 // ONLY IF EVERYTHING SUCCEEDS safely push to success hashes
-                success_hashes.push(hash)
+                success_hashes.push(clientHash || hash)
 
             } catch (err: any) {
                 console.error("Bulk processing error for a message:", err)
