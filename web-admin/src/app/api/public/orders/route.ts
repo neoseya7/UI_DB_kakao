@@ -59,11 +59,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'Failed to find orders' }, { status: 500 })
         }
 
-        // 누락된 product join만 제외. is_hidden=true 상품도 이미 들어간 주문은 고객 검색에 노출.
-        // 이유: 운영자가 [삭제](=is_hidden) 처리해도 안내문 "기존 주문 기록은 보존됩니다" 의미상
-        // 고객 검색에 보여야 정합. 중복 등록 후 오래된 product 삭제 시 기존 주문이 사라지는 사고 방지.
+        // 옵션A: 운영자가 hidden 처리한 상품(=삭제 의도)은 고객 검색에서도 가린다.
+        // - product null(완전 삭제) 또는 product.is_hidden=true인 item은 결과에서 제외.
+        // - 모든 item이 제외되면 주문 자체가 결과에서 사라짐(아래 length>0 필터).
         const filteredOrders = (orders || []).map(order => {
-            const visibleItems = order.order_items?.filter((item: any) => item.product) || [];
+            const visibleItems = order.order_items?.filter((item: any) => item.product && !item.product.is_hidden) || [];
             return {
                 ...order,
                 order_items: visibleItems

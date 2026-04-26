@@ -120,11 +120,22 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
     }
 
     // Extract unique dates for Pill Tabs
+    // 상품리스트와 동일한 가시성 기준을 적용해, 표시할 상품이 0개인 탭은 만들지 않는다.
     const filterTabs = useMemo(() => {
-        const tabs = [{ id: 'regular', label: '상시판매제품' }]
+        const isVisible = (p: any) => {
+            if (settings?.hide_soldout && p.allocated_stock !== null && p.allocated_stock <= 0) return false
+            return true
+        }
+
+        const tabs: { id: string, label: string }[] = []
+
+        if (products.some(p => p.is_regular_sale && isVisible(p))) {
+            tabs.push({ id: 'regular', label: '상시판매제품' })
+        }
+
         const dates = new Set<string>()
         products.forEach(p => {
-            if (!p.is_regular_sale && p.target_date) {
+            if (!p.is_regular_sale && p.target_date && isVisible(p)) {
                 dates.add(p.target_date)
             }
         })
@@ -142,7 +153,15 @@ export default function PublicStorePage({ params }: { params: Promise<{ store_id
             tabs.push({ id: date, label: formattedDate })
         })
         return tabs
-    }, [products])
+    }, [products, settings])
+
+    // activeFilter가 가리키는 탭이 사라지면 첫 번째 가용 탭으로 자동 이동
+    useEffect(() => {
+        if (filterTabs.length === 0) return
+        if (!filterTabs.some(t => t.id === activeFilter)) {
+            setActiveFilter(filterTabs[0].id)
+        }
+    }, [filterTabs, activeFilter])
 
     // Filtered products list
     const filteredProducts = useMemo(() => {
