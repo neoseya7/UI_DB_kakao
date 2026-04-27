@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { computeMsgHash } from '@/lib/msgHash'
+import { STRICT_MATCHING_APPENDIX } from '@/lib/promptAppendix'
 
 export async function POST(request: Request) {
     try {
@@ -104,9 +105,17 @@ export async function POST(request: Request) {
         // --- NEW: CRITICAL SYSTEM OVERRIDE FOR MULTI-ITEM BUNDLING ---
         promptA += "\n\n[CRITICAL SYSTEM FORMATTING RULE]: If a user orders multiple different products in one message (e.g. '수박1 사과2' or '수박(1) 사과(2)'), YOU MUST NEVER COMBINE THEM INTO A SINGLE JSON OBJECT! You MUST explicitly separate them into an array of multiple JSON objects. Example output ALWAYS: [{\"product\": \"수박\", \"quantity\": 1}, {\"product\": \"사과\", \"quantity\": 2}]. Do NOT return {\"product\": \"수박 1 사과 2\"}!!";
 
+        // KST 기준 오늘 날짜 (Vercel UTC 환경에서도 한국 자정 기준으로 계산)
+        const todayKST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" })
+
+        // 매칭 후보 필터: 상시판매 제외 + KST 오늘 이후 target_date
+        const isMatchableProduct = (p: any) =>
+            !p.is_regular_sale && p.target_date && p.target_date >= todayKST
+
         // --- NEW: PRODUCT VARIANT AWARENESS ---
         // Inject registered product names so AI can distinguish variants from quantities
-        const productNameList = products.map(p => p.collect_name).filter(Boolean);
+        // (날짜 필터 적용 — 어제·과거 상품은 주입 X)
+        const productNameList = products.filter(isMatchableProduct).map(p => p.collect_name).filter(Boolean);
         if (productNameList.length > 0) {
             promptA += `\n\n[REGISTERED PRODUCT LIST]: The store has these products: [${productNameList.join(', ')}]. IMPORTANT: When a number follows a product name (e.g. '석류즙30', '석류즙 60'), check if it matches a registered product variant (e.g. '석류즙(30포)', '석류즙(60포)'). If so, the number is a VARIANT IDENTIFIER, NOT a quantity. Output the matched product name exactly as registered with quantity 1. Example: '석류즙30' → {"product": "석류즙(30포)", "quantity": 1}, NOT {"product": "석류즙", "quantity": 30}.`;
         }
@@ -153,7 +162,7 @@ export async function POST(request: Request) {
 - product_list: [{product_list}]
 #OUTPUT#
 `;
-            const systemPrompt = systemPromptText.replace('{product_list}', productListStr);
+            const systemPrompt = systemPromptText.replace('{product_list}', productListStr) + STRICT_MATCHING_APPENDIX;
             const userPrompt = `user_product_name: "${userProductName}"`;
             let result = await callGemini(systemPrompt, userPrompt);
             // Clean up Markdown and prefixes
@@ -332,11 +341,13 @@ export async function POST(request: Request) {
                 let fixedProductName = item.product;
 
                 if (products) {
-                    const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
+                    // 매칭 후보: 상시판매 제외 + KST 오늘 이후 + 재고 있음
+                    const availableCandidates = products.filter(p => isMatchableProduct(p) && (p.allocated_stock === null || p.allocated_stock > 0));
                     fixedProductName = await matchProductWithAI(item.product, availableCandidates);
 
                     if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
-                        const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
+                        // 품절 후보도 같은 날짜 필터 적용
+                        const soldoutCandidates = products.filter(p => isMatchableProduct(p) && p.allocated_stock !== null && p.allocated_stock <= 0);
                         if (soldoutCandidates.length > 0) {
                             fixedProductName = await matchProductWithAI(item.product, soldoutCandidates);
                         }
@@ -344,10 +355,12 @@ export async function POST(request: Request) {
 
                     item.product = fixedProductName;
                     const qty = parseInt(item.quantity, 10) || 1;
-                    
-                    const matchedProduct = 
-                        products.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
-                        || products.find(p => p.collect_name === fixedProductName);
+
+                    // 최종 lookup도 같은 필터로 — 어제·과거 상품이 lookup 단계에서 잡히는 뒷문 차단
+                    const lookupPool = products.filter(isMatchableProduct);
+                    const matchedProduct =
+                        lookupPool.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
+                        || lookupPool.find(p => p.collect_name === fixedProductName);
 
                     if (matchedProduct) {
                         const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;

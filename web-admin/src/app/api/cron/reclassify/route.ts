@@ -3,6 +3,7 @@ export const maxDuration = 300; // 5 minutes (Pro plan)
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { computeMsgHash } from '@/lib/msgHash';
+import { STRICT_MATCHING_APPENDIX } from '@/lib/promptAppendix';
 
 // 주기적으로 재분류가 필요한 chat_logs를 재처리
 // 대상: 최근 24h, category='UNKNOWN', retry_count<3
@@ -72,6 +73,13 @@ export async function GET(request: Request) {
             }
         }
         promptA += "\n\n[CRITICAL SYSTEM FORMATTING RULE]: If a user orders multiple different products in one message (e.g. '수박1 사과2' or '수박(1) 사과(2)'), YOU MUST NEVER COMBINE THEM INTO A SINGLE JSON OBJECT! You MUST explicitly separate them into an array of multiple JSON objects. Example output ALWAYS: [{\"product\": \"수박\", \"quantity\": 1}, {\"product\": \"사과\", \"quantity\": 2}]. Do NOT return {\"product\": \"수박 1 사과 2\"}!!";
+
+        // KST 기준 오늘 날짜
+        const todayKST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+
+        // 매칭 후보 필터: 상시판매 제외 + KST 오늘 이후 target_date
+        const isMatchableProduct = (p: any) =>
+            !p.is_regular_sale && p.target_date && p.target_date >= todayKST;
 
         const logAiError = async (storeId: string, provider: string, errorMessage: string, fallbackUsed: boolean, fallbackProvider: string | null) => {
             try {
@@ -165,14 +173,21 @@ export async function GET(request: Request) {
 - product_list: [{product_list}]
 #OUTPUT#
 `;
-            const systemPrompt = systemPromptText.replace('{product_list}', productListStr);
+            const systemPrompt = systemPromptText.replace('{product_list}', productListStr) + STRICT_MATCHING_APPENDIX;
             const userPrompt = `user_product_name: "${userProductName}"`;
             let result = await callAIWithFallback(storeId, systemPrompt, userPrompt);
             result = result.replace(/```json/gi, "").replace(/```/g, "").trim();
             if (result.includes("user_product_name:")) result = result.split("user_product_name:")[1].trim();
             if (result.includes("Input:")) result = result.split("Input:")[1].trim();
             const cleanResult = result.replace(/['"\n]/g, "").trim();
-            if (productCandidates.find(p => p.collect_name === cleanResult)) return cleanResult;
+
+            // 환각 검증: 후보에 존재 + 입력과 공통 글자 ≥ 2 (collect와 동일)
+            if (productCandidates.find(p => p.collect_name === cleanResult)) {
+                const set1 = new Set(userProductName.replace(/\s/g, "").split(''));
+                const set2 = new Set(cleanResult.replace(/\s/g, "").split(''));
+                const intersection = new Set([...set1].filter(x => set2.has(x)));
+                if (intersection.size >= 2) return cleanResult;
+            }
             return userProductName;
         };
 
@@ -204,6 +219,13 @@ export async function GET(request: Request) {
                 collect_name: p.collect_name ? p.collect_name.trim() : "",
                 remaining_stock: p.allocated_stock !== null ? Math.max(0, p.allocated_stock - (qtyMap[p.id] || 0)) : null
             })) || [];
+
+            // Prompt A에 REGISTERED PRODUCT LIST 주입 (날짜 필터 적용) — 매장별로 별도 빌드
+            let storePromptA = promptA;
+            const productNameList = products.filter(isMatchableProduct).map(p => p.collect_name).filter(Boolean);
+            if (productNameList.length > 0) {
+                storePromptA += `\n\n[REGISTERED PRODUCT LIST]: The store has these products: [${productNameList.join(', ')}]. IMPORTANT: When a number follows a product name (e.g. '석류즙30', '석류즙 60'), check if it matches a registered product variant (e.g. '석류즙(30포)', '석류즙(60포)'). If so, the number is a VARIANT IDENTIFIER, NOT a quantity. Output the matched product name exactly as registered with quantity 1. Example: '석류즙30' → {"product": "석류즙(30포)", "quantity": 1}, NOT {"product": "석류즙", "quantity": 30}.`;
+            }
 
             for (const row of rows) {
                 const logId = row.id;
@@ -240,7 +262,7 @@ export async function GET(request: Request) {
                         continue;
                     }
 
-                    const extractedRaw = await callAIWithFallback(storeId, promptA, chat_content, true);
+                    const extractedRaw = await callAIWithFallback(storeId, storePromptA, chat_content, true);
                     let jsonMatch = extractedRaw.match(/\[[\s\S]*\]/);
                     let extractedItems: any[] = [];
                     if (jsonMatch) {
@@ -329,10 +351,13 @@ export async function GET(request: Request) {
                             let fixedProductName = item.product;
 
                             if (products) {
-                                const availableCandidates = products.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
+                                // 매칭 후보: 상시판매 제외 + KST 오늘 이후 + 재고 있음
+                                const matchablePool = products.filter(isMatchableProduct);
+                                const availableCandidates = matchablePool.filter(p => p.allocated_stock === null || p.allocated_stock > 0);
                                 fixedProductName = await matchProductWithAI(storeId, item.product, availableCandidates);
                                 if (fixedProductName === item.product && !availableCandidates.find(p => p.collect_name === fixedProductName)) {
-                                    const soldoutCandidates = products.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
+                                    // 품절 후보도 같은 날짜 필터 적용
+                                    const soldoutCandidates = matchablePool.filter(p => p.allocated_stock !== null && p.allocated_stock <= 0);
                                     if (soldoutCandidates.length > 0) {
                                         fixedProductName = await matchProductWithAI(storeId, item.product, soldoutCandidates);
                                     }
@@ -340,9 +365,10 @@ export async function GET(request: Request) {
                                 item.product = fixedProductName;
 
                                 const qty = parseInt(item.quantity, 10) || 1;
+                                // 최종 lookup도 같은 필터로 — 어제·과거 상품 뒷문 차단
                                 const matchedProduct =
-                                    products.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
-                                    || products.find(p => p.collect_name === fixedProductName);
+                                    matchablePool.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
+                                    || matchablePool.find(p => p.collect_name === fixedProductName);
 
                                 if (matchedProduct) {
                                     const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
