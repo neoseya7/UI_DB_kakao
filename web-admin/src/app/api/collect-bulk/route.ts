@@ -324,8 +324,12 @@ export async function POST(request: Request) {
                 if (logError) throw new Error("Log Insert Fail: " + logError.message)
                 logId = logData.id
 
+                // INSERT 성공한 시점에 success_hashes에 push.
+                // AI 처리가 catch 에러나 함수 timeout으로 실패하더라도 스크래퍼가 재전송하지 않도록.
+                // 운영자는 cls=null 또는 cls='AI오류'를 오늘의대화에서 보고 주문관리에서 수동 처리.
+                success_hashes.push(clientHash || hash)
+
                 if (!geminiKey) {
-                    success_hashes.push(clientHash || hash)
                     continue
                 }
 
@@ -587,8 +591,8 @@ export async function POST(request: Request) {
                     }
                 }
 
-                // ONLY IF EVERYTHING SUCCEEDS safely push to success hashes
-                success_hashes.push(clientHash || hash)
+                // success_hashes는 INSERT 직후 이미 push됨 (라인 ~325 참조).
+                // 정상 처리 끝났으니 별도 push 불필요.
 
             } catch (err: any) {
                 console.error("Bulk processing error for a message:", err)
@@ -601,7 +605,8 @@ export async function POST(request: Request) {
                         }).eq('id', logId).eq('classification', null);  // 이미 early update된 경우 덮어쓰지 않음
                     } catch (_) { /* silent */ }
                 }
-                // Skip success_hashes push on error, so python scraper will re-send this specific msg later!
+                // success_hashes는 INSERT 직후 이미 push됨 → 스크래퍼는 재전송 안 함.
+                // 운영자가 'AI오류' 표시 보고 주문관리에서 수동 처리.
             }
         }
 
