@@ -1225,7 +1225,12 @@ export default function PickupCalendarPage() {
         const qty = parseInt(newQty)
         const pId = newProductId
         const actualDate = newDate || currentDate
-        const dbDate = actualDate === "상시판매" ? "1900-01-01" : actualDate
+        // 상시판매 상품은 운영자가 어떤 날짜를 골랐든 무조건 1900-01-01(상시판매 탭)로 저장
+        // → AI 자동 수집과 동일한 규칙. 운영자 실수로 날짜 탭에 박히는 것 방지.
+        const selectedProduct = manualOrderProducts.find(p => p.id === pId)
+        const dbDate = selectedProduct?.is_regular_sale
+            ? "1900-01-01"
+            : (actualDate === "상시판매" ? "1900-01-01" : actualDate)
 
         const { data: oData, error: oErr } = await supabase.from('orders').insert({
             store_id: storeId,
