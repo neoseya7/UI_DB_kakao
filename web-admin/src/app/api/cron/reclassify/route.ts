@@ -76,10 +76,27 @@ export async function GET(request: Request) {
 
         // KST 기준 오늘 날짜
         const todayKST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+        // KST 기준 오늘 - 3일 (늦주문 허용 윈도우)
+        const cutoffKST = new Date(Date.now() - 3 * 24 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 
-        // 매칭 후보 필터: 상시판매 제외 + KST 오늘 이후 target_date
+        // 매칭 후보 필터: 상시판매 포함 + 과거 3일 이내 ~ 미래 target_date 허용
         const isMatchableProduct = (p: any) =>
-            !p.is_regular_sale && p.target_date && p.target_date >= todayKST;
+            p.is_regular_sale || (p.target_date && p.target_date >= cutoffKST);
+
+        // 같은 이름 상품 여러 row 중 우선순위 결정용:
+        //   1순위 미래/오늘 (가까운 순), 2순위 과거 3일 이내 (최근 순), 3순위 상시판매
+        const getMatchRank = (p: any) => {
+            if (p.is_regular_sale) return 3
+            if (p.target_date && p.target_date >= todayKST) return 1
+            return 2
+        };
+        const sortByMatchPriority = (arr: any[]) => arr.slice().sort((a: any, b: any) => {
+            const ra = getMatchRank(a), rb = getMatchRank(b)
+            if (ra !== rb) return ra - rb
+            if (ra === 1) return (a.target_date || '').localeCompare(b.target_date || '')
+            if (ra === 2) return (b.target_date || '').localeCompare(a.target_date || '')
+            return 0
+        });
 
         const logAiError = async (storeId: string, provider: string, errorMessage: string, fallbackUsed: boolean, fallbackProvider: string | null) => {
             try {
@@ -365,10 +382,11 @@ export async function GET(request: Request) {
                                 item.product = fixedProductName;
 
                                 const qty = parseInt(item.quantity, 10) || 1;
-                                // 최종 lookup도 같은 필터로 — 어제·과거 상품 뒷문 차단
+                                // 최종 lookup: 같은 이름 후보 중 우선순위(미래>과거3일>상시판매) 정렬 후 재고 충분한 것 우선
+                                const sameNameSorted = sortByMatchPriority(matchablePool.filter(p => p.collect_name === fixedProductName));
                                 const matchedProduct =
-                                    matchablePool.find(p => p.collect_name === fixedProductName && (p.remaining_stock === null || p.remaining_stock >= qty))
-                                    || matchablePool.find(p => p.collect_name === fixedProductName);
+                                    sameNameSorted.find(p => p.remaining_stock === null || p.remaining_stock >= qty)
+                                    || sameNameSorted[0];
 
                                 if (matchedProduct) {
                                     const isOutOfStock = matchedProduct.remaining_stock !== null && matchedProduct.remaining_stock < qty;
