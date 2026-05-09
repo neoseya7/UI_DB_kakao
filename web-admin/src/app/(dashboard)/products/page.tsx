@@ -493,9 +493,37 @@ export default function ProductsPage() {
     }, [searchSharedQuery, isSharedDialogOpen, storeId])
 
     const handleCloneProduct = async (prod: any) => {
-        if (!confirm(`[${prod.display_name || prod.collect_name}] 상품 정보와 이미지를 내 매장으로 복사하시겠습니까?`)) return
+        const newTargetDate = prod.target_date || new Date().toISOString().split('T')[0]
+
+        // 동일 collect_name의 다른 날짜 활성 상품 사전 조회 (확인 메시지에 안내용)
+        let dupQuery = supabase
+            .from('products')
+            .select('id, target_date, is_regular_sale, allocated_stock')
+            .eq('store_id', storeId)
+            .eq('collect_name', prod.collect_name)
+            .eq('is_hidden', false)
+        if (newTargetDate) {
+            dupQuery = dupQuery.neq('target_date', newTargetDate)
+        } else {
+            dupQuery = dupQuery.not('target_date', 'is', null)
+        }
+        const { data: dbDuplicates } = await dupQuery
+
+        let confirmMsg = `[${prod.display_name || prod.collect_name}] 상품 정보와 이미지를 내 매장으로 복사하시겠습니까?`
+        if (dbDuplicates && dbDuplicates.length > 0) {
+            const dupSummary = dbDuplicates
+                .map(d => d.is_regular_sale ? '상시판매' : (d.target_date || '날짜미지정'))
+                .join(', ')
+            confirmMsg += `\n\n⚠️ 내 매장에 동일 상품명의 기존 상품(${dupSummary})이 있어, 해당 상품의 재고가 0으로 처리됩니다.`
+        }
+        if (!confirm(confirmMsg)) return
 
         setIsLoadingShared(true)
+
+        if (dbDuplicates && dbDuplicates.length > 0) {
+            await supabase.from('products').update({ allocated_stock: 0 }).in('id', dbDuplicates.map(d => d.id))
+        }
+
         const newPayload = {
             store_id: storeId,
             collect_name: prod.collect_name,
@@ -513,7 +541,7 @@ export default function ProductsPage() {
             is_visible: true,
             is_regular_sale: prod.is_regular_sale,
             box_quantity: prod.box_quantity || null,
-            target_date: prod.target_date || new Date().toISOString().split('T')[0]
+            target_date: newTargetDate
         }
 
         const { error } = await supabase.from('products').insert(newPayload)
