@@ -352,10 +352,10 @@ function PickupTableImpl(props: PickupViewProps) {
                         <tr>
                             <th className={`border-b border-r py-1.5 px-1 bg-white ${getStickyClasses('price').th}`}>
                                 <div className="flex items-center justify-center gap-2">
-                                    <span className="text-[12px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0).toLocaleString()}</span>
+                                    <span className="text-[12px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0) - (products[oi].archivedReceived || 0)), 0).toLocaleString()}</span>
                                     <span className="text-[13px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => {
                                         const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
-                                        const remaining = products[oi].stock - orderSum;
+                                        const remaining = products[oi].stock - orderSum - (products[oi].archivedReceived || 0);
                                         const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
                                         return acc + (remaining + unreceivedSum);
                                     }, 0).toLocaleString()}</span>
@@ -369,7 +369,7 @@ function PickupTableImpl(props: PickupViewProps) {
                             </th>
                             {activeProductIndices.map((oi, di) => {
                                 const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
-                                const remaining = products[oi].stock - orderSum;
+                                const remaining = products[oi].stock - orderSum - (products[oi].archivedReceived || 0);
                                 const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                 const physicalTarget = remaining + unreceivedSum;
                                 return (

@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-type Product = { id: string, name: string, price: number, required: number, stock: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string, tiered_prices?: {qty: number, price: number}[], unit_text?: string }
+type Product = { id: string, name: string, price: number, required: number, stock: number, archivedReceived?: number, target_date?: string, is_regular_sale?: boolean, product_memo?: string, tiered_prices?: {qty: number, price: number}[], unit_text?: string }
 type Order = { id: string, name: string, items: number[], memo1: string, memo2: string, checked: boolean, pickup_date?: string, originalIndex?: number, crm?: { category: string, memo: string } }
 
 
@@ -364,7 +364,7 @@ export default function PickupCalendarPage() {
         if (!storeId || !isTransferModalOpen) return;
         const fetchModalProducts = async () => {
             const date = transferSourceDate || currentDate;
-            let query = supabase.from('products').select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
+            let query = supabase.from('products').select('id,collect_name,price,allocated_stock,archived_received_qty,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
             if (isTransferFromRegular || date === "상시판매") {
                 query = query.eq('is_regular_sale', true)
             } else {
@@ -395,7 +395,7 @@ export default function PickupCalendarPage() {
         const activeDate = newDate || currentDate;
         const fetchManualProducts = async () => {
             let query = supabase.from('products')
-                .select('id,collect_name,price,allocated_stock,target_date,is_regular_sale,product_memo,tiered_prices,unit_text')
+                .select('id,collect_name,price,allocated_stock,archived_received_qty,target_date,is_regular_sale,product_memo,tiered_prices,unit_text')
                 .eq('store_id', storeId)
                 .eq('is_hidden', false)
             if (activeDate === "상시판매") {
@@ -412,6 +412,7 @@ export default function PickupCalendarPage() {
                     price: p.price || 0,
                     required: p.allocated_stock || 0,
                     stock: p.allocated_stock || 0,
+                    archivedReceived: Number(p.archived_received_qty) || 0,
                     target_date: p.target_date,
                     is_regular_sale: p.is_regular_sale,
                     product_memo: p.product_memo || "",
@@ -462,7 +463,7 @@ export default function PickupCalendarPage() {
         }
 
         // 상품 쿼리 (날짜 기반 - 주문 의존성 없이 바로 병렬 실행)
-        let pQuery = supabase.from('products').select('id,collect_name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
+        let pQuery = supabase.from('products').select('id,collect_name,price,allocated_stock,archived_received_qty,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).eq('is_hidden', false)
         if (searchScope === "today") {
             if (currentDate === "상시판매") {
                 pQuery = pQuery.eq('is_regular_sale', true)
@@ -533,7 +534,7 @@ export default function PickupCalendarPage() {
         let allProductData = pResult.data || []
         if (missingIds.length > 0) {
             const uniqueMissing = [...new Set(missingIds)]
-            const { data: extraProducts } = await supabase.from('products').select('id,collect_name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).in('id', uniqueMissing)
+            const { data: extraProducts } = await supabase.from('products').select('id,collect_name,price,allocated_stock,archived_received_qty,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeId).in('id', uniqueMissing)
             if (extraProducts) allProductData = [...allProductData, ...extraProducts]
         }
         const mappedProducts = allProductData.map((p: any) => ({
@@ -542,6 +543,7 @@ export default function PickupCalendarPage() {
             price: p.price || 0,
             required: p.is_hidden ? 0 : (p.allocated_stock || 0),
             stock: p.is_hidden ? 0 : (p.allocated_stock || 0),
+            archivedReceived: p.is_hidden ? 0 : (Number(p.archived_received_qty) || 0),
             target_date: p.target_date,
             is_regular_sale: p.is_regular_sale,
             product_memo: p.product_memo || "",
@@ -669,7 +671,7 @@ export default function PickupCalendarPage() {
                 adjOrders.forEach((o: any) => { if (o.items) o.items.forEach((oi: any) => adjOrderedIds.add(oi.product_id)) })
                 const adjIdList = Array.from(adjOrderedIds).join(',')
 
-                let adjPQuery = supabase.from('products').select('id,collect_name,price,allocated_stock,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeIdStr).eq('is_hidden', false)
+                let adjPQuery = supabase.from('products').select('id,collect_name,price,allocated_stock,archived_received_qty,is_hidden,target_date,is_regular_sale,product_memo,tiered_prices,unit_text').eq('store_id', storeIdStr).eq('is_hidden', false)
                 adjPQuery = adjIdList.length > 0 ? adjPQuery.or(`target_date.eq.${adjDate},id.in.(${adjIdList})`) : adjPQuery.eq('target_date', adjDate)
                 const adjPResult = await adjPQuery.limit(5000)
                 if (!isMountedRef.current) return
@@ -677,6 +679,7 @@ export default function PickupCalendarPage() {
                 const adjProducts = (adjPResult.data || []).map((p: any) => ({
                     id: p.id, name: p.collect_name || "(이름없음)", price: p.price || 0,
                     required: p.is_hidden ? 0 : (p.allocated_stock || 0), stock: p.is_hidden ? 0 : (p.allocated_stock || 0),
+                    archivedReceived: p.is_hidden ? 0 : (Number(p.archived_received_qty) || 0),
                     target_date: p.target_date, is_regular_sale: p.is_regular_sale,
                     product_memo: p.product_memo || "", tiered_prices: p.tiered_prices || [], unit_text: p.unit_text || ""
                 }))
@@ -859,7 +862,33 @@ export default function PickupCalendarPage() {
             const fname = `수령백업_${safeLabel}_${stamp}.xlsx`
             XLSX.writeFile(wb, fname)
 
-            // 6) DB 삭제 (order_items → orders 순)
+            // 6) product별 수령 수량 누적 (archived_received_qty)
+            //    - 미예약/매장재고가 삭제로 인해 부풀려지지 않게 보존
+            //    - 화면 계산: 미예약 = allocated_stock - orderSum - archived_received_qty
+            const qtyByProduct: Record<string, number> = {}
+            for (const it of allItems) {
+                if (!it.product_id) continue
+                qtyByProduct[it.product_id] = (qtyByProduct[it.product_id] || 0) + Number(it.quantity || 0)
+            }
+            const productEntries = Object.entries(qtyByProduct).filter(([, q]) => q > 0)
+            if (productEntries.length > 0) {
+                const { data: curRows } = await supabase
+                    .from("products")
+                    .select("id, archived_received_qty")
+                    .in("id", productEntries.map(([id]) => id))
+                const currentMap: Record<string, number> = {}
+                ;(curRows || []).forEach((r: any) => { currentMap[r.id] = Number(r.archived_received_qty) || 0 })
+                for (const [pid, addQty] of productEntries) {
+                    const next = (currentMap[pid] || 0) + addQty
+                    const { error: aErr } = await supabase
+                        .from("products")
+                        .update({ archived_received_qty: next })
+                        .eq("id", pid)
+                    if (aErr) throw aErr
+                }
+            }
+
+            // 7) DB 삭제 (order_items → orders 순)
             recordMutation(orderIds)
             for (let i = 0; i < orderIds.length; i += CHUNK) {
                 const chunk = orderIds.slice(i, i + CHUNK)
@@ -872,7 +901,7 @@ export default function PickupCalendarPage() {
                 if (oErr) throw oErr
             }
 
-            alert(`${dateLabel}의 수령제품 ${receivedOrders.length}건 삭제 완료.\n백업 엑셀이 다운로드됐습니다.\n복원 시 '더보기(⋮) → 엑셀 일괄 등록' 메뉴로 재업로드하세요.`)
+            alert(`${dateLabel}의 수령제품 ${receivedOrders.length}건 삭제 완료.\n백업 엑셀이 참고용으로 다운로드됐습니다.\n(엑셀 복원 시 미예약/매장재고 수치가 어긋날 수 있으므로 발주 수량을 직접 조정해 주세요.)`)
             await fetchMatrixData(true)
         } catch (e: any) {
             console.error(e)
@@ -2403,10 +2432,10 @@ export default function PickupCalendarPage() {
                             <tr>
                                 <th className={`border-b border-r py-1.5 px-1 bg-white ${getStickyClasses('price').th}`}>
                                     <div className="flex items-center justify-center gap-2">
-                                        <span className="text-[12px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0)), 0).toLocaleString()}</span>
+                                        <span className="text-[12px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => acc + (products[oi].stock - rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0) - (products[oi].archivedReceived || 0)), 0).toLocaleString()}</span>
                                         <span className="text-[13px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">{activeProductIndices.reduce((acc, oi) => {
                                             const orderSum = rawCustomers.reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
-                                            const remaining = products[oi].stock - orderSum;
+                                            const remaining = products[oi].stock - orderSum - (products[oi].archivedReceived || 0);
                                             const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((cAcc, c) => cAcc + (c.items[oi] || 0), 0);
                                             return acc + (remaining + unreceivedSum);
                                         }, 0).toLocaleString()}</span>
@@ -2420,7 +2449,7 @@ export default function PickupCalendarPage() {
                                 </th>
                                 {activeProductIndices.map((oi, di) => {
                                     const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0);
-                                    const remaining = products[oi].stock - orderSum;
+                                    const remaining = products[oi].stock - orderSum - (products[oi].archivedReceived || 0);
                                     const unreceivedSum = rawCustomers.filter(c => !c.checked && (!c.memo2 || c.memo2.trim() === '')).reduce((acc, c) => acc + (c.items[oi] || 0), 0);
                                     const physicalTarget = remaining + unreceivedSum;
                                     return (

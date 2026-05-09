@@ -48,7 +48,7 @@ export default function PickupCardList(props: PickupCardListProps) {
     const summaryData = activeProductIndices.map(oi => {
         const p = products[oi]
         const orderSum = rawCustomers.reduce((acc, c) => acc + (c.items[oi] || 0), 0)
-        const remaining = p.stock - orderSum
+        const remaining = p.stock - orderSum - (p.archivedReceived || 0)
         return { name: p.name, stock: p.stock, orderSum, remaining }
     })
 

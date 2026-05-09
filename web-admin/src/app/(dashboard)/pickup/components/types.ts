@@ -4,6 +4,7 @@ export type Product = {
     price: number
     required: number
     stock: number
+    archivedReceived?: number
     target_date?: string
     is_regular_sale?: boolean
     product_memo?: string
