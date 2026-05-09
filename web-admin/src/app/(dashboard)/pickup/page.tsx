@@ -777,16 +777,18 @@ export default function PickupCalendarPage() {
 
     const handleDeleteReceivedOrders = async () => {
         if (!storeId) return
+        // 기간검색 드릴다운 시 focusedDate 우선, 그 외에는 currentDate
+        const effectiveDate = (searchScope === "date_range" && focusedDate) ? focusedDate : currentDate
         // 현재 화면의 날짜 라벨
         const dateLabel = (() => {
-            if (currentDate === "상시판매") return "상시판매"
-            const parts = currentDate.split("-")
+            if (effectiveDate === "상시판매") return "상시판매"
+            const parts = effectiveDate.split("-")
             if (parts.length === 3) return `${parts[1]}월${parts[2]}일`
-            return currentDate
+            return effectiveDate
         })()
 
         // 1) 해당 날짜 + is_received=true 주문 조회
-        const targetDbDate = currentDate === "상시판매" ? "1900-01-01" : currentDate
+        const targetDbDate = effectiveDate === "상시판매" ? "1900-01-01" : effectiveDate
         const { data: receivedOrders, error: fErr } = await supabase
             .from("orders")
             .select("id, customer_nickname, pickup_date, customer_memo_1, customer_memo_2, is_received")
