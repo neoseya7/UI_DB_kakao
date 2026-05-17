@@ -398,20 +398,30 @@ export default function Dashboard() {
             if (activeProducts) {
               prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate && (p.allocated_stock === null || p.allocated_stock > 0));
               if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && p.target_date === targetDate);
-              if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0));
-              if (!prod) prod = activeProducts.find(p => p.collect_name === targetProduct);
+              if (!prod) {
+                // 지정 날짜에 product 없음 → 다른 날짜로 fallback 시 매니저 확인 (pickup_date ≠ product.target_date 불일치 방지)
+                let fb = activeProducts.find(p => p.collect_name === targetProduct && (p.allocated_stock === null || p.allocated_stock > 0));
+                if (!fb) fb = activeProducts.find(p => p.collect_name === targetProduct);
+                if (fb) {
+                  const ok = confirm(`"${targetProduct}"는 ${targetDate}에 등록되어 있지 않습니다.\n${fb.target_date}의 상품으로 매칭하여 진행할까요?\n(취소 시 이 항목은 건너뜁니다)`);
+                  if (ok) prod = fb;
+                }
+              }
             }
             if (!prod) {
               alert(`⚠️ 주분 복구 실패: "${log.nickname}" 님의 데이터 중 ["${targetProduct}"] 상품은 상품관리 목록에 존재하지 않습니다.\n이 항목을 무시하고 건너뜁니다. 상품 등록 후 다시 수동수정해주세요.`);
-              continue; 
+              continue;
             }
         }
+
+        // 매칭된 product의 target_date를 픽업일/분류 반영일로 강제 (data 정합성 — pickup_date ≠ product.target_date 방지)
+        const effectiveDate = prod ? (prod.is_regular_sale ? '1900-01-01' : prod.target_date) : targetDate
 
         await supabase.from('chat_logs').update({
           product_name: newProductName,
           is_processed: true,
           category: 'ORDER',
-          classification: targetDate && targetDate !== "-" ? `분류:수정, [${targetDate} 반영]` : '분류:수정'
+          classification: prod ? `분류:수정, [${effectiveDate} 반영]` : (targetDate && targetDate !== "-" ? `분류:수정, [${targetDate} 반영]` : '분류:수정')
         }).eq('id', log.id)
 
         if (targetDate && targetDate !== "-" && targetProduct && targetProduct !== "-" && prod) {
@@ -436,7 +446,7 @@ export default function Dashboard() {
           // --- FIX: Always create a completely NEW independent orders row (1:1 mapping rule) ---
           const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
             store_id: user.id,
-            pickup_date: targetDate,
+            pickup_date: effectiveDate,
             customer_nickname: log.nickname,
             is_received: false,
             customer_memo_1: '관리자 수동 지정'
